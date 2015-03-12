@@ -27,55 +27,38 @@
 //! specialised, but it is a crate to make version handling and distribution easier. 
 
 extern crate "rustc-serialize" as rustc_serialize;
+extern crate sodiumoxide;
+use sodiumoxide::crypto;
+
 
 struct NameType ( [u8; 64] );
-
-enum SelfSignedType {
-AnMaid,
-PublicAnMaid,
-AnMpid,
-PublicAnMpid,
-}
-
-enum ProtectedType {
-Maid,
-PublicMaid,
-Mpid,
-PublicMpid,
-}
 
 enum Data {
 ImmutableData(NameType, Vec<u8>),
 StructuredData((NameType, NameType), Vec<Vec<NameType>>),
-SelfSigned,
-PublicSelfSigned,
-Protected,
-PublicProtected,
+AnMaid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+PublicAnMaid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::Signature),
+AnMpid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::Signature),
+PublicAnMpid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::Signature),
+Maid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+PublicMaid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::Signature, crypto::sign::Signature),
+Mpid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+PublicMpid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::Signature, crypto::sign::Signature),
 }
 
+// TODO(dirvine) Only specialisation is StructuredData :12/03/2015
 trait DataTraits {
-fn get_type_id(&self)->u32;
-fn parse(serialised_data: Vec<u8>) -> Self;
-fn get_name(&self)->&NameType;
-fn validate(&self, public_key: Option<NameType>)->bool;
+  fn get_name(&self)->crypto::hash::sha512::Digest {
+    crypto::hash::sha512::hash("Unimplemented".as_bytes())
+  }
 }
 
-/* impl DataTraits for Data::ImmutableData { */
-/*   fn get_type_id(&self)->u32 { */
-/*     Data::ImmutableData as u32 */
-/*   } */
-/*   fn parse(serialised_data: Vec<u8>) -> Data { */
-/*   unimplemented!(); */
-/*   /*  ImmutableData { name : [u8, ..64], value: vec![1,2,3] }  */ */
-/*   } */
-/*   fn get_name(&self)->&NameType { */
-/*     &self.name */
-/*   } */
-/*   fn validate(&self, public_key: Option<NameType>)->bool { */
-/*     true // FIXME Hash value and check name is  */
-/*   }   */
-/* } */
-/*  */
+impl DataTraits for Data::Struc {
+  fn get_name(&self)->NameType {
+    &self.name
+  }
+}
+
 /* #[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)]  */
 struct ImmutableData {
 name: NameType,
