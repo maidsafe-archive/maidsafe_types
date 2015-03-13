@@ -2,6 +2,11 @@ language: rust
 env:
   global:
     secure: HPse/b5ho65gPE2nkOzHAaaeJSpp4Bg/+itrXt3422Cy8xJNzqJ9GiCBHS6lFYSgLQq9jj9BTW2mSUC9pV+oy2QUsg+8xiCNOreP9jP+U4YmqwHE2NTpRsiPsoSYBdcnUgoxetgFegtMdE71xkArV2qgtDF+Welp1qLHgAMuAa8=
+install:
+- wget https://github.com/jedisct1/libsodium/releases/download/1.0.0/libsodium-1.0.0.tar.gz
+- tar xvfz libsodium-1.0.0.tar.gz
+- cd libsodium-1.0.0 && ./configure --prefix=/usr && make && sudo make install && cd ..
+
 after_success: |
   [ $TRAVIS_BRANCH = master ] &&
   [ $TRAVIS_PULL_REQUEST = false ] &&

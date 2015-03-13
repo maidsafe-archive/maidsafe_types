@@ -31,7 +31,8 @@ extern crate sodiumoxide;
 use sodiumoxide::crypto;
 
 
-struct NameType ( [u8; 64] );
+#[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)] 
+struct NameType ( Vec<u8> );
 
 enum Data {
 ImmutableData(NameType, Vec<u8>),
@@ -53,13 +54,13 @@ trait DataTraits {
   }
 }
 
-impl DataTraits for Data::Struc {
-  fn get_name(&self)->NameType {
-    &self.name
-  }
-}
+/* impl DataTraits for StructuredData { */
+/*   fn get_name(&self)->crypto::hash::sha512::Digest  { */
+/*     &self.name as crypto::hash::sha512::Digest  */
+/*   } */
+/* } */
 
-/* #[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)]  */
+#[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)] 
 struct ImmutableData {
 name: NameType,
 value: Vec<u8>,
