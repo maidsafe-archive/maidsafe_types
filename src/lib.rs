@@ -34,6 +34,7 @@ use sodiumoxide::crypto;
 #[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)] 
 struct NameType ( Vec<u8> );
 
+/* #[derive(RustcEncodable, RustcDecodable)]  */
 enum Data {
 ImmutableData(NameType, Vec<u8>),
 StructuredData((NameType, NameType), Vec<Vec<NameType>>),
@@ -66,7 +67,7 @@ name: NameType,
 value: Vec<u8>,
 }
 
-/* #[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)]  */
+#[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)] 
 struct StructuredData {
 name: (NameType, NameType),  /// name + owner of this StructuredData
 value: Vec<Vec<NameType>>,
