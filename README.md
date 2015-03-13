@@ -13,8 +13,8 @@ Appveyor build status (Windows)
 
 
 #Todo
-- [ ] Add all DataTypes
-- [ ] Add all functor types
+- [x] Add all DataTypes for Data Put/Get 
+- [ ] Add Encode/Decode traits for all types (cbor)
 - [ ] Write tests to confirm invariants of all types
 - [ ] Write tests to confirm serialising and parsing of all types
 - [ ] API version 0.1.0
