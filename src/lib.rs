@@ -28,12 +28,30 @@
 
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate sodiumoxide;
+extern crate cbor;
+use cbor::CborTagEncode;
+use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)] 
 struct NameType ( Vec<u8> );
 
+// These traits will be defined in routing and require to be avauilable for any type 
+// passed to routing 
+// The name will let routing know its an NaeManager and the owner will allow routing to hash
+// the requsters id with this name (by hashing the requesters id) for put and post messages 
+trait RoutingTrait {
+  fn get_name(&self)->NameType;
+  fn get_owner_hash(&self)->NameType;
+  fn refresh(&self)->bool { false } // is this an account transfer type
+  fn merge(&self)->bool { false } // how do we merge these 
+}
+
+
+// [TODO]: Enum will likely not work we need to use full types, probably a good thing really
+// so will have to implement Encode and Decoe for all types and 
+// also fixed size arrays as NameType shoudl be - 2015-03-14 08:44pm
 /* #[derive(RustcEncodable, RustcDecodable)]  */
 enum Data {
 ImmutableData(NameType, Vec<u8>),
@@ -55,33 +73,43 @@ trait DataTraits {
   }
 }
 
-/* impl DataTraits for StructuredData { */
-/*   fn get_name(&self)->crypto::hash::sha512::Digest  { */
-/*     &self.name as crypto::hash::sha512::Digest  */
-/*   } */
-/* } */
-
-#[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)] 
+// [TODO]: Implement validate() for all types, possibly get_name() shoudl always check invariants - 2015-03-14 09:03pm
 struct ImmutableData {
 name: NameType,
 value: Vec<u8>,
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)] 
+impl RoutingTrait for ImmutableData {
+  fn get_name(&self)->NameType {
+   NameType(vec![0u8]) 
+  }
+  fn get_owner_hash(&self)->NameType {
+    self.get_name()  
+  }
+  }
+
+impl Encodable for ImmutableData {
+  fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
+    CborTagEncode {
+       tag: 5483_001,
+       data: &(&self.name, &self.value)
+    }.encode(e)
+  }
+}
+
 struct StructuredData {
 name: (NameType, NameType),  /// name + owner of this StructuredData
 value: Vec<Vec<NameType>>,
 }
 
-/* #[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)]  */
-struct DataWrapper {
-  data_type : Data,
-  serialised_data : Vec<u8>,
-}
-
-fn parse_serialised_data_type(wrapped_data: DataWrapper) -> Data {
-  unimplemented!();
+impl Encodable for StructuredData {
+  fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
+    CborTagEncode {
+       tag: 5483_002,
+       data: &(&self.name, &self.value)
+    }.encode(e)
   }
+}
 
 
 
