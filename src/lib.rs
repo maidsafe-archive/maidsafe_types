@@ -37,8 +37,10 @@ use sodiumoxide::crypto;
 #[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)] 
 struct NameType ( Vec<u8> );
 
+// temporary code to test passing a trait to routing to query and possible decode types or
+// at least soem info routing needs which is access to these functions on data types
 // These traits will be defined in routing and require to be avauilable for any type 
-// passed to routing 
+// passed to routing, refresh / account transfer is optional 
 // The name will let routing know its an NaeManager and the owner will allow routing to hash
 // the requsters id with this name (by hashing the requesters id) for put and post messages 
 trait RoutingTrait {
@@ -66,14 +68,10 @@ Mpid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::Se
 PublicMpid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::Signature, crypto::sign::Signature),
 }
 
-// TODO(dirvine) Only specialisation is StructuredData :12/03/2015
-trait DataTraits {
-  fn get_name(&self)->crypto::hash::sha512::Digest {
-    crypto::hash::sha512::hash("Unimplemented".as_bytes())
-  }
-}
 
-// [TODO]: Implement validate() for all types, possibly get_name() shoudl always check invariants - 2015-03-14 09:03pm
+
+// ################## Immutable Data ##############################################
+// [TODO]: Implement validate() for all types, possibly get_name() should always check invariants - 2015-03-14 09:03pm
 struct ImmutableData {
 name: NameType,
 value: Vec<u8>,
@@ -96,6 +94,18 @@ impl Encodable for ImmutableData {
     }.encode(e)
   }
 }
+impl Decodable for ImmutableData {
+    fn decode<D: Decoder>(d: &mut D) -> Result<ImmutableData, D::Error> {
+        try!(d.read_u64());   // FIXME: Check tag value ?? 
+        Ok(ImmutableData { name: try!(Decodable::decode(d)),
+                           value: try!(Decodable::decode(d)),
+        
+        })
+    }
+}
+
+//###################### Structured Data ##########################################
+
 
 struct StructuredData {
 name: (NameType, NameType),  /// name + owner of this StructuredData
