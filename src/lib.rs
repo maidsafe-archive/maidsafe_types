@@ -51,24 +51,6 @@ trait RoutingTrait {
 }
 
 
-// [TODO]: Enum will likely not work we need to use full types, probably a good thing really
-// so will have to implement Encode and Decoe for all types and 
-// also fixed size arrays as NameType shoudl be - 2015-03-14 08:44pm
-/* #[derive(RustcEncodable, RustcDecodable)]  */
-enum Data {
-ImmutableData(NameType, Vec<u8>),
-StructuredData((NameType, NameType), Vec<Vec<NameType>>),
-AnMaid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-PublicAnMaid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::Signature),
-AnMpid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::Signature),
-PublicAnMpid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::Signature),
-Maid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-PublicMaid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::Signature, crypto::sign::Signature),
-Mpid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-PublicMpid(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey, crypto::sign::Signature, crypto::sign::Signature),
-}
-
-
 
 // ################## Immutable Data ##############################################
 // [TODO]: Implement validate() for all types, possibly get_name() should always check invariants - 2015-03-14 09:03pm
@@ -121,8 +103,53 @@ impl Encodable for StructuredData {
   }
 }
 
+/// The following key types use the internal cbor tag to identify them and this 
+/// should be carried through to any json representation if stored on disk
 
+//###################### AnMaid ##########################################
+struct AnMaid {
+public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
+}
 
+//######################  PublicAnMaid ##########################################
+struct PublicAnMaid {
+public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), 
+signature: crypto::sign::Signature
+}
+
+//###################### AnMpid ##########################################
+struct AnMpid {
+public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
+}
+//######################  ##########################################
+struct PublicAnMpid { 
+public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), 
+signature: crypto::sign::Signature
+}
+//######################  ##########################################
+struct Maid { 
+public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
+}
+//######################  ##########################################
+struct PublicMaid {
+public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), 
+maid_signature: crypto::sign::Signature,
+signature: crypto::sign::Signature
+}
+//######################  ##########################################
+struct Mpid { 
+public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
+}
+//######################  ##########################################
+struct PublicMpid {
+public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), 
+mpid_signature: crypto::sign::Signature,
+signature: crypto::sign::Signature
+}
 
 
 
