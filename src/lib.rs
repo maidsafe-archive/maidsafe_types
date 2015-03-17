@@ -46,14 +46,14 @@ struct NameType {
 // the requsters id with this name (by hashing the requesters id) for put and post messages 
 trait RoutingTrait {
   fn get_name(&self)->NameType;
-  fn get_owner_hash(&self)->NameType;
+  fn get_owner(&self)->NameType;
   fn refresh(&self)->bool { false } // is this an account transfer type
   fn merge(&self)->bool { false } // how do we merge these 
 }
 
 trait RoutingTraitNew {
   fn get_name(&self)->&NameType;
-  fn get_owner_hash(&self)->&Vec<u8>;
+  fn get_owner(&self)->&Vec<u8>;
   fn refresh(&self)->bool { false } // is this an account transfer type
   fn merge(&self)->bool { false } // how do we merge these
 }
@@ -71,7 +71,7 @@ impl RoutingTraitNew for ImmutableData {
     &self.name
   }
 
-  fn get_owner_hash(&self)->&Vec<u8> {
+  fn get_owner(&self)->&Vec<u8> {
     &self.value
   }
 }
@@ -151,46 +151,56 @@ impl Encodable for StructuredData {
 //###################### AnMaid ##########################################
 struct AnMaid {
 public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
+secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+name: NameType,
 }
 
 //######################  PublicAnMaid ##########################################
 struct PublicAnMaid {
 public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), 
-signature: crypto::sign::Signature
+signature: crypto::sign::Signature,
+name: NameType,
 }
 
 //###################### AnMpid ##########################################
 struct AnMpid {
 public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
+secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+name: NameType,
 }
 //######################  ##########################################
 struct PublicAnMpid { 
 public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), 
-signature: crypto::sign::Signature
+signature: crypto::sign::Signature,
+name: NameType,
 }
 //######################  ##########################################
 struct Maid { 
 public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
+secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+name: NameType,
 }
 //######################  ##########################################
 struct PublicMaid {
 public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), 
 maid_signature: crypto::sign::Signature,
-signature: crypto::sign::Signature
+owner: NameType,
+signature: crypto::sign::Signature,
+name: NameType
 }
 //######################  ##########################################
 struct Mpid { 
 public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
+secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+name: NameType
 }
 //######################  ##########################################
 struct PublicMpid {
 public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), 
 mpid_signature: crypto::sign::Signature,
-signature: crypto::sign::Signature
+owner: NameType,
+signature: crypto::sign::Signature,
+name: NameType
 }
 
 
