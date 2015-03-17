@@ -34,9 +34,8 @@ use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 
 
-struct NameType {
-  id: Vec<u8>,
-}
+#[derive(PartialEq, Eq, PartialOrd, Ord, RustcEncodable, RustcDecodable)] 
+struct NameType ( Vec<u8> );
 
 // temporary code to test passing a trait to routing to query and possible decode types or
 // at least soem info routing needs which is access to these functions on data types
@@ -51,16 +50,10 @@ trait RoutingTrait {
   fn merge(&self)->bool { false } // how do we merge these 
 }
 
-trait RoutingTraitNew {
-  fn get_name(&self)->&NameType;
-  fn get_owner_hash(&self)->&Vec<u8>;
-  fn refresh(&self)->bool { false } // is this an account transfer type
-  fn merge(&self)->bool { false } // how do we merge these 
-}
+
 
 // ################## Immutable Data ##############################################
 // [TODO]: Implement validate() for all types, possibly get_name() should always check invariants - 2015-03-14 09:03pm
-/*
 struct ImmutableData {
 name: NameType,
 value: Vec<u8>,
@@ -91,74 +84,6 @@ impl Decodable for ImmutableData {
         
         })
     }
-}
-*/
-
-struct ImmutableData {
-  name: NameType,
-  value: Vec<u8>,
-}
-
-impl RoutingTraitNew for ImmutableData {
-  fn get_name(&self)->&NameType {
-    &self.name
-  }
-
-  fn get_owner_hash(&self)->&Vec<u8> {
-    &self.value
-  }
-}
-
-impl Encodable for NameType {
-  fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-    CborTagEncode {
-      tag: 5483_000,
-      data: &self.id,
-    }.encode(e)
-  }
-}
-
-impl Decodable for NameType {
-  fn decode<D: Decoder>(d: &mut D)->Result<NameType, D::Error> {
-    try!(d.read_u64());
-    let id = try!(Decodable::decode(d));
-    Ok(NameType{ id: id })
-  }
-}
-
-impl Encodable for ImmutableData {
-  fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-    CborTagEncode {
-      tag: 5483_001,
-      data: &(&self.name, &self.value),
-    }.encode(e)
-  }
-}
-
-impl Decodable for ImmutableData {
-  fn decode<D: Decoder>(d: &mut D)->Result<ImmutableData, D::Error> {
-    try!(d.read_u64());
-    let (name, value) = try!(Decodable::decode(d));
-    Ok(ImmutableData { name: name, value: value })
-  }
-}
-
-#[test]
-#[allow(non_snake_case)]
-fn Serialisation_ImmutableData() {
-  let obj_before = ImmutableData {
-    name: NameType{ id: vec![3u8; 10] },
-    value: vec![99u8; 10],
-  };
-
-  let mut e = cbor::Encoder::from_memory();
-  e.encode(&[&obj_before]).unwrap();
-
-  let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-  let obj_after: ImmutableData = d.decode().next().unwrap().unwrap();
-
-  assert_eq!(obj_before.name.id, obj_after.name.id);
-  assert_eq!(obj_before.value, obj_after.value);
 }
 
 //###################### Structured Data ##########################################
