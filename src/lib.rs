@@ -149,10 +149,115 @@ impl Encodable for StructuredData {
 /// should be carried through to any json representation if stored on disk
 
 //###################### AnMaid ##########################################
+//#[derive(Debug, Eq, PartialEq)]
 struct AnMaid {
-public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-name: NameType,
+  public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+  secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+  name: NameType,
+}
+
+impl Encodable for AnMaid {
+  fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+    let &(crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = &self.public_keys;
+    let &(crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = &self.secret_keys;
+
+    let mut vec0 = vec![0u8; 0];
+    for i in pub_sign_vec.iter() {
+      vec0.push(*i);
+    }
+
+    let mut vec1 = vec![0u8; 0];
+    for i in pub_asym_vec.iter() {
+      vec1.push(*i);
+    }
+
+    let mut vec2 = vec![0u8; 0];
+    for i in sec_sign_vec.iter() {
+      vec2.push(*i);
+    }
+
+    let mut vec3 = vec![0u8; 0];
+    for i in sec_asym_vec.iter() {
+      vec3.push(*i);
+    }
+
+    CborTagEncode {
+      tag: 5483_001,
+      data: &(vec0, vec1, vec2, vec3, &self.name)
+    }.encode(e)
+  }
+}
+
+impl Decodable for AnMaid {
+  fn decode<D: Decoder>(d: &mut D)->Result<AnMaid, D::Error> {
+    try!(d.read_u64());
+    let(
+      pub_sign_vec,
+      pub_asym_vec,
+      sec_sign_vec,
+      sec_asym_vec,
+      name): (
+        Vec<u8>,
+        Vec<u8>,
+        Vec<u8>,
+        Vec<u8>,
+        NameType) = try!(Decodable::decode(d));
+
+    let mut arr0 = [0u8; 32];
+    for i in 0..pub_sign_vec.len() {
+      arr0[i] = pub_sign_vec[i];
+    }
+
+    let mut arr1 = [0u8; 32];
+    for i in 0..pub_asym_vec.len() {
+      arr1[i] = pub_asym_vec[i];
+    }
+
+    let mut arr2 = [0u8; 64];
+    for i in 0..sec_sign_vec.len() {
+      arr2[i] = sec_sign_vec[i];
+    }
+
+    let mut arr3 = [0u8; 32];
+    for i in 0..sec_asym_vec.len() {
+      arr3[i] = sec_asym_vec[i];
+    }
+
+    Ok(AnMaid {
+      public_keys: (crypto::sign::PublicKey(arr0), crypto::asymmetricbox::PublicKey(arr1)),
+      secret_keys: (crypto::sign::SecretKey(arr2), crypto::asymmetricbox::SecretKey(arr3)),
+      name: name,
+    })
+  }
+}
+
+#[test]
+#[allow(non_snake_case)]
+fn Serialisation_AnMaid() {
+  let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
+  let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
+
+  let obj_before = AnMaid {
+    public_keys: (pub_sign_key, pub_asym_key),
+    secret_keys: (sec_sign_key, sec_asym_key),
+    name: NameType{ id: vec![3u8; 10] },
+  };
+
+  let mut e = cbor::Encoder::from_memory();
+  e.encode(&[&obj_before]).unwrap();
+
+  let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+  let obj_after: AnMaid = d.decode().next().unwrap().unwrap();
+
+  let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = &obj_before.public_keys;
+  let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = &obj_after.public_keys;
+  let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = &obj_before.secret_keys;
+  let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = &obj_after.secret_keys;
+
+  assert_eq!(obj_before.name.id, obj_after.name.id);
+  assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
+  assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
+  assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
 }
 
 //######################  PublicAnMaid ##########################################
