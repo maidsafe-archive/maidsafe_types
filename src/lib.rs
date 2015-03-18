@@ -78,10 +78,7 @@ impl RoutingTraitNew for ImmutableData {
 
 impl Encodable for NameType {
   fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-    CborTagEncode {
-      tag: 5483_000,
-      data: &self.id,
-    }.encode(e)
+    CborTagEncode::new(5483_000, &self.id).encode(e)
   }
 }
 
@@ -95,10 +92,7 @@ impl Decodable for NameType {
 
 impl Encodable for ImmutableData {
   fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-    CborTagEncode {
-      tag: 5483_001,
-      data: &(&self.name, &self.value),
-    }.encode(e)
+    CborTagEncode::new(5483_001, &(&self.name, &self.value)).encode(e)
   }
 }
 
@@ -138,10 +132,7 @@ value: Vec<Vec<NameType>>,
 
 impl Encodable for StructuredData {
   fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
-    CborTagEncode {
-       tag: 5483_002,
-       data: &(&self.name, &self.value)
-    }.encode(e)
+    CborTagEncode::new(5483_002, &(&self.name, &self.value)).encode(e)
   }
 }
 
