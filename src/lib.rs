@@ -34,7 +34,40 @@ use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 
+/// NameType struct accepts u8 array of size 64
+/// #Examples
+/// Creating a NameType
+///
+/// ```
+/// let name_type = maidsafe_types::NameType([0u8; 64]);
+/// ```
+///
+/// NameType Struct can be created using the new function by passing the id as its parameter.
+/// Parameter 'id' is a u8 array of size 64.
+///
+/// ```
+/// let name_type = maidsafe_types::NameType::new(id);
+/// let id: [u8; 64] = name_type.get_id();
+/// ```
+/// id value from the NameType can also be de-referenced like,
+///
+/// ```
+/// let name_type = maidsafe_types::NameType([0u8; 64]);
+/// NameType(id) = name_type;
+/// ```
 pub struct NameType(pub [u8; 64] );
+
+impl NameType {
+
+  pub fn new(id: [u8;64]) -> NameType {
+    NameType(id)
+  }
+
+  pub fn get_id(&self) -> [u8;64] {
+    let NameType(id) = *self;
+    id
+  }
+}
 
 impl Encodable for NameType {
   fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
@@ -63,20 +96,14 @@ fn serialisation_name_type() {
   assert!(helper::compare_arr_u8_64(&id_before, &id_after));
 }
 
-// temporary code to test passing a trait to routing to query and possible decode types or
-// at least soem info routing needs which is access to these functions on data types
-// These traits will be defined in routing and require to be avauilable for any type 
-// passed to routing, refresh / account transfer is optional 
-// The name will let routing know its an NaeManager and the owner will allow routing to hash
-// the requsters id with this name (by hashing the requesters id) for put and post messages 
-trait RoutingTrait {
-  fn get_name(&self)->NameType;
-  fn get_owner(&self)->NameType;
-  fn refresh(&self)->bool { false } // is this an account transfer type
-  fn merge(&self)->bool { false } // how do we merge these 
-}
+/// temporary code to test passing a trait to routing to query and possible decode types or
+/// at least soem info routing needs which is access to these functions on data types
+/// These traits will be defined in routing and require to be avauilable for any type
+/// passed to routing, refresh / account transfer is optional
+/// The name will let routing know its an NaeManager and the owner will allow routing to hash
+/// the requsters id with this name (by hashing the requesters id) for put and post messages
 
-trait RoutingTraitNew {
+trait RoutingTrait {
   fn get_name(&self)->&NameType;
   fn get_owner(&self)->&Vec<u8>;
   fn refresh(&self)->bool { false } // is this an account transfer type
@@ -86,12 +113,12 @@ trait RoutingTraitNew {
 // ################## Immutable Data ##############################################
 // [TODO]: Implement validate() for all types, possibly get_name() should always check invariants - 2015-03-14 09:03pm
 
-struct ImmutableData {
+pub struct ImmutableData {
   pub name: NameType,
   pub value: Vec<u8>,
 }
 
-impl RoutingTraitNew for ImmutableData {
+impl RoutingTrait for ImmutableData {
   fn get_name(&self)->&NameType {
     &self.name
   }
