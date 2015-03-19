@@ -23,3 +23,13 @@ pub fn vector_as_u8_64_array(vector: Vec<u8>) -> [u8;64] {
   }
   arr
 }
+
+
+pub fn compare_arr_u8_64(lhs: &[u8; 64], rhs: &[u8; 64])->bool {
+  for i in 0..64 {
+    if lhs[i] != rhs[i] {
+      return false;
+    }
+  }
+  return true;
+}

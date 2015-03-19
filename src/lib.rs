@@ -210,12 +210,74 @@ fn serialisation_an_maid() {
 }
 
 //######################  PublicAnMaid ##########################################
-struct PublicAnMaid {
+pub struct PublicAnMaid {
   public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), 
   signature: crypto::sign::Signature,
   name: NameType,
 }
 
+impl PublicAnMaid {
+  pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), 
+    signature: crypto::sign::Signature, name: NameType) -> PublicAnMaid {
+      PublicAnMaid {
+        public_keys: public_keys,
+        signature: signature,
+        name: name
+      }
+  }
+}
+
+impl Encodable for PublicAnMaid {
+  fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+    let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
+    let crypto::sign::Signature(signature_arr) = self.signature;
+
+    CborTagEncode::new(5483_001, &(
+        helper::array_as_vector(&pub_sign_vec),
+        helper::array_as_vector(&pub_asym_vec),
+        helper::array_as_vector(&signature_arr),
+        &self.name)).encode(e)
+  }
+}
+
+impl Decodable for PublicAnMaid {
+  fn decode<D: Decoder>(d: &mut D)-> Result<PublicAnMaid, D::Error> {
+    try!(d.read_u64());
+
+    let(pub_sign_vec, pub_asym_vec, signature_vec, name) = try!(Decodable::decode(d));
+    let pub_keys = (crypto::sign::PublicKey(helper::vector_as_u8_32_array(pub_sign_vec)),
+      crypto::asymmetricbox::PublicKey(helper::vector_as_u8_32_array(pub_asym_vec)));
+    let signature = crypto::sign::Signature(helper::vector_as_u8_64_array(signature_vec));
+
+    Ok(PublicAnMaid::new(pub_keys, signature, name))
+  }
+}
+
+
+#[test]
+fn serialisation_public_anmaid() {
+  let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
+  let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
+
+  let obj_before = PublicAnMaid::new((pub_sign_key, pub_asym_key), 
+  crypto::sign::Signature([5u8; 64]), NameType { id: vec![99u8; 10] });
+
+  let mut e = cbor::Encoder::from_memory();
+  e.encode(&[&obj_before]).unwrap();
+
+  let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+  let obj_after: PublicAnMaid = d.decode().next().unwrap().unwrap();
+
+  let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = &obj_before.public_keys;
+  let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = &obj_after.public_keys;
+  let &crypto::sign::Signature(signature_arr_before) = &obj_before.signature;
+  let &crypto::sign::Signature(signature_arr_after) = &obj_after.signature;
+
+  assert_eq!(obj_before.name.id, obj_after.name.id);
+  assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
+  assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
+  assert!(helper::compare_arr_u8_64(&signature_arr_before, &signature_arr_after));
+}
 //###################### AnMpid ##########################################
 pub struct AnMpid {
   public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
