@@ -136,6 +136,37 @@ impl Encodable for StructuredData {
   }
 }
 
+impl Decodable for StructuredData {
+  fn decode<D: Decoder>(d: &mut D)->Result<StructuredData, D::Error> {
+    try!(d.read_u64());
+    let (name, value) = try!(Decodable::decode(d));
+    Ok(StructuredData { name: name, value: value })
+  }
+}
+
+#[test]
+fn serialisation_structured_data() {
+  let mut value = Vec::new();
+  value.push(Vec::new());
+  match value.last_mut() {
+      Some(v) => v.push(NameType{ id: vec![7u8; 10] }),
+      None => ()
+  }
+  let obj_before = StructuredData {
+    name: (NameType{ id: vec![3u8; 10] }, NameType{ id: vec![5u8; 10] }),
+    value: value,
+  };
+
+  let mut e = cbor::Encoder::from_memory();
+  e.encode(&[&obj_before]).unwrap();
+
+  let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+  let obj_after: StructuredData = d.decode().next().unwrap().unwrap();
+
+  assert_eq!((obj_before.name.0.id, obj_before.name.1.id), (obj_after.name.0.id, obj_after.name.1.id));
+  assert_eq!(obj_before.value[0][0].id, obj_after.value[0][0].id);
+}
+
 /// The following key types use the internal cbor tag to identify them and this 
 /// should be carried through to any json representation if stored on disk
 
