@@ -25,6 +25,7 @@
 //! Types of data functors and messages for MaidSafe secure Autonomous networks.
 //! This crate is of no use to anyone as a stand alone crate. It is a module that is 
 //! specialised, but it is a crate to make version handling and distribution easier. 
+mod helper;
 
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate sodiumoxide;
@@ -34,7 +35,7 @@ use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 
 
-struct NameType {
+pub struct NameType {
   id: Vec<u8>,
 }
 
@@ -155,9 +156,75 @@ name: NameType,
 
 //###################### AnMpid ##########################################
 struct AnMpid {
-public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-name: NameType,
+    public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+    secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+    name: NameType,
+}
+
+impl AnMpid {
+pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+           secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+           nameType: NameType) -> AnMpid {
+    AnMpid {
+    public_keys: public_keys,
+    secret_keys: secret_keys,
+    name: nameType
+    }
+}
+}
+
+impl Encodable for AnMpid {
+fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+    let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
+    let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
+
+    CborTagEncode::new(5483_001, &(
+            helper::array_as_vector(&pub_sign_vec),
+                helper::array_as_vector(&pub_asym_vec),
+                helper::array_as_vector(&sec_sign_vec),
+                helper::array_as_vector(&sec_asym_vec),
+            &self.name)).encode(e)
+}
+}
+
+impl Decodable for AnMpid {
+    fn decode<D: Decoder>(d: &mut D)-> Result<AnMpid, D::Error> {
+        try!(d.read_u64());
+        let(pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec, name) = try!(Decodable::decode(d));
+        let pub_keys = (crypto::sign::PublicKey(helper::vector_as_u8_32_array(pub_sign_vec)),
+                crypto::asymmetricbox::PublicKey(helper::vector_as_u8_32_array(pub_asym_vec)));
+        let sec_keys = (crypto::sign::SecretKey(helper::vector_as_u8_64_array(sec_sign_vec)),
+                crypto::asymmetricbox::SecretKey(helper::vector_as_u8_32_array(sec_asym_vec)));
+        Ok(AnMpid::new(pub_keys, sec_keys, name))
+    }
+}
+
+#[test]
+fn serialisation_an_mpid() {
+    let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
+    let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
+
+    let obj_before = AnMpid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType{ id: vec![3u8; 10] });
+
+    let mut e = cbor::Encoder::from_memory();
+    e.encode(&[&obj_before]).unwrap();
+
+    let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+    let obj_after: AnMpid = d.decode().next().unwrap().unwrap();
+
+    let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before))
+    = &obj_before.public_keys;
+    let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after))
+    = &obj_after.public_keys;
+    let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before))
+    = &obj_before.secret_keys;
+    let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after))
+    = &obj_after.secret_keys;
+
+    assert_eq!(obj_before.name.id, obj_after.name.id);
+    assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
+    assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
+    assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
 }
 //######################  ##########################################
 struct PublicAnMpid { 
@@ -166,10 +233,76 @@ signature: crypto::sign::Signature,
 name: NameType,
 }
 //######################  ##########################################
-struct Maid { 
-public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-name: NameType,
+pub struct Maid {
+    public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+    secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+    name: NameType,
+}
+
+impl Maid {
+    pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+               secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+               nameType: NameType) -> Maid {
+        Maid {
+            public_keys: public_keys,
+            secret_keys: secret_keys,
+            name: nameType
+        }
+    }
+}
+
+impl Encodable for Maid {
+    fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+        let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
+        let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
+
+        CborTagEncode::new(5483_001, &(
+                helper::array_as_vector(&pub_sign_vec),
+                    helper::array_as_vector(&pub_asym_vec),
+                    helper::array_as_vector(&sec_sign_vec),
+                    helper::array_as_vector(&sec_asym_vec),
+                &self.name)).encode(e)
+    }
+}
+
+impl Decodable for Maid {
+    fn decode<D: Decoder>(d: &mut D)-> Result<Maid, D::Error> {
+        try!(d.read_u64());
+        let(pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec, name) = try!(Decodable::decode(d));
+        let pub_keys = (crypto::sign::PublicKey(helper::vector_as_u8_32_array(pub_sign_vec)),
+                crypto::asymmetricbox::PublicKey(helper::vector_as_u8_32_array(pub_asym_vec)));
+        let sec_keys = (crypto::sign::SecretKey(helper::vector_as_u8_64_array(sec_sign_vec)),
+                crypto::asymmetricbox::SecretKey(helper::vector_as_u8_32_array(sec_asym_vec)));
+        Ok(Maid::new(pub_keys, sec_keys, name))
+    }
+}
+
+#[test]
+fn serialisation_maid() {
+    let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
+    let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
+
+    let obj_before = Maid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType{ id: vec![3u8; 10] });
+
+    let mut e = cbor::Encoder::from_memory();
+    e.encode(&[&obj_before]).unwrap();
+
+    let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+    let obj_after: Maid = d.decode().next().unwrap().unwrap();
+
+    let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before))
+    = &obj_before.public_keys;
+    let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after))
+    = &obj_after.public_keys;
+    let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before))
+    = &obj_before.secret_keys;
+    let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after))
+    = &obj_after.secret_keys;
+
+    assert_eq!(obj_before.name.id, obj_after.name.id);
+    assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
+    assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
+    assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
 }
 //######################  ##########################################
 struct PublicMaid {
