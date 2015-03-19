@@ -267,7 +267,22 @@ fn serialisation_structured_data() {
 /// should be carried through to any json representation if stored on disk
 
 //###################### AnMaid ##########################################
-//#[derive(Debug, Eq, PartialEq)]
+/// AnMaid
+///
+/// #Examples
+/// Create AnMaid using the new function.
+/// Can retrive the values from the AnMaid using the getter functions
+///
+/// ```
+/// let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
+/// let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
+/// let an_maid = AnMaid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType([3u8; 64]));
+/// // Retrieving the values
+/// let publicKeys = an_maid.get_public_keys();
+/// let secretKeys = an_maid.get_secret_keys();
+/// let name = an_maid.get_name();
+/// ```
+///
 pub struct AnMaid {
   public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
   secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
@@ -283,6 +298,15 @@ impl AnMaid {
       secret_keys: secret_keys,
       name: name_type
     }
+  }
+  pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
+    &self.public_keys
+  }
+  pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
+    &self.secret_keys
+  }
+  pub fn get_name(&self) -> &NameType {
+    &self.name
   }
 }
 
