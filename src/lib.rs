@@ -383,7 +383,7 @@ fn serialisation_an_mpid() {
   assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
   assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
 }
-//######################  ##########################################
+//###################### MAID ##########################################
 pub struct Maid {
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
     secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
@@ -451,14 +451,86 @@ fn serialisation_maid() {
   assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
   assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
 }
-//######################  ##########################################
-struct PublicMaid {
-public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), 
-maid_signature: crypto::sign::Signature,
-owner: NameType,
-signature: crypto::sign::Signature,
-name: NameType
+//###################### PublicMaid ##########################################
+pub struct PublicMaid {
+  public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), 
+  maid_signature: crypto::sign::Signature,
+  owner: NameType,
+  signature: crypto::sign::Signature,
+  name: NameType
 }
+
+impl PublicMaid {
+  pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+             maid_signature: crypto::sign::Signature,
+             owner: NameType,
+             signature: crypto::sign::Signature,
+             name: NameType) -> PublicMaid {
+    PublicMaid {
+      public_keys: public_keys,
+      maid_signature: maid_signature,
+      owner: owner,
+      signature: signature,
+      name: name,
+    }
+  }
+}
+
+impl Encodable for PublicMaid {
+  fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+    let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
+    let crypto::sign::Signature(maid_signature) = self.maid_signature;
+    let crypto::sign::Signature(signature) = self.signature;
+    CborTagEncode::new(5483_001, &(
+        helper::array_as_vector(&pub_sign_vec),
+        helper::array_as_vector(&pub_asym_vec),
+        helper::array_as_vector(&maid_signature),
+        &self.owner,
+        helper::array_as_vector(&signature),
+        &self.name)).encode(e)
+  }
+}
+
+impl Decodable for PublicMaid {
+  fn decode<D: Decoder>(d: &mut D)-> Result<PublicMaid, D::Error> {
+    try!(d.read_u64());
+    let(pub_sign_vec, pub_asym_vec, maid_signature, owner, signature, name) = try!(Decodable::decode(d));
+    let pub_keys = (crypto::sign::PublicKey(helper::vector_as_u8_32_array(pub_sign_vec)),
+        crypto::asymmetricbox::PublicKey(helper::vector_as_u8_32_array(pub_asym_vec)));
+    let parsed_maid_signature = crypto::sign::Signature(helper::vector_as_u8_64_array(maid_signature));
+    let parsed_signature = crypto::sign::Signature(helper::vector_as_u8_64_array(signature));
+
+    Ok(PublicMaid::new(pub_keys, parsed_maid_signature, owner, parsed_signature, name))
+  }
+}
+
+#[test]
+fn serialisation_public_maid() {
+  let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
+  let (pub_asym_key, _) = crypto::asymmetricbox::gen_keypair();
+
+  let obj_before = PublicMaid::new((pub_sign_key, pub_asym_key), crypto::sign::Signature([5u8; 64]), 
+    NameType{ id: vec![5u8; 10] }, crypto::sign::Signature([5u8; 64]), NameType{ id: vec![3u8; 10] });
+
+  let mut e = cbor::Encoder::from_memory();
+  e.encode(&[&obj_before]).unwrap();
+
+  let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+  let obj_after: PublicMaid = d.decode().next().unwrap().unwrap();
+
+  let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = &obj_before.public_keys;
+  let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = &obj_after.public_keys;
+  let &(crypto::sign::Signature(maid_signature_before), crypto::sign::Signature(maid_signature_after)) = &(obj_before.maid_signature, obj_after.maid_signature);
+  let &(crypto::sign::Signature(signature_before), crypto::sign::Signature(signature_after)) = &(obj_before.signature, obj_after.signature);
+
+  assert_eq!(obj_before.name.id, obj_after.name.id);
+  assert_eq!(obj_before.owner.id, obj_after.owner.id);
+  assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
+  assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
+  assert!(helper::compare_arr_u8_64(&maid_signature_before, &maid_signature_after));
+  assert!(helper::compare_arr_u8_64(&signature_before, &signature_after));
+}
+
 //######################  ##########################################
 pub struct Mpid { 
   public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
