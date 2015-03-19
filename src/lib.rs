@@ -217,7 +217,7 @@ fn serialisation_an_mpid() {
   let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = &obj_before.secret_keys;
   let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = &obj_after.secret_keys;
 
-  assert_eq!(obj_before, obj_after);
+  assert_eq!(obj_before.name.id, obj_after.name.id);
   assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
   assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
   assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
