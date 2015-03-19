@@ -158,26 +158,26 @@ struct AnMaid {
 
 impl Encodable for AnMaid {
   fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-    let &(crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = &self.public_keys;
-    let &(crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = &self.secret_keys;
+    let &(crypto::sign::PublicKey(pub_sign_arr), crypto::asymmetricbox::PublicKey(pub_asym_arr)) = &self.public_keys;
+    let &(crypto::sign::SecretKey(sec_sign_arr), crypto::asymmetricbox::SecretKey(sec_asym_arr)) = &self.secret_keys;
 
     let mut vec0 = vec![0u8; 0];
-    for i in pub_sign_vec.iter() {
+    for i in pub_sign_arr.iter() {
       vec0.push(*i);
     }
 
     let mut vec1 = vec![0u8; 0];
-    for i in pub_asym_vec.iter() {
+    for i in pub_asym_arr.iter() {
       vec1.push(*i);
     }
 
     let mut vec2 = vec![0u8; 0];
-    for i in sec_sign_vec.iter() {
+    for i in sec_sign_arr.iter() {
       vec2.push(*i);
     }
 
     let mut vec3 = vec![0u8; 0];
-    for i in sec_asym_vec.iter() {
+    for i in sec_asym_arr.iter() {
       vec3.push(*i);
     }
 
@@ -333,8 +333,3 @@ name: NameType
 
 /// Placeholder doc test
 pub fn always_true() -> bool { true }
-
-#[test]
-fn it_works() {
- assert_eq!(always_true(), true);
-}
