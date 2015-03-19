@@ -553,13 +553,9 @@ impl Decodable for PublicMpid {
 fn serialisation_public_mpid() {
   let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
   let (pub_asym_key, _) = crypto::asymmetricbox::gen_keypair();
-  let mpid_sig_message = randombytes::randombytes(32);
-  let sig_message = randombytes::randombytes(32);
 
-  let mpid_signature = crypto::sign::sign_detached(&mpid_sig_message, &sec_sign_key);
-  let signature = crypto::sign::sign_detached(&sig_message, &sec_sign_key);
-
-  let obj_before = PublicMpid::new((pub_sign_key, pub_asym_key), mpid_signature, NameType{ id: vec![5u8; 10] }, signature, NameType{ id: vec![3u8; 10] });
+  let obj_before = PublicMpid::new((pub_sign_key, pub_asym_key), crypto::sign::Signature([5u8; 64]), 
+    NameType{ id: vec![5u8; 10] }, crypto::sign::Signature([5u8; 64]), NameType{ id: vec![3u8; 10] });
 
   let mut e = cbor::Encoder::from_memory();
   e.encode(&[&obj_before]).unwrap();
@@ -576,8 +572,8 @@ fn serialisation_public_mpid() {
   assert_eq!(obj_before.owner.id, obj_after.owner.id);
   assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
   assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-  assert_eq!(helper::array_as_vector(&mpid_signature_before), helper::array_as_vector(&mpid_signature_after));
-  assert_eq!(helper::array_as_vector(&signature_before), helper::array_as_vector(&signature_after));
+  assert!(helper::compare_arr_u8_64(&mpid_signature_before, &mpid_signature_after));
+  assert!(helper::compare_arr_u8_64(&signature_before, &signature_after));
 }
 
 /// Placeholder doc test
