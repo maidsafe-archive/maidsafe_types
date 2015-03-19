@@ -155,7 +155,6 @@ struct PublicAnMaid {
 }
 
 //###################### AnMpid ##########################################
-[derive(PartialEq)]
 pub struct AnMpid {
   public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
   secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
