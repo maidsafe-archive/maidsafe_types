@@ -125,9 +125,18 @@ fn serialisation_immutable_data() {
 //###################### Structured Data ##########################################
 
 
-struct StructuredData {
+pub struct StructuredData {
   name: (NameType, NameType),  /// name + owner of this StructuredData
   value: Vec<Vec<NameType>>,
+}
+
+impl StructuredData {
+  pub fn new(name: (NameType, NameType), value: Vec<Vec<NameType>>) -> StructuredData {
+    StructuredData {
+      name: name,
+      value: value,
+    }
+  }
 }
 
 impl Encodable for StructuredData {
@@ -152,10 +161,7 @@ fn serialisation_structured_data() {
       Some(v) => v.push(NameType{ id: vec![7u8; 10] }),
       None => ()
   }
-  let obj_before = StructuredData {
-    name: (NameType{ id: vec![3u8; 10] }, NameType{ id: vec![5u8; 10] }),
-    value: value,
-  };
+  let obj_before = StructuredData::new((NameType{ id: vec![3u8; 10] }, NameType{ id: vec![5u8; 10] }), value);
 
   let mut e = cbor::Encoder::from_memory();
   e.encode(&[&obj_before]).unwrap();
@@ -378,12 +384,6 @@ fn serialisation_an_mpid() {
   assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
 }
 //######################  ##########################################
-struct PublicAnMpid { 
-public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-signature: crypto::sign::Signature,
-name: NameType,
-}
-//######################  ##########################################
 pub struct Maid {
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
     secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
@@ -460,7 +460,7 @@ signature: crypto::sign::Signature,
 name: NameType
 }
 //######################  ##########################################
-struct Mpid { 
+pub struct Mpid { 
   public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
   secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
   name: NameType
