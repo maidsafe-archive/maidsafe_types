@@ -87,7 +87,7 @@ impl Decodable for NameType {
 fn serialisation_name_type() {
   let obj_before = NameType([99u8; 64]);
   let mut e = cbor::Encoder::from_memory();
-  e.encode(&[&obj_before]);
+  e.encode(&[&obj_before]).unwrap();
 
   let mut d = cbor::Decoder::from_bytes(e.as_bytes());
   let obj_after: NameType = d.decode().next().unwrap().unwrap();
@@ -116,7 +116,7 @@ pub trait RoutingTrait {
 ///
 /// #Examples
 /// Create an ImmutableData using the new function.
-/// Can retrive the values from the ImmutableData using the getter methods
+/// Can retrive the values from the ImmutableData using the getter functions
 ///
 /// ```
 /// let immutable_data = maidsafe_types::ImmutableData::new(maidsafe_types::NameType([0u8; 64]), [1u8; 64]);
@@ -176,7 +176,7 @@ impl Decodable for ImmutableData {
 fn serialisation_immutable_data() {
   let obj_before = ImmutableData::new(NameType([3u8; 64]), vec![99u8; 10]);
   let mut e = cbor::Encoder::from_memory();
-  e.encode(&[&obj_before]);
+  e.encode(&[&obj_before]).unwrap();
 
   let mut d = cbor::Decoder::from_bytes(e.as_bytes());
   let obj_after: ImmutableData = d.decode().next().unwrap().unwrap();
@@ -187,8 +187,25 @@ fn serialisation_immutable_data() {
 }
 
 //###################### Structured Data ##########################################
-
-
+/// StructuredData
+///
+/// #Examples
+/// Create StructuredData using the new function.
+/// Can retrive the values from the StructuredData using the getter functions
+///
+/// ```
+/// let mut value = Vec::new();
+/// value.push(Vec::new());
+/// match value.last_mut() {
+///   Some(v) => v.push(NameType([7u8; 64])),
+///   None => ()
+/// }
+/// let structured_data = maidsafe_types::StructuredData::new((maidsafe_types::NameType([3u8; 64]), maidsafe_types::NameType([5u8; 64])), value);
+/// // Retrieving the values
+/// let name_owner: (NameType, NameType) = structured_data.get_name();
+/// let value: Vec<Vec<NameType>> = structured_data.get_value();
+/// ```
+///
 pub struct StructuredData {
   name: (NameType, NameType),  /// name + owner of this StructuredData
   value: Vec<Vec<NameType>>,
@@ -201,6 +218,12 @@ impl StructuredData {
       value: value,
     }
   }
+  pub fn get_name(&self) -> &(NameType, NameType) {
+    &self.name
+  }
+  pub fn get_value(&self) -> &Vec<Vec<NameType>> {
+    &self.value
+  }
 }
 
 impl Encodable for StructuredData {
@@ -210,10 +233,10 @@ impl Encodable for StructuredData {
 }
 
 impl Decodable for StructuredData {
-  fn decode<D: Decoder>(d: &mut D)->Result<StructuredData, D::Error> {
+  fn decode<D: Decoder>(d: &mut D) -> Result<StructuredData, D::Error> {
     try!(d.read_u64());
     let (name, value) = try!(Decodable::decode(d));
-    Ok(StructuredData { name: name, value: value })
+    Ok(StructuredData::new(name, value))
   }
 }
 
