@@ -34,7 +34,7 @@ use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 
-/// NameType struct accepts u8 array of size 64
+/// NameType struct
 /// #Examples
 /// Creating a NameType
 ///
@@ -87,12 +87,12 @@ impl Decodable for NameType {
 fn serialisation_name_type() {
   let obj_before = NameType([99u8; 64]);
   let mut e = cbor::Encoder::from_memory();
-  e.encode(&[&obj_before]).unwrap();
+  e.encode(&[&obj_before]);
 
   let mut d = cbor::Decoder::from_bytes(e.as_bytes());
   let obj_after: NameType = d.decode().next().unwrap().unwrap();
-  let NameType(id_before) = obj_before;
-  let NameType(id_after) = obj_after;
+  let id_before = obj_before.get_id();
+  let id_after = obj_after.get_id();
   assert!(helper::compare_arr_u8_64(&id_before, &id_after));
 }
 
@@ -103,7 +103,7 @@ fn serialisation_name_type() {
 /// The name will let routing know its an NaeManager and the owner will allow routing to hash
 /// the requsters id with this name (by hashing the requesters id) for put and post messages
 
-trait RoutingTrait {
+pub trait RoutingTrait {
   fn get_name(&self)->&NameType;
   fn get_owner(&self)->&Vec<u8>;
   fn refresh(&self)->bool { false } // is this an account transfer type
@@ -112,10 +112,21 @@ trait RoutingTrait {
 
 // ################## Immutable Data ##############################################
 // [TODO]: Implement validate() for all types, possibly get_name() should always check invariants - 2015-03-14 09:03pm
-
+/// ImmutableData
+///
+/// #Examples
+/// Create an ImmutableData using the new function.
+/// Can retrive the values from the ImmutableData using the getter methods
+///
+/// ```
+/// let immutable_data = maidsafe_types::ImmutableData::new(maidsafe_types::NameType([0u8; 64]), [1u8; 64]);
+/// let name_type = immutable_data.get_name();
+/// let value = immutable_data.get_value();
+/// ```
+///
 pub struct ImmutableData {
-  pub name: NameType,
-  pub value: Vec<u8>,
+  name: NameType,
+  value: Vec<u8>,
 }
 
 impl RoutingTrait for ImmutableData {
@@ -136,6 +147,15 @@ impl ImmutableData {
       value: value,
     }
   }
+
+  pub fn get_name(&self) -> &NameType {
+    &self.name
+  }
+
+  pub fn get_value(&self) -> &Vec<u8> {
+    &self.value
+  }
+
 }
 
 impl Encodable for ImmutableData {
@@ -156,14 +176,14 @@ impl Decodable for ImmutableData {
 fn serialisation_immutable_data() {
   let obj_before = ImmutableData::new(NameType([3u8; 64]), vec![99u8; 10]);
   let mut e = cbor::Encoder::from_memory();
-  e.encode(&[&obj_before]).unwrap();
+  e.encode(&[&obj_before]);
 
   let mut d = cbor::Decoder::from_bytes(e.as_bytes());
   let obj_after: ImmutableData = d.decode().next().unwrap().unwrap();
-  let NameType(name_before) = obj_before.name;
-  let NameType(name_after) = obj_after.name;
+  let name_before = obj_before.get_name().get_id();
+  let name_after = obj_after.get_name().get_id();
   assert!(helper::compare_arr_u8_64(&name_before, &name_after));
-  assert_eq!(obj_before.value, obj_after.value);
+  assert_eq!(obj_before.get_value(), obj_after.get_value());
 }
 
 //###################### Structured Data ##########################################
