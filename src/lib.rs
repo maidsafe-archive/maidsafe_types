@@ -37,23 +37,15 @@ use sodiumoxide::crypto;
 /// NameType struct
 ///
 /// #Examples
-/// Creating a NameType
 ///
 /// ```
-/// let name_type = maidsafe_types::NameType([0u8; 64]);
-/// ```
-///
-/// NameType Struct can be created using the new function by passing, id as its parameter.
-/// Parameter 'id' is a u8 array of size 64.
-///
-/// ```
+/// // NameType Struct can be created using the new function by passing, id as its parameter.
 /// let name_type = maidsafe_types::NameType::new([7u8; 64]);
 /// let id: [u8; 64] = name_type.get_id();
-/// ```
-/// id value from the NameType can also be de-referenced like,
-///
-/// ```
+/// //
 /// let name_type = maidsafe_types::NameType([0u8; 64]);
+///
+/// // de-reference id value from the NameType
 /// let maidsafe_types::NameType(id) = name_type;
 /// ```
 pub struct NameType(pub [u8; 64] );
@@ -114,10 +106,9 @@ pub trait RoutingTrait {
 /// ImmutableData
 ///
 /// #Examples
-/// Create an ImmutableData using the new function.
-/// Can retrive the values from the ImmutableData using the getter functions
 ///
 /// ```
+/// // Create an ImmutableData using the new function.
 /// let immutable_data = maidsafe_types::ImmutableData::new(maidsafe_types::NameType([0u8; 64]),  vec![99u8; 10]);
 /// // Retrieving values
 /// let ref name_type = immutable_data.get_name();
@@ -190,8 +181,6 @@ fn serialisation_immutable_data() {
 /// StructuredData
 ///
 /// #Examples
-/// Create StructuredData using the new function.
-/// Can retrive the values from the StructuredData using the getter functions
 ///
 /// ```
 /// let mut value = Vec::new();
@@ -200,9 +189,10 @@ fn serialisation_immutable_data() {
 ///   Some(v) => v.push(maidsafe_types::NameType([7u8; 64])),
 ///   None => ()
 /// }
+/// // Create a StructuredData
 /// let structured_data = maidsafe_types::StructuredData::new((maidsafe_types::NameType([3u8; 64]), maidsafe_types::NameType([5u8; 64])), value);
 /// // Retrieving the values
-/// let ref name_owner = structured_data.get_name();
+/// let (maidsafe_types::NameType(name), maidsafe_types::NameType(owner)) = *structured_data.get_name();
 /// let ref value = structured_data.get_value();
 /// ```
 ///
@@ -254,10 +244,11 @@ fn serialisation_structured_data() {
 
   let mut d = cbor::Decoder::from_bytes(e.as_bytes());
   let obj_after: StructuredData = d.decode().next().unwrap().unwrap();
-  let (NameType(name_before_0), NameType(name_before_1)) = (obj_before.name.0, obj_before.name.1);
-  let (NameType(name_after_0), NameType(name_after_1)) = (obj_after.name.0, obj_after.name.1);
-  let NameType(value_before) = obj_before.value[0][0];
-  let NameType(value_after) = obj_after.value[0][0];
+
+  let (NameType(name_before_0), NameType(name_before_1)) = *obj_before.get_name();
+  let (NameType(name_after_0), NameType(name_after_1)) = *obj_after.get_name();
+  let NameType(value_before) = obj_before.get_value()[0][0];
+  let NameType(value_after) = obj_after.get_value()[0][0];
   assert!(helper::compare_arr_u8_64(&name_before_0, &name_after_0));
   assert!(helper::compare_arr_u8_64(&name_before_1, &name_after_1));
   assert!(helper::compare_arr_u8_64(&value_before, &value_after));
