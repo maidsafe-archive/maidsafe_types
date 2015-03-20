@@ -339,12 +339,12 @@ fn serialisation_an_maid() {
   let mut d = cbor::Decoder::from_bytes(e.as_bytes());
   let obj_after: AnMaid = d.decode().next().unwrap().unwrap();
 
-  let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = &obj_before.public_keys;
-  let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = &obj_after.public_keys;
-  let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = &obj_before.secret_keys;
-  let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = &obj_after.secret_keys;
-  let NameType(name_before) = obj_before.name;
-  let NameType(name_after) = obj_after.name;
+  let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
+  let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
+  let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = obj_before.get_secret_keys();
+  let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = obj_after.get_secret_keys();
+  let NameType(name_before) = *obj_before.get_name();
+  let NameType(name_after) = *obj_after.get_name();
   assert!(helper::compare_arr_u8_64(&name_before, &name_after));
   assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
   assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
