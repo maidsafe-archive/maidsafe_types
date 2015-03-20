@@ -120,8 +120,8 @@ pub trait RoutingTrait {
 /// ```
 /// let immutable_data = maidsafe_types::ImmutableData::new(maidsafe_types::NameType([0u8; 64]),  vec![99u8; 10]);
 /// // Retrieving values
-/// let name_type = immutable_data.get_name();
-/// let value = immutable_data.get_value();
+/// let ref name_type = immutable_data.get_name();
+/// let ref value = immutable_data.get_value();
 /// ```
 ///
 pub struct ImmutableData {
@@ -168,7 +168,7 @@ impl Decodable for ImmutableData {
   fn decode<D: Decoder>(d: &mut D)->Result<ImmutableData, D::Error> {
     try!(d.read_u64());
     let (name, value) = try!(Decodable::decode(d));
-    Ok(ImmutableData { name: name, value: value })
+    Ok(ImmutableData::new(name, value))
   }
 }
 
@@ -180,9 +180,9 @@ fn serialisation_immutable_data() {
 
   let mut d = cbor::Decoder::from_bytes(e.as_bytes());
   let obj_after: ImmutableData = d.decode().next().unwrap().unwrap();
-  let name_before = obj_before.get_name().get_id();
-  let name_after = obj_after.get_name().get_id();
-  assert!(helper::compare_arr_u8_64(&name_before, &name_after));
+  let id_before = obj_before.get_name().get_id();
+  let id_after = obj_after.get_name().get_id();
+  assert!(helper::compare_arr_u8_64(&id_before, &id_after));
   assert_eq!(obj_before.get_value(), obj_after.get_value());
 }
 
