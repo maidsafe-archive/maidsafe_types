@@ -361,7 +361,7 @@ fn serialisation_an_maid() {
 /// // Generating publick and secret keys using sodiumoxide
 /// let (pub_sign_key, _) = sodiumoxide::crypto::sign::gen_keypair();
 /// let (pub_asym_key, _) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
-/// // Create AnMaid
+/// // Create PublicAnMaid
 /// let pub_an_maid = maidsafe_types::PublicAnMaid::new((pub_sign_key, pub_asym_key), sodiumoxide::crypto::sign::Signature([5u8; 64]), maidsafe_types::NameType([99u8; 64]));
 /// // Retrieving the values
 /// let ref publicKeys = pub_an_maid.get_public_keys();
@@ -450,6 +450,24 @@ fn serialisation_public_anmaid() {
 }
 
 //###################### AnMpid ##########################################
+/// AnMpid
+///
+/// #Examples
+/// ```
+/// extern crate sodiumoxide;
+/// extern crate maidsafe_types;
+///
+/// // Generating publick and secret keys using sodiumoxide
+/// let (pub_sign_key, sec_sign_key) = sodiumoxide::crypto::sign::gen_keypair();
+/// let (pub_asym_key, sec_asym_key) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
+/// // Create AnMpid
+/// let an_mpid = maidsafe_types::AnMpid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), maidsafe_types::NameType([3u8; 64]));
+/// // Retrieving the values
+/// let ref publicKeys = an_mpid.get_public_keys();
+/// let ref secret_keys = an_mpid.get_secret_keys();
+/// let ref name = an_mpid.get_name();
+/// ```
+///
 pub struct AnMpid {
   public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
   secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
@@ -465,6 +483,15 @@ impl AnMpid {
       secret_keys: secret_keys,
       name: name_type
     }
+  }
+  pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
+    &self.public_keys
+  }
+  pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
+    &self.secret_keys
+  }
+  pub fn get_name(&self) -> &NameType {
+    &self.name
   }
 }
 
@@ -507,12 +534,12 @@ fn serialisation_an_mpid() {
   let mut d = cbor::Decoder::from_bytes(e.as_bytes());
   let obj_after: AnMpid = d.decode().next().unwrap().unwrap();
 
-  let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = &obj_before.public_keys;
-  let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = &obj_after.public_keys;
-  let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = &obj_before.secret_keys;
-  let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = &obj_after.secret_keys;
-  let NameType(name_before) = obj_before.name;
-  let NameType(name_after) = obj_after.name;
+  let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
+  let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
+  let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = obj_before.get_secret_keys();
+  let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = obj_after.get_secret_keys();
+  let NameType(name_before) = *obj_before.get_name();
+  let NameType(name_after) = *obj_after.get_name();
 
   assert!(helper::compare_arr_u8_64(&name_before, &name_after));
   assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
