@@ -549,7 +549,7 @@ fn serialisation_an_mpid() {
 }
 
 //###################### MAID ##########################################
-/// Maid struct
+/// Maid
 ///
 /// #Examples
 /// ```
@@ -657,7 +657,7 @@ fn serialisation_maid() {
 }
 
 //###################### PublicMaid ##########################################
-// PublicMaid struct
+/// PublicMaid
 ///
 /// #Examples
 ///
@@ -793,7 +793,7 @@ fn serialisation_public_maid() {
 }
 
 //######################  ##########################################
-/// Mpid struct
+/// Mpid
 ///
 /// #Examples
 /// ```
@@ -900,7 +900,7 @@ fn serialisation_mpid() {
   assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
 }
 //######################  ##########################################
-// PublicMpid struct
+/// PublicMpid
 ///
 /// #Examples
 ///
