@@ -35,6 +35,7 @@ use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 
 /// NameType struct
+///
 /// #Examples
 /// Creating a NameType
 ///
@@ -42,7 +43,7 @@ use sodiumoxide::crypto;
 /// let name_type = maidsafe_types::NameType([0u8; 64]);
 /// ```
 ///
-/// NameType Struct can be created using the new function by passing the id as its parameter.
+/// NameType Struct can be created using the new function by passing, id as its parameter.
 /// Parameter 'id' is a u8 array of size 64.
 ///
 /// ```
@@ -91,9 +92,7 @@ fn serialisation_name_type() {
 
   let mut d = cbor::Decoder::from_bytes(e.as_bytes());
   let obj_after: NameType = d.decode().next().unwrap().unwrap();
-  let id_before = obj_before.get_id();
-  let id_after = obj_after.get_id();
-  assert!(helper::compare_arr_u8_64(&id_before, &id_after));
+  assert!(helper::compare_arr_u8_64(&obj_before.get_id(), &obj_after.get_id()));
 }
 
 /// temporary code to test passing a trait to routing to query and possible decode types or
