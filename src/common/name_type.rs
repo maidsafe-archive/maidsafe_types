@@ -1,0 +1,78 @@
+/*  Copyright 2014 MaidSafe.net limited
+
+    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
+    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
+    licence you accepted on initial access to the Software (the "Licences").
+
+    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
+    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
+    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
+    available at: http://www.maidsafe.net/licenses
+
+    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
+    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+    OF ANY KIND, either express or implied.
+
+    See the Licences for the specific language governing permissions and limitations relating to
+    use of the MaidSafe Software.                                                                 */
+extern crate "rustc-serialize" as rustc_serialize;
+extern crate sodiumoxide;
+extern crate cbor;
+
+use cbor::CborTagEncode;
+use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+use helper::*;
+
+/// NameType struct
+///
+/// #Examples
+///
+/// ```
+/// // NameType Struct can be created using the new function by passing, id as its parameter.
+/// let name_type = maidsafe_types::NameType::new([7u8; 64]);
+/// let id: [u8; 64] = name_type.get_id();
+/// //
+/// let name_type = maidsafe_types::NameType([0u8; 64]);
+///
+/// // de-reference id value from the NameType
+/// let maidsafe_types::NameType(id) = name_type;
+/// ```
+pub struct NameType(pub [u8; 64]);
+
+impl NameType {
+
+	pub fn new(id: [u8;64]) -> NameType {
+		NameType(id)
+	}
+
+	pub fn get_id(& self) -> [u8;64] {
+		let NameType(id) = * self;
+		id
+	}
+}
+
+impl Encodable for NameType {
+	fn encode<E: Encoder>(& self, e: &mut E)->Result<(), E::Error> {
+		let NameType(id) = * self;
+		CborTagEncode::new(5483_000, &(array_as_vector(&id))).encode(e)
+	}
+}
+
+impl Decodable for NameType {
+	fn decode<D: Decoder>(d: &mut D)->Result<NameType, D::Error> {
+		try!(d.read_u64());
+		let id = try!(Decodable::decode(d));
+		Ok(NameType(vector_as_u8_64_array(id)))
+	}
+}
+
+#[test]
+fn serialisation_name_type() {
+	let obj_before = NameType([99u8; 64]);
+	let mut e = cbor::Encoder::from_memory();
+	e.encode(&[&obj_before]).unwrap();
+
+	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+	let obj_after: NameType = d.decode().next().unwrap().unwrap();
+	assert!(compare_arr_u8_64(&obj_before.get_id(), &obj_after.get_id()));
+}
