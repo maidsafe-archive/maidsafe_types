@@ -34,7 +34,40 @@ use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 
+/// NameType struct
+/// #Examples
+/// Creating a NameType
+///
+/// ```
+/// let name_type = maidsafe_types::NameType([0u8; 64]);
+/// ```
+///
+/// NameType Struct can be created using the new function by passing the id as its parameter.
+/// Parameter 'id' is a u8 array of size 64.
+///
+/// ```
+/// let name_type = maidsafe_types::NameType::new([7u8; 64]);
+/// let id: [u8; 64] = name_type.get_id();
+/// ```
+/// id value from the NameType can also be de-referenced like,
+///
+/// ```
+/// let name_type = maidsafe_types::NameType([0u8; 64]);
+/// let maidsafe_types::NameType(id) = name_type;
+/// ```
 pub struct NameType(pub [u8; 64] );
+
+impl NameType {
+
+  pub fn new(id: [u8;64]) -> NameType {
+    NameType(id)
+  }
+
+  pub fn get_id(&self) -> [u8;64] {
+    let NameType(id) = *self;
+    id
+  }
+}
 
 impl Encodable for NameType {
   fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
@@ -58,25 +91,19 @@ fn serialisation_name_type() {
 
   let mut d = cbor::Decoder::from_bytes(e.as_bytes());
   let obj_after: NameType = d.decode().next().unwrap().unwrap();
-  let NameType(id_before) = obj_before;
-  let NameType(id_after) = obj_after;
+  let id_before = obj_before.get_id();
+  let id_after = obj_after.get_id();
   assert!(helper::compare_arr_u8_64(&id_before, &id_after));
 }
 
-// temporary code to test passing a trait to routing to query and possible decode types or
-// at least soem info routing needs which is access to these functions on data types
-// These traits will be defined in routing and require to be avauilable for any type 
-// passed to routing, refresh / account transfer is optional 
-// The name will let routing know its an NaeManager and the owner will allow routing to hash
-// the requsters id with this name (by hashing the requesters id) for put and post messages 
-trait RoutingTrait {
-  fn get_name(&self)->NameType;
-  fn get_owner(&self)->NameType;
-  fn refresh(&self)->bool { false } // is this an account transfer type
-  fn merge(&self)->bool { false } // how do we merge these 
-}
+/// temporary code to test passing a trait to routing to query and possible decode types or
+/// at least soem info routing needs which is access to these functions on data types
+/// These traits will be defined in routing and require to be avauilable for any type
+/// passed to routing, refresh / account transfer is optional
+/// The name will let routing know its an NaeManager and the owner will allow routing to hash
+/// the requsters id with this name (by hashing the requesters id) for put and post messages
 
-trait RoutingTraitNew {
+pub trait RoutingTrait {
   fn get_name(&self)->&NameType;
   fn get_owner(&self)->&Vec<u8>;
   fn refresh(&self)->bool { false } // is this an account transfer type
@@ -85,13 +112,25 @@ trait RoutingTraitNew {
 
 // ################## Immutable Data ##############################################
 // [TODO]: Implement validate() for all types, possibly get_name() should always check invariants - 2015-03-14 09:03pm
-
-struct ImmutableData {
-  pub name: NameType,
-  pub value: Vec<u8>,
+/// ImmutableData
+///
+/// #Examples
+/// Create an ImmutableData using the new function.
+/// Can retrive the values from the ImmutableData using the getter functions
+///
+/// ```
+/// let immutable_data = maidsafe_types::ImmutableData::new(maidsafe_types::NameType([0u8; 64]),  vec![99u8; 10]);
+/// // Retrieving values
+/// let name_type = immutable_data.get_name();
+/// let value = immutable_data.get_value();
+/// ```
+///
+pub struct ImmutableData {
+  name: NameType,
+  value: Vec<u8>,
 }
 
-impl RoutingTraitNew for ImmutableData {
+impl RoutingTrait for ImmutableData {
   fn get_name(&self)->&NameType {
     &self.name
   }
@@ -109,6 +148,15 @@ impl ImmutableData {
       value: value,
     }
   }
+
+  pub fn get_name(&self) -> &NameType {
+    &self.name
+  }
+
+  pub fn get_value(&self) -> &Vec<u8> {
+    &self.value
+  }
+
 }
 
 impl Encodable for ImmutableData {
@@ -133,15 +181,32 @@ fn serialisation_immutable_data() {
 
   let mut d = cbor::Decoder::from_bytes(e.as_bytes());
   let obj_after: ImmutableData = d.decode().next().unwrap().unwrap();
-  let NameType(name_before) = obj_before.name;
-  let NameType(name_after) = obj_after.name;
+  let name_before = obj_before.get_name().get_id();
+  let name_after = obj_after.get_name().get_id();
   assert!(helper::compare_arr_u8_64(&name_before, &name_after));
-  assert_eq!(obj_before.value, obj_after.value);
+  assert_eq!(obj_before.get_value(), obj_after.get_value());
 }
 
 //###################### Structured Data ##########################################
-
-
+/// StructuredData
+///
+/// #Examples
+/// Create StructuredData using the new function.
+/// Can retrive the values from the StructuredData using the getter functions
+///
+/// ```
+/// let mut value = Vec::new();
+/// value.push(Vec::new());
+/// match value.last_mut() {
+///   Some(v) => v.push(maidsafe_types::NameType([7u8; 64])),
+///   None => ()
+/// }
+/// let structured_data = maidsafe_types::StructuredData::new((maidsafe_types::NameType([3u8; 64]), maidsafe_types::NameType([5u8; 64])), value);
+/// // Retrieving the values
+/// let ref name_owner = structured_data.get_name();
+/// let ref value = structured_data.get_value();
+/// ```
+///
 pub struct StructuredData {
   name: (NameType, NameType),  /// name + owner of this StructuredData
   value: Vec<Vec<NameType>>,
@@ -154,6 +219,12 @@ impl StructuredData {
       value: value,
     }
   }
+  pub fn get_name(&self) -> &(NameType, NameType) {
+    &self.name
+  }
+  pub fn get_value(&self) -> &Vec<Vec<NameType>> {
+    &self.value
+  }
 }
 
 impl Encodable for StructuredData {
@@ -163,10 +234,10 @@ impl Encodable for StructuredData {
 }
 
 impl Decodable for StructuredData {
-  fn decode<D: Decoder>(d: &mut D)->Result<StructuredData, D::Error> {
+  fn decode<D: Decoder>(d: &mut D) -> Result<StructuredData, D::Error> {
     try!(d.read_u64());
     let (name, value) = try!(Decodable::decode(d));
-    Ok(StructuredData { name: name, value: value })
+    Ok(StructuredData::new(name, value))
   }
 }
 
@@ -197,7 +268,26 @@ fn serialisation_structured_data() {
 /// should be carried through to any json representation if stored on disk
 
 //###################### AnMaid ##########################################
-//#[derive(Debug, Eq, PartialEq)]
+/// AnMaid
+///
+/// #Examples
+///
+/// Create AnMaid using the new function.
+/// Can retrive the values from the AnMaid using the getter functions
+///
+/// ```
+/// extern crate sodiumoxide;
+/// extern crate maidsafe_types;
+///
+/// let (pub_sign_key, sec_sign_key) = sodiumoxide::crypto::sign::gen_keypair();
+/// let (pub_asym_key, sec_asym_key) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
+/// let an_maid = maidsafe_types::AnMaid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), maidsafe_types::NameType([3u8; 64]));
+/// // Retrieving the values
+/// let publicKeys = an_maid.get_public_keys();
+/// let secretKeys = an_maid.get_secret_keys();
+/// let name = an_maid.get_name();
+/// ```
+///
 pub struct AnMaid {
   public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
   secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
@@ -213,6 +303,15 @@ impl AnMaid {
       secret_keys: secret_keys,
       name: name_type
     }
+  }
+  pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
+    &self.public_keys
+  }
+  pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
+    &self.secret_keys
+  }
+  pub fn get_name(&self) -> &NameType {
+    &self.name
   }
 }
 
