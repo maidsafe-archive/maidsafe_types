@@ -7,3 +7,4 @@ build-tests/
 target/
 /.idea
 /third_party_libs
+/bin

@@ -15,5 +15,5 @@ rustc-serialize = "*"
 cbor = "*"
 
 [dependencies.sodiumoxide]
-git = "https://github.com/krishnaindia/sodiumoxide"
+git = "https://github.com/dnaq/sodiumoxide"
 

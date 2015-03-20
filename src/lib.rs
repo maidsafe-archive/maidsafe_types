@@ -46,14 +46,14 @@ use sodiumoxide::crypto;
 /// Parameter 'id' is a u8 array of size 64.
 ///
 /// ```
-/// let name_type = maidsafe_types::NameType::new(id);
+/// let name_type = maidsafe_types::NameType::new([7u8; 64]);
 /// let id: [u8; 64] = name_type.get_id();
 /// ```
 /// id value from the NameType can also be de-referenced like,
 ///
 /// ```
 /// let name_type = maidsafe_types::NameType([0u8; 64]);
-/// NameType(id) = name_type;
+/// let maidsafe_types::NameType(id) = name_type;
 /// ```
 pub struct NameType(pub [u8; 64] );
 
@@ -119,7 +119,8 @@ pub trait RoutingTrait {
 /// Can retrive the values from the ImmutableData using the getter functions
 ///
 /// ```
-/// let immutable_data = maidsafe_types::ImmutableData::new(maidsafe_types::NameType([0u8; 64]), [1u8; 64]);
+/// let immutable_data = maidsafe_types::ImmutableData::new(maidsafe_types::NameType([0u8; 64]),  vec![99u8; 10]);
+/// // Retrieving values
 /// let name_type = immutable_data.get_name();
 /// let value = immutable_data.get_value();
 /// ```
@@ -197,13 +198,13 @@ fn serialisation_immutable_data() {
 /// let mut value = Vec::new();
 /// value.push(Vec::new());
 /// match value.last_mut() {
-///   Some(v) => v.push(NameType([7u8; 64])),
+///   Some(v) => v.push(maidsafe_types::NameType([7u8; 64])),
 ///   None => ()
 /// }
 /// let structured_data = maidsafe_types::StructuredData::new((maidsafe_types::NameType([3u8; 64]), maidsafe_types::NameType([5u8; 64])), value);
 /// // Retrieving the values
-/// let name_owner: (NameType, NameType) = structured_data.get_name();
-/// let value: Vec<Vec<NameType>> = structured_data.get_value();
+/// let ref name_owner = structured_data.get_name();
+/// let ref value = structured_data.get_value();
 /// ```
 ///
 pub struct StructuredData {
@@ -270,13 +271,17 @@ fn serialisation_structured_data() {
 /// AnMaid
 ///
 /// #Examples
+///
 /// Create AnMaid using the new function.
 /// Can retrive the values from the AnMaid using the getter functions
 ///
 /// ```
-/// let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
-/// let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
-/// let an_maid = AnMaid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType([3u8; 64]));
+/// extern crate sodiumoxide;
+/// extern crate maidsafe_types;
+///
+/// let (pub_sign_key, sec_sign_key) = sodiumoxide::crypto::sign::gen_keypair();
+/// let (pub_asym_key, sec_asym_key) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
+/// let an_maid = maidsafe_types::AnMaid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), maidsafe_types::NameType([3u8; 64]));
 /// // Retrieving the values
 /// let publicKeys = an_maid.get_public_keys();
 /// let secretKeys = an_maid.get_secret_keys();
