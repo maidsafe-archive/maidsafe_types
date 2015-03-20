@@ -62,6 +62,19 @@ impl NameType {
   }
 }
 
+impl Clone for NameType {
+  fn clone(&self) -> Self {
+    let mut arr_cloned = [0u8; 64];
+    let &NameType(arr_self) = self;
+
+    for i in 0..arr_self.len() {
+      arr_cloned[i] = arr_self[i];
+    }
+
+    NameType(arr_cloned)
+  }
+}
+
 impl Encodable for NameType {
   fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
     let NameType(id) = *self;
