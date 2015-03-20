@@ -1,6 +1,4 @@
-use std::num::UnsignedInt;
-
-pub fn array_as_vector<T: UnsignedInt>(arr: &[T]) -> Vec<T> {
+pub fn array_as_vector(arr: &[u8]) -> Vec<u8> {
   let mut vector = Vec::new();
   for i in arr.iter() {
     vector.push(*i);
