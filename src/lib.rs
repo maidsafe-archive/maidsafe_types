@@ -25,7 +25,7 @@
 //! Types of data functors and messages for MaidSafe secure Autonomous networks.
 //! This crate is of no use to anyone as a stand alone crate. It is a module that is 
 //! specialised, but it is a crate to make version handling and distribution easier. 
-mod helper;
+pub mod helper;
 
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate sodiumoxide;
