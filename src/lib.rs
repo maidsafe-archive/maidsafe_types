@@ -256,26 +256,23 @@ fn serialisation_structured_data() {
 
 /// The following key types use the internal cbor tag to identify them and this
 /// should be carried through to any json representation if stored on disk
-
+///
 //###################### AnMaid ##########################################
 /// AnMaid
 ///
 /// #Examples
-///
-/// Create AnMaid using the new function.
-/// Can retrive the values from the AnMaid using the getter functions
-///
 /// ```
 /// extern crate sodiumoxide;
 /// extern crate maidsafe_types;
-///
+/// // Generating publick and secret keys using sodiumoxide
 /// let (pub_sign_key, sec_sign_key) = sodiumoxide::crypto::sign::gen_keypair();
 /// let (pub_asym_key, sec_asym_key) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
+/// // Create AnMaid
 /// let an_maid = maidsafe_types::AnMaid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), maidsafe_types::NameType([3u8; 64]));
 /// // Retrieving the values
-/// let publicKeys = an_maid.get_public_keys();
-/// let secretKeys = an_maid.get_secret_keys();
-/// let name = an_maid.get_name();
+/// let ref publicKeys = an_maid.get_public_keys();
+/// let ref secretKeys = an_maid.get_secret_keys();
+/// let ref name = an_maid.get_name();
 /// ```
 ///
 pub struct AnMaid {
