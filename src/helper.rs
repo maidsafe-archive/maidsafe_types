@@ -40,12 +40,8 @@ pub fn vector_as_u8_64_array(vector: Vec<u8>) -> [u8;64] {
   arr
 }
 
+
 #[allow(dead_code)]
-pub fn compare_arr_u8_64(lhs: &[u8; 64], rhs: &[u8; 64])->bool {
-  for i in 0..64 {
-    if lhs[i] != rhs[i] {
-      return false;
-    }
-  }
-  return true;
+pub fn compare_u8_array(lhs: &[u8], rhs: &[u8])->bool {
+  lhs.iter().zip(rhs.iter()).all(|(a,b)| a == b)
 }

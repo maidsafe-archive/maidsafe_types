@@ -152,10 +152,10 @@ fn serialisation_public_maid() {
 	let (&NameType(name_before), &NameType(name_after)) = (obj_before.get_name(), obj_after.get_name());
 	let (&NameType(owner_before), &NameType(owner_after)) = (obj_after.get_owner(), obj_after.get_owner());
 
-	assert!(compare_arr_u8_64(&name_before, &name_after));
-	assert!(compare_arr_u8_64(&owner_before, &owner_after));
+	assert!(compare_u8_array(&name_before, &name_after));
+	assert!(compare_u8_array(&owner_before, &owner_after));
 	assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
 	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-	assert!(compare_arr_u8_64(&maid_signature_before, &maid_signature_after));
-	assert!(compare_arr_u8_64(&signature_before, &signature_after));
+	assert!(compare_u8_array(&maid_signature_before, &maid_signature_after));
+	assert!(compare_u8_array(&signature_before, &signature_after));
 }
