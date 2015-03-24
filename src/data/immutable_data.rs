@@ -95,6 +95,6 @@ fn serialisation_immutable_data() {
 	let obj_after: ImmutableData = d.decode().next().unwrap().unwrap();
 	let id_before = obj_before.get_name().get_id();
 	let id_after = obj_after.get_name().get_id();
-	assert!(compare_arr_u8_64(&id_before, &id_after));
+	assert!(compare_u8_array(&id_before, &id_after));
 	assert_eq!(obj_before.get_value(), obj_after.get_value());
 }

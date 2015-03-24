@@ -117,9 +117,9 @@ fn serialisation_an_mpid() {
 	let NameType(name_before) = *obj_before.get_name();
 	let NameType(name_after) = *obj_after.get_name();
 
-																																																																					 assert!(compare_arr_u8_64(&name_before, &name_after));
+																																																																					 assert!(compare_u8_array(&name_before, &name_after));
 	assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
 	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-	assert!(compare_arr_u8_64(&sec_sign_arr_before, &sec_sign_arr_after));
+	assert!(compare_u8_array(&sec_sign_arr_before, &sec_sign_arr_after));
 	assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
 }

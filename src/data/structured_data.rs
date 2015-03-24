@@ -21,7 +21,6 @@ extern crate cbor;
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
-use helper::compare_arr_u8_64;
 use common::NameType;
 
 /// StructuredData
@@ -81,9 +80,9 @@ fn serialisation_structured_data() {
 	let mut value = Vec::new();
 	value.push(Vec::new());
 	match value.last_mut() {
-			Some(v) => v.push(NameType([7u8; 64])),
+		Some(v) => v.push(NameType([7u8; 64])),
 		None => ()
-		}
+	}
 	let obj_before = StructuredData::new((NameType([3u8; 64]), NameType([5u8; 64])), value);
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
@@ -91,11 +90,9 @@ fn serialisation_structured_data() {
 	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
 	let obj_after: StructuredData = d.decode().next().unwrap().unwrap();
 
-	let (NameType(name_before_0), NameType(name_before_1)) = *obj_before.get_name();
-	let (NameType(name_after_0), NameType(name_after_1)) = *obj_after.get_name();
-	let NameType(value_before) = obj_before.get_value()[0][0];
-	let NameType(value_after) = obj_after.get_value()[0][0];
-	assert!(compare_arr_u8_64(&name_before_0, &name_after_0));
-	assert!(compare_arr_u8_64(&name_before_1, &name_after_1));
-	assert!(compare_arr_u8_64(&value_before, &value_after));
+  let name_before = obj_before.get_name();
+  let name_after = obj_after.get_name();
+  	
+	assert!(name_before.0 == name_after.0);
+	assert!(name_before.1 == name_after.1);
 }
