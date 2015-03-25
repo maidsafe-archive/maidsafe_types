@@ -20,6 +20,7 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 #Todo
 - [x] Add all DataTypes for Data Put/Get 
 - [x] Add Encode/Decode traits for all types (cbor)
+- [x] API version 0.0.8
 - [ ] Write tests to confirm invariants of all types
 - [x] Write tests to confirm serialising and parsing of all types
 - [ ] API version 0.1.0

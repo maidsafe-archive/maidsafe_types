@@ -15,28 +15,18 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
-    
-#![crate_name = "maidsafe_types"]
-#![crate_type = "lib"]
-#![doc(html_logo_url = "http://maidsafe.net/img/Resources/branding/maidsafe_logo.fab2.png",
-       html_favicon_url = "http://maidsafe.net/img/favicon.ico",
-              html_root_url = "http://dirvine.github.io/dirvine/maidsafe_types/")]
-//! Placeholder DO NOT USE ! until version 0.1 - all code is a test and useless
-//! Types of data functors and messages for MaidSafe secure Autonomous networks.
-//! This crate is of no use to anyone as a stand alone crate. It is a module that is 
-//! specialised, but it is a crate to make version handling and distribution easier.
 
-extern crate "rustc-serialize" as rustc_serialize;
-extern crate sodiumoxide;
-extern crate cbor;
+/// temporary code to test passing a trait to routing to query and possible decode types or
+/// at least soem info routing needs which is access to these functions on data types
+/// These traits will be defined in routing and require to be avauilable for any type
+/// passed to routing, refresh / account transfer is optional
+/// The name will let routing know its an NaeManager and the owner will allow routing to hash
+/// the requsters id with this name (by hashing the requesters id) for put and post messages
+use common::NameType;
 
-mod id;
-mod common;
-mod data;
-
-
-pub mod traits;
-pub mod helper;
-pub use common::*;
-pub use id::*;
-pub use data::*;
+pub trait RoutingTrait {
+	fn get_name(&self)->NameType;
+	fn get_owner(&self)->Option<Vec<u8>> { Option::None }
+	fn refresh(&self)->bool { false } // is this an account transfer type
+	fn merge(&self)->bool { false } // how do we merge these
+}
