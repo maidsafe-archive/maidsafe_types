@@ -80,7 +80,7 @@ impl RoutingTrait for PublicMpid {
             arr_combined[i] = sign_arr[i];
         }
         for i in 0..asym_arr.len() {
-            arr_combined[64 + i] = sign_arr[i];
+            arr_combined[64 + i] = asym_arr[i];
         }
 
         let digest = crypto::hash::sha512::hash(&arr_combined);
