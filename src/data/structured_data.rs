@@ -22,6 +22,8 @@ extern crate cbor;
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use common::NameType;
+use traits::RoutingTrait;
+use helper::*;
 
 /// StructuredData
 ///
@@ -44,6 +46,16 @@ use common::NameType;
 pub struct StructuredData {
 	name: (NameType, NameType),  /// name + owner of this StructuredData
 	value: Vec<Vec<NameType>>,
+}
+
+impl RoutingTrait for StructuredData {
+    fn get_name(&self) -> NameType {
+        self.name.0.clone()
+    }
+
+    fn get_owner(&self) -> Option<Vec<u8>> {
+        Some(array_as_vector(&(&self.name.1).0))
+    }
 }
 
 impl StructuredData {

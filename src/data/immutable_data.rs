@@ -24,6 +24,7 @@ use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
+use sodiumoxide::crypto;
 
 /// ImmutableData
 ///
@@ -43,12 +44,9 @@ pub struct ImmutableData {
 }
 
 impl RoutingTrait for ImmutableData {
-	fn get_name(&self)->&NameType {
-		&self.name
-	}
-
-	fn get_owner(&self)->&Vec<u8> {
-		&self.value
+	fn get_name(&self) -> NameType {
+        let digest = crypto::hash::sha512::hash(&self.name.0);
+        NameType(digest.0)
 	}
 }
 

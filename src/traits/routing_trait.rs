@@ -25,8 +25,8 @@
 use common::NameType;
 
 pub trait RoutingTrait {
-	fn get_name(&self)->&NameType;
-	fn get_owner(&self)->&Vec<u8>;
+	fn get_name(&self)->NameType;
+	fn get_owner(&self)->Option<Vec<u8>> { Option::None }
 	fn refresh(&self)->bool { false } // is this an account transfer type
 	fn merge(&self)->bool { false } // how do we merge these
 }
