@@ -15,7 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
 

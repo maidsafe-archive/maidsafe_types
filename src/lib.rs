@@ -26,7 +26,7 @@
 //! This crate is of no use to anyone as a stand alone crate. It is a module that is 
 //! specialised, but it is a crate to make version handling and distribution easier.
 
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
 
