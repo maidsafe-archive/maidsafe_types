@@ -4,11 +4,13 @@ Travis build status
 
 [![Build Status](https://travis-ci.org/dirvine/maidsafe_types.svg?branch=master)](https://travis-ci.org/dirvine/maidsafe_types)
 
-[![Coverage Status](https://coveralls.io/repos/dirvine/maidsafe_types/badge.svg?branch=master)](https://coveralls.io/r/dirvine/maidsafe_types?branch=master)
-
 Appveyor build status (Windows)
 
 [![Build status](https://ci.appveyor.com/api/projects/status/jsuo65sa631h0kav?svg=true)](https://ci.appveyor.com/project/dirvine/maidsafe-types)
+
+Code Coverage
+
+[![Coverage Status](https://coveralls.io/repos/dirvine/maidsafe_types/badge.svg?branch=master)](https://coveralls.io/r/dirvine/maidsafe_types?branch=master)
 
 
 [Documentation](http://dirvine.github.io/maidsafe_types/)
