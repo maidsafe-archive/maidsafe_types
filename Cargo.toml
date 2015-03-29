@@ -14,4 +14,3 @@ homepage = "http://www.maidsafe.net"
 rustc-serialize = "*"
 cbor = "*"
 sodiumoxide = "*"
-
