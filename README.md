@@ -1,10 +1,14 @@
 # maidsafe_types
 
-Travis build status
+Travis build and test status
 
 [![Build Status](https://travis-ci.org/dirvine/maidsafe_types.svg?branch=master)](https://travis-ci.org/dirvine/maidsafe_types)
 
-Appveyor build status (Windows)
+Drone.io build and test status
+
+[![Build Status](https://drone.io/github.com/dirvine/maidsafe_types/status.png)](https://drone.io/github.com/dirvine/maidsafe_types/latest)
+
+Appveyor build and test status (Windows)
 
 [![Build status](https://ci.appveyor.com/api/projects/status/jsuo65sa631h0kav?svg=true)](https://ci.appveyor.com/project/dirvine/maidsafe-types)
 
