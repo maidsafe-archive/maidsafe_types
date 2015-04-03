@@ -34,12 +34,22 @@ mod id;
 mod common;
 mod data;
 
-
 pub mod traits;
 pub mod helper;
 pub use common::*;
 pub use id::*;
 pub use data::*;
+
+use cbor::CborTagEncode;
+use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+
+fn array_as_vector(arr: &[u8]) -> Vec<u8> {
+  let mut vector = Vec::new();
+  for i in arr.iter() {
+    vector.push(*i);
+  }
+  vector
+}
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 /// Types of payload that will be exchange among vaults
@@ -110,7 +120,7 @@ impl Payload {
   pub fn new<T>(type_tag : PayloadTypeTag, data : T) -> Payload where T: for<'a> Encodable + Decodable {
     let mut e = cbor::Encoder::from_memory();
     e.encode(&[&data]).unwrap();
-    Payload { type_tag: type_tag, payload: types::array_as_vector(e.as_bytes()) }
+    Payload { type_tag: type_tag, payload: array_as_vector(e.as_bytes()) }
   }
 
   pub fn get_data<T>(&self) -> T where T: for<'a> Encodable + Decodable {
@@ -122,6 +132,6 @@ impl Payload {
   pub fn set_data<T>(&mut self, data: T) where T: for<'a> Encodable + Decodable {
     let mut e = cbor::Encoder::from_memory();
     e.encode(&[&data]).unwrap();
-    self.payload = types::array_as_vector(e.as_bytes())
+    self.payload = array_as_vector(e.as_bytes())
   }
 }
