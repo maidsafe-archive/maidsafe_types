@@ -101,8 +101,22 @@ impl Maid {
         &self.public_keys
     }
 
-    pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
-        &self.secret_keys
+    pub fn sign(&self, data : &[u8]) -> Vec<u8> {
+        return crypto::sign::sign(&data, &self.secret_keys.0)
+    }
+
+    pub fn seal(&self, data : &[u8], to : &crypto::asymmetricbox::PublicKey) -> (Vec<u8>, crypto::asymmetricbox::Nonce) {
+        let nonce = crypto::asymmetricbox::gen_nonce();
+        let sealed = crypto::asymmetricbox::seal(data, &nonce, &to, &self.secret_keys.1);
+        return (sealed, nonce);
+    }
+
+    pub fn open(
+        &self,
+        data : &[u8],
+        nonce : &crypto::asymmetricbox::Nonce,
+        from : &crypto::asymmetricbox::PublicKey) -> Result<Vec<u8>, ::CryptoError> {
+        return crypto::asymmetricbox::open(&data, &nonce, &from, &self.secret_keys.1).ok_or(::CryptoError::Unknown);
     }
 
     pub fn get_name(&self) -> &NameType {
@@ -148,8 +162,8 @@ fn serialisation_maid() {
 
     let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
     let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
-    let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = obj_before.get_secret_keys();
-    let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = obj_after.get_secret_keys();
+    let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = &obj_before.secret_keys;
+    let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = &obj_after.secret_keys;
     let (&NameType(name_before), &NameType(name_after)) = (obj_before.get_name(), obj_after.get_name());
 
     assert!(compare_u8_array(&name_before, &name_after));
@@ -164,28 +178,10 @@ fn generation() {
     let maid1 = Maid::generate();
     let maid2 = Maid::generate();
 
-    {
-
-        let &(crypto::sign::PublicKey(pub_sign_arr1), crypto::asymmetricbox::PublicKey(pub_asym_arr1)) = maid1.get_public_keys();
-        let &(crypto::sign::PublicKey(pub_sign_arr2), crypto::asymmetricbox::PublicKey(pub_asym_arr2)) = maid2.get_public_keys();
-        let &(crypto::sign::SecretKey(sec_sign_arr1), crypto::asymmetricbox::SecretKey(sec_asym_arr1)) = maid1.get_secret_keys();
-        let &(crypto::sign::SecretKey(sec_sign_arr2), crypto::asymmetricbox::SecretKey(sec_asym_arr2)) = maid2.get_secret_keys();
-        let (&NameType(name1), &NameType(name2)) = (maid1.get_name(), maid2.get_name());
-
-        assert!(maid1.name.is_valid());
-        assert!(maid2.name.is_valid());
-        assert!(compare_u8_array(&name1, &name2));
-
-        assert!(!(compare_u8_array(&pub_sign_arr1, &pub_sign_arr2)));
-        assert!(!(compare_u8_array(&pub_asym_arr1, &pub_asym_arr2)));
-        assert!(!(compare_u8_array(&sec_sign_arr1, &sec_sign_arr2)));
-        assert!(!(compare_u8_array(&sec_asym_arr1, &sec_asym_arr2)));
-    }
-
     let random_bytes = rand::thread_rng().gen_iter::<u8>().take(100).collect::<Vec<u8>>();
     {
-        let sign1 = crypto::sign::sign(&random_bytes, &maid1.get_secret_keys().0);
-        let sign2 = crypto::sign::sign(&random_bytes, &maid2.get_secret_keys().0);
+        let sign1 = maid1.sign(&random_bytes);
+        let sign2 = maid2.sign(&random_bytes);
         assert!(sign1 != sign2);
 
         assert!(crypto::sign::verify(&sign1, &maid1.get_public_keys().0).is_some());
@@ -196,22 +192,15 @@ fn generation() {
     }
     {
         let maid3 = Maid::generate();
-        let nonce = crypto::asymmetricbox::gen_nonce();
 
-        let encrypt1 = crypto::asymmetricbox::seal(
-            &random_bytes, &nonce, &maid3.get_public_keys().1, &maid1.get_secret_keys().1);
-        let encrypt2 = crypto::asymmetricbox::seal(
-            &random_bytes, &nonce, &maid3.get_public_keys().1, &maid2.get_secret_keys().1);
-        assert!(encrypt1 != encrypt2);
+        let encrypt1 = maid1.seal(&random_bytes, &maid3.get_public_keys().1);
+        let encrypt2 = maid2.seal(&random_bytes, &maid3.get_public_keys().1);
+        assert!(encrypt1.0 != encrypt2.0);
 
-        assert!(crypto::asymmetricbox::open(
-            &encrypt1, &nonce, &maid1.get_public_keys().1, &maid3.get_secret_keys().1).is_some());
-        assert!(crypto::asymmetricbox::open(
-            &encrypt1, &nonce, &maid2.get_public_keys().1, &maid3.get_secret_keys().1).is_none());
+        assert!(maid3.open(&encrypt1.0, &encrypt1.1, &maid1.get_public_keys().1).is_ok());
+        assert!(maid3.open(&encrypt1.0, &encrypt1.1, &maid2.get_public_keys().1).is_err());
 
-        assert!(crypto::asymmetricbox::open(
-            &encrypt2, &nonce, &maid2.get_public_keys().1, &maid3.get_secret_keys().1).is_some());
-        assert!(crypto::asymmetricbox::open(
-            &encrypt2, &nonce, &maid1.get_public_keys().1, &maid3.get_secret_keys().1).is_none());
+        assert!(maid3.open(&encrypt2.0, &encrypt2.1, &maid2.get_public_keys().1).is_ok());
+        assert!(maid3.open(&encrypt2.0, &encrypt2.1, &maid1.get_public_keys().1).is_err());
     }
 }

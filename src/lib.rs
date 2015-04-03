@@ -15,7 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
-    
+
 #![crate_name = "maidsafe_types"]
 #![crate_type = "lib"]
 #![doc(html_logo_url = "http://maidsafe.net/img/Resources/branding/maidsafe_logo.fab2.png",
@@ -23,7 +23,7 @@
               html_root_url = "http://dirvine.github.io/dirvine/maidsafe_types/")]
 //! Placeholder DO NOT USE ! until version 0.1 - all code is a test and useless
 //! Types of data functors and messages for MaidSafe secure Autonomous networks.
-//! This crate is of no use to anyone as a stand alone crate. It is a module that is 
+//! This crate is of no use to anyone as a stand alone crate. It is a module that is
 //! specialised, but it is a crate to make version handling and distribution easier.
 
 extern crate rustc_serialize;
@@ -34,9 +34,12 @@ mod id;
 mod common;
 mod data;
 
-
 pub mod traits;
 pub mod helper;
 pub use common::*;
 pub use id::*;
 pub use data::*;
+
+pub enum CryptoError {
+    Unknown
+}
