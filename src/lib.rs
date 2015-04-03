@@ -117,9 +117,9 @@ impl Payload {
     Payload { type_tag: type_tag, payload: Vec::<u8>::new() }
   }
 
-  pub fn new<T>(type_tag : PayloadTypeTag, data : T) -> Payload where T: for<'a> Encodable + Decodable {
+  pub fn new<T>(type_tag : PayloadTypeTag, data : &T) -> Payload where T: for<'a> Encodable + Decodable {
     let mut e = cbor::Encoder::from_memory();
-    e.encode(&[&data]).unwrap();
+    e.encode(&[data]).unwrap();
     Payload { type_tag: type_tag, payload: array_as_vector(e.as_bytes()) }
   }
 
