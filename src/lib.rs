@@ -65,7 +65,7 @@ pub enum PayloadTypeTag {
 
 impl Encodable for PayloadTypeTag {
   fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-    let mut type_tag = "";
+    let mut type_tag : &str;
     match *self {
       PayloadTypeTag::PublicMaid => type_tag = "PublicMaid",
       PayloadTypeTag::PublicAnMaid => type_tag = "PublicAnMaid",
@@ -80,7 +80,7 @@ impl Encodable for PayloadTypeTag {
 impl Decodable for PayloadTypeTag {
   fn decode<D: Decoder>(d: &mut D)->Result<PayloadTypeTag, D::Error> {
     try!(d.read_u64());
-    let mut type_tag : String = String::new();
+    let mut type_tag : String;
     type_tag = try!(Decodable::decode(d));
     match &type_tag[..] {
       "PublicMaid" => Ok(PayloadTypeTag::PublicMaid),
