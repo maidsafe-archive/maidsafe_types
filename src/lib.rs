@@ -134,4 +134,8 @@ impl Payload {
     e.encode(&[&data]).unwrap();
     self.payload = array_as_vector(e.as_bytes())
   }
+
+  pub fn get_type_tag(&self) -> PayloadTypeTag {
+    self.type_tag.clone()
+  }
 }
