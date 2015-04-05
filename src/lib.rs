@@ -39,9 +39,9 @@ mod data;
 
 pub mod traits;
 pub mod helper;
-pub use common::*;
-pub use id::*;
-pub use data::*;
+pub use common::NameType;
+pub use id::{AnMaid, PublicAnMaid, AnMpid, PublicMaid, PublicMpid};
+pub use data::{ImmutableData, StructuredData};
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -100,6 +100,7 @@ impl Decodable for PayloadTypeTag {
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
+/// Encoded type serialised and ready to send on wire
 pub struct Payload {
   type_tag : PayloadTypeTag,
   payload : Vec<u8>
