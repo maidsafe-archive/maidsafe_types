@@ -40,7 +40,7 @@ pub mod data;
 pub mod traits;
 pub mod helper;
 pub use common::NameType;
-pub use id::{AnMaid, PublicAnMaid, AnMpid, PublicMaid, PublicMpid};
+pub use id::{Maid, Mpid, AnMaid, PublicAnMaid, AnMpid, PublicMaid, PublicMpid};
 pub use data::{ImmutableData, StructuredData};
 
 use cbor::CborTagEncode;
