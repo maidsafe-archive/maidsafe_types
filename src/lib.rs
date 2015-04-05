@@ -21,10 +21,13 @@
 #![doc(html_logo_url = "http://maidsafe.net/img/Resources/branding/maidsafe_logo.fab2.png",
        html_favicon_url = "http://maidsafe.net/img/favicon.ico",
               html_root_url = "http://dirvine.github.io/dirvine/maidsafe_types/")]
-//! Placeholder DO NOT USE ! until version 0.1 - all code is a test and useless
-//! Types of data functors and messages for MaidSafe secure Autonomous networks.
-//! This crate is of no use to anyone as a stand alone crate. It is a module that is
-//! specialised, but it is a crate to make version handling and distribution easier.
+//! #Safe Network Data Types  
+//! 
+//! This library implements the fundimental data types used on the SAFE Network
+//! The serialisation mechnism used is ``cbor``` which is an IETF Rfc [7049](http://tools.ietf.org/html/rfc7049)
+//! for serialising data and is an attempt to upgrade messagepack and ASN.1
+//! On disk serialisation is [JSON](https://www.ietf.org/rfc/rfc4627.txt) 
+//! 
 
 extern crate rustc_serialize;
 extern crate sodiumoxide;
