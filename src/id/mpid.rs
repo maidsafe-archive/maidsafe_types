@@ -39,7 +39,7 @@ use traits::RoutingTrait;
 /// let (pub_asym_key, sec_asym_key) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
 ///
 /// // Creating new Mpid
-/// let mpid  = maidsafe_types::Mpid::new((pub_sign_key, pub_asym_key),
+/// let mpid  = maidsafe_types::id::mpid::Mpid::new((pub_sign_key, pub_asym_key),
 ///                     (sec_sign_key, sec_asym_key),
 ///                     maidsafe_types::NameType([6u8; 64]));
 ///

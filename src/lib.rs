@@ -33,9 +33,9 @@ extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
 
-mod id;
-mod common;
-mod data;
+pub mod id;
+pub mod common;
+pub mod data;
 
 pub mod traits;
 pub mod helper;

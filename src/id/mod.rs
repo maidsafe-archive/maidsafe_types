@@ -15,13 +15,13 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
-mod an_maid;
-mod an_mpid;
-mod maid;
-mod mpid;
-mod public_maid;
-mod public_mpid;
-mod public_an_maid;
+pub mod an_maid;
+pub mod an_mpid;
+pub mod maid;
+pub mod mpid;
+pub mod public_maid;
+pub mod public_mpid;
+pub mod public_an_maid;
 
 pub use self::an_maid::*;
 pub use self::an_mpid::*;
