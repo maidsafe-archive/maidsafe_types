@@ -26,7 +26,6 @@ use sodiumoxide::crypto;
 use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
-use self::rand::Rng;
 
 /// Maid
 ///
@@ -149,6 +148,9 @@ impl Decodable for Maid {
         Ok(Maid::new(pub_keys, sec_keys, name))
     }
 }
+
+#[cfg(test)]
+use self::rand::Rng;
 
 #[test]
 fn serialisation_maid() {
