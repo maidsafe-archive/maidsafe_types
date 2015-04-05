@@ -27,7 +27,7 @@
 //! The serialisation mechnism used is ``cbor``` which is an IETF Rfc [7049](http://tools.ietf.org/html/rfc7049)
 //! for serialising data and is an attempt to upgrade messagepack and ASN.1
 //! On disk serialisation is [JSON](https://www.ietf.org/rfc/rfc4627.txt) 
-//! 
+//! [github page](https://github.com/dirvine/maidsafe_types) 
 
 extern crate rustc_serialize;
 extern crate sodiumoxide;
