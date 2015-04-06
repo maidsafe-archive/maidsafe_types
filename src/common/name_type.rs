@@ -89,16 +89,13 @@ impl Random for NameType {
 
 impl fmt::Debug for NameType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.iter().fold(f.debug_list(), |b, e| b.entry(e)).finish()
+        write!(f, "{:?}", self.0.to_vec())
     }
 }
 
 impl PartialEq for NameType {
   fn eq(&self, other: &NameType) -> bool {
   	self.0.iter().zip(other.0.iter()).all(|(a,b)| a == b) 
-  }
-  fn ne(&self, other: &NameType) -> bool {
-    !self.0.iter().zip(other.0.iter()).all(|(a,b)| a == b)
   }
 }
 
