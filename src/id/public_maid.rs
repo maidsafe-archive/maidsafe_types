@@ -176,12 +176,12 @@ impl Encodable for PublicMaid {
 		let crypto::sign::Signature(maid_signature) = self.maid_signature;
 		let crypto::sign::Signature(signature) = self.signature;
 		CborTagEncode::new(5483_001, &(
-				array_as_vector(&pub_sign_vec),
-					array_as_vector(&pub_asym_vec),
-					array_as_vector(&maid_signature),
-				&self.owner,
-					array_as_vector(&signature),
-				&self.name)).encode(e)
+			array_as_vector(&pub_sign_vec),
+			array_as_vector(&pub_asym_vec),
+			array_as_vector(&maid_signature),
+			&self.owner,
+			array_as_vector(&signature),
+			&self.name)).encode(e)
 	}
 }
 

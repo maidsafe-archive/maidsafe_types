@@ -133,11 +133,11 @@ impl Encodable for AnMpid {
 		let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
 
 		CborTagEncode::new(5483_001, &(
-				array_as_vector(&pub_sign_vec),
-					array_as_vector(&pub_asym_vec),
-					array_as_vector(&sec_sign_vec),
-					array_as_vector(&sec_asym_vec),
-				&self.name)).encode(e)
+			array_as_vector(&pub_sign_vec),
+			array_as_vector(&pub_asym_vec),
+			array_as_vector(&sec_sign_vec),
+			array_as_vector(&sec_asym_vec),
+			&self.name)).encode(e)
 	}
 }
 

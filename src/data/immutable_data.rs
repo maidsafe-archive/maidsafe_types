@@ -100,7 +100,7 @@ impl Random for ImmutableData {
 
 impl Encodable for ImmutableData {
 	fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-				CborTagEncode::new(5483_001, &(&self.name, &self.value)).encode(e)
+		CborTagEncode::new(5483_001, &(&self.name, &self.value)).encode(e)
 	}
 }
 

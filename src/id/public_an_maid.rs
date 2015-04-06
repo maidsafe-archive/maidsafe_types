@@ -138,11 +138,11 @@ impl Encodable for PublicAnMaid {
 		let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
 		let crypto::sign::Signature(signature_arr) = self.signature;
 
-		CborTagEncode::new(5483_001, &(
-				array_as_vector(&pub_sign_vec),
-					array_as_vector(&pub_asym_vec),
-					array_as_vector(&signature_arr),
-				&self.name)).encode(e)
+            CborTagEncode::new(5483_001, &(
+            array_as_vector(&pub_sign_vec),
+            array_as_vector(&pub_asym_vec),
+            array_as_vector(&signature_arr),
+            &self.name)).encode(e)
 	}
 }
 

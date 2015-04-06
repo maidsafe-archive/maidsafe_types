@@ -135,54 +135,54 @@ impl Random for PublicMpid {
 }
 
 impl PublicMpid {
-pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-					 mpid_signature: crypto::sign::Signature,
-					 owner: NameType,
-					 signature: crypto::sign::Signature,
-					 name: NameType) -> PublicMpid {
-	PublicMpid {
-	public_keys: public_keys,
-	mpid_signature: mpid_signature,
-	owner: owner,
-	signature: signature,
-	name: name,
+	pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+						 mpid_signature: crypto::sign::Signature,
+						 owner: NameType,
+						 signature: crypto::sign::Signature,
+						 name: NameType) -> PublicMpid {
+		PublicMpid {
+		public_keys: public_keys,
+		mpid_signature: mpid_signature,
+		owner: owner,
+		signature: signature,
+		name: name,
+		}
 	}
-}
-#[warn(dead_code)]
-pub fn get_public_keys(& self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
-	&self.public_keys
-}
-#[warn(dead_code)]
-pub fn get_mpid_signature(& self) -> &crypto::sign::Signature {
-	&self.mpid_signature
-}
-#[warn(dead_code)]
-pub fn get_owner(& self) -> &NameType {
-	&self.owner
-}
-#[warn(dead_code)]
-pub fn get_signature(& self) -> &crypto::sign::Signature {
-	&self.signature
-}
-#[warn(dead_code)]
-pub fn get_name(& self) -> &NameType {
-	&self.name
-}
+	#[warn(dead_code)]
+	pub fn get_public_keys(& self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
+		&self.public_keys
+	}
+	#[warn(dead_code)]
+	pub fn get_mpid_signature(& self) -> &crypto::sign::Signature {
+		&self.mpid_signature
+	}
+	#[warn(dead_code)]
+	pub fn get_owner(& self) -> &NameType {
+		&self.owner
+	}
+	#[warn(dead_code)]
+	pub fn get_signature(& self) -> &crypto::sign::Signature {
+		&self.signature
+	}
+	#[warn(dead_code)]
+	pub fn get_name(& self) -> &NameType {
+		&self.name
+	}
 }
 
 impl Encodable for PublicMpid {
-fn encode<E: Encoder>(& self, e: &mut E)->Result<(), E::Error> {
-	let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
-	let crypto::sign::Signature(mpid_signature) = self.mpid_signature;
-	let crypto::sign::Signature(signature) = self.signature;
-	CborTagEncode::new(5483_001, &(
-			array_as_vector(&pub_sign_vec),
-				array_as_vector(&pub_asym_vec),
-				array_as_vector(&mpid_signature),
-			&self.owner,
-				array_as_vector(&signature),
-			&self.name)).encode(e)
-}
+	fn encode<E: Encoder>(& self, e: &mut E)->Result<(), E::Error> {
+		let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
+		let crypto::sign::Signature(mpid_signature) = self.mpid_signature;
+		let crypto::sign::Signature(signature) = self.signature;
+		CborTagEncode::new(5483_001, &(
+				array_as_vector(&pub_sign_vec),
+					array_as_vector(&pub_asym_vec),
+					array_as_vector(&mpid_signature),
+				&self.owner,
+					array_as_vector(&signature),
+				&self.name)).encode(e)
+	}
 }
 
 impl Decodable for PublicMpid {

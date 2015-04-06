@@ -108,40 +108,40 @@ impl RoutingTrait for Mpid {
 }
 
 impl Mpid {
-pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-					 secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-					 name_type: NameType) -> Mpid {
-	Mpid {
-	public_keys: public_keys,
-	secret_keys: secret_keys,
-	name: name_type
+	pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+						 secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+						 name_type: NameType) -> Mpid {
+		Mpid {
+		public_keys: public_keys,
+		secret_keys: secret_keys,
+		name: name_type
+		}
 	}
-}
-pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
-	&self.public_keys
-}
+	pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
+		&self.public_keys
+	}
 
-pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
-	&self.secret_keys
-}
+	pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
+		&self.secret_keys
+	}
 
-pub fn get_name(&self) -> &NameType {
-	&self.name
-}
+	pub fn get_name(&self) -> &NameType {
+		&self.name
+	}
 }
 
 impl Encodable for Mpid {
-fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-	let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
-	let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
+	fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+		let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
+		let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
 
-	CborTagEncode::new(5483_001, &(
+		CborTagEncode::new(5483_001, &(
 			array_as_vector(&pub_sign_vec),
-				array_as_vector(&pub_asym_vec),
-				array_as_vector(&sec_sign_vec),
-				array_as_vector(&sec_asym_vec),
+			array_as_vector(&pub_asym_vec),
+			array_as_vector(&sec_sign_vec),
+			array_as_vector(&sec_asym_vec),
 			&self.name)).encode(e)
-}
+	}
 }
 
 impl Decodable for Mpid {
