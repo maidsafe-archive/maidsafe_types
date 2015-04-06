@@ -126,17 +126,12 @@ impl PartialEq for AnMpid {
 
 impl Random for AnMpid {
 	fn generate_random() -> AnMpid {
-		let mut arr: [u8; 64] = unsafe { mem::uninitialized() };
-        for i in 0..64 {
-            arr[i] = rand::random::<u8>();
-        }
-
         let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
         let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();        
 		AnMpid {
 			public_keys: (sign_pub_key, asym_pub_key),
 			secret_keys: (sign_sec_key, asym_sec_key),
-			name: NameType(arr)
+			name: NameType::generate_random()
 		}
 	}
 }
@@ -190,10 +185,7 @@ impl Decodable for AnMpid {
 
 #[test]
 fn serialisation_an_mpid() {
-	let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
-	let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
-
-																																																																					 let obj_before = AnMpid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType([3u8; 64]));
+	let obj_before = AnMpid::generate_random();
 
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
@@ -202,15 +194,23 @@ fn serialisation_an_mpid() {
 	let obj_after: AnMpid = d.decode().next().unwrap().unwrap();
 
 	let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
-																																																																					 let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
+	let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
 	let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = obj_before.get_secret_keys();
 	let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = obj_after.get_secret_keys();
 	let NameType(name_before) = *obj_before.get_name();
 	let NameType(name_after) = *obj_after.get_name();
-
-																																																																					 assert!(compare_u8_array(&name_before, &name_after));
+	assert!(compare_u8_array(&name_before, &name_after));
 	assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
 	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
 	assert!(compare_u8_array(&sec_sign_arr_before, &sec_sign_arr_after));
 	assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
+}
+
+#[test] 
+fn equality_assertion_an_mpid() {	
+	let an_maid_first = AnMpid::generate_random();
+	let an_maid_second = an_maid_first.clone();
+	let an_maid_third = AnMpid::generate_random();
+	assert_eq!(an_maid_first, an_maid_second);
+	assert!(an_maid_first != an_maid_third);
 }
