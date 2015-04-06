@@ -174,7 +174,7 @@ fn serialisation_public_anmaid() {
 
 #[test]
 fn equality_assertion_public_anmaid() {
-     let first_obj = PublicAnMaid::generate_random();
+    let first_obj = PublicAnMaid::generate_random();
     let second_obj = PublicAnMaid::generate_random();
     let cloned_obj = second_obj.clone();
     
