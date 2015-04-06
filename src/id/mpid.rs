@@ -53,20 +53,11 @@ use Random;
 /// // getting Mpid::name
 /// let name: &maidsafe_types::NameType = mpid.get_name();
 /// ```
+#[derive(Clone)]
 pub struct Mpid {
 	public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 	secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
 	name: NameType
-}
-
-impl Clone for Mpid {
-	fn clone(&self) -> Self {
-		Mpid {
-			public_keys: self.public_keys.clone(),
-			secret_keys: self.secret_keys.clone(),
-			name: self.name.clone()
-		}
-	}
 }
 
 impl PartialEq for Mpid {
@@ -167,10 +158,7 @@ fn decode<D: Decoder>(d: &mut D)-> Result<Mpid, D::Error> {
 
 #[test]
 fn serialisation_mpid() {
-	let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
-	let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
-
-																																																																					 let obj_before = Mpid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType([3u8; 64]));
+	let obj_before = Mpid::generate_random();
 
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
@@ -178,18 +166,7 @@ fn serialisation_mpid() {
 	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
 	let obj_after: Mpid = d.decode().next().unwrap().unwrap();
 
-	let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
-																																																																					 let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
-	let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = obj_before.get_secret_keys();
-	let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = obj_after.get_secret_keys();
-	let &NameType(name_before) = obj_before.get_name();
-	let &NameType(name_after) = obj_after.get_name();
-
-																																																																					 assert!(compare_u8_array(&name_before, &name_after));
-	assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
-	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-	assert!(compare_u8_array(&sec_sign_arr_before, &sec_sign_arr_after));
-	assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
+	assert_eq!(obj_before, obj_after);
 }
 
 #[test]

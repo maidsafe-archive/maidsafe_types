@@ -28,7 +28,6 @@ use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
 use Random;
-use std::mem;
 use std::fmt;
 
 /// AnMpid
@@ -49,6 +48,7 @@ use std::fmt;
 /// let ref name = an_mpid.get_name();
 /// ```
 ///
+#[derive(Clone)]
 pub struct AnMpid {
 	public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 	secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
@@ -77,16 +77,6 @@ impl RoutingTrait for AnMpid {
     fn get_owner(&self) -> Option<Vec<u8>> {
         Some(array_as_vector(&self.name.0))
     }
-}
-
-impl Clone for AnMpid {
-	fn clone(&self) -> Self {		
-		AnMpid{
-			public_keys: self.public_keys.clone(),
-			secret_keys: self.secret_keys.clone(),
-			name: self.name.clone()
-		}
-	}
 }
 
 impl fmt::Debug for AnMpid {
@@ -166,24 +156,13 @@ impl Decodable for AnMpid {
 #[test]
 fn serialisation_an_mpid() {
 	let obj_before = AnMpid::generate_random();
-
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
 
 	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
 	let obj_after: AnMpid = d.decode().next().unwrap().unwrap();
 
-	let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
-	let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
-	let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = obj_before.get_secret_keys();
-	let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = obj_after.get_secret_keys();
-	let NameType(name_before) = *obj_before.get_name();
-	let NameType(name_after) = *obj_after.get_name();
-	assert!(compare_u8_array(&name_before, &name_after));
-	assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
-	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-	assert!(compare_u8_array(&sec_sign_arr_before, &sec_sign_arr_after));
-	assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
+	assert_eq!(obj_before, obj_after);
 }
 
 #[test] 
