@@ -27,6 +27,8 @@ use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
 use Random;
+use std::cmp;
+use std::fmt;
 
 /// Maid
 ///
@@ -53,6 +55,7 @@ use Random;
 /// // getting Maid::name
 /// let name: &maidsafe_types::NameType = maid.get_name();
 /// ```
+#[derive(Clone)]
 pub struct Maid {
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
     secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
@@ -60,13 +63,6 @@ pub struct Maid {
 }
 
 impl Maid {
-    pub fn generate() -> Maid {
-        let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
-        let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
-
-        return Maid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType::generate_random());
-    }
-
     pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
                secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
                name_type: NameType) -> Maid {
@@ -103,6 +99,35 @@ impl Maid {
         &self.name
     }
 }
+
+impl Random for Maid {
+    fn generate_random() -> Maid {
+        let sign_keys = crypto::sign::gen_keypair();
+        let asym_keys = crypto::asymmetricbox::gen_keypair();
+
+        Maid {
+            public_keys: (sign_keys.0, asym_keys.0),
+            secret_keys: (sign_keys.1, asym_keys.1),
+            name: NameType::generate_random(),
+        }
+    }
+}
+
+impl cmp::PartialEq for Maid {
+    fn eq(&self, other: &Maid) -> bool {
+        self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.secret_keys.0 .0.iter().chain(self.secret_keys.1 .0.iter()))).zip(
+            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.secret_keys.0 .0.iter().chain(other.secret_keys.1 .0.iter())))).all(|a| a.0 == a.1) &&
+            self.name == other.name
+    }
+}
+
+impl fmt::Debug for Maid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Maid {{ public_keys: ({:?}, {:?}), secret_keys: ({:?}, {:?}), name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
+        self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec(), self.name)
+    }
+}
+
 
 impl RoutingTrait for Maid {
     fn get_name(&self) -> NameType {
@@ -155,7 +180,7 @@ use self::rand::Rng;
 
 #[test]
 fn serialisation_maid() {
-    let obj_before = Maid::generate();
+    let obj_before = Maid::generate_random();
 
     let mut e = cbor::Encoder::from_memory();
     e.encode(&[&obj_before]).unwrap();
@@ -178,8 +203,13 @@ fn serialisation_maid() {
 
 #[test]
 fn generation() {
-    let maid1 = Maid::generate();
-    let maid2 = Maid::generate();
+    let maid1 = Maid::generate_random();
+    let maid2 = Maid::generate_random();
+    let maid2_clone = maid2.clone();
+
+    assert_eq!(maid2, maid2_clone);
+    assert!(!(maid2 != maid2_clone));
+    assert!(maid1 != maid2);
 
     let random_bytes = rand::thread_rng().gen_iter::<u8>().take(100).collect::<Vec<u8>>();
     {
@@ -194,7 +224,7 @@ fn generation() {
         assert!(crypto::sign::verify(&sign2, &maid1.get_public_keys().0).is_none());
     }
     {
-        let maid3 = Maid::generate();
+        let maid3 = Maid::generate_random();
 
         let encrypt1 = maid1.seal(&random_bytes, &maid3.get_public_keys().1);
         let encrypt2 = maid2.seal(&random_bytes, &maid3.get_public_keys().1);
