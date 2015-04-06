@@ -28,6 +28,7 @@ use helper::*;
 use std::cmp::*;
 use std::mem;
 use std::fmt;
+use Random;
 
 /// NameType struct
 ///
@@ -46,15 +47,7 @@ use std::fmt;
 pub struct NameType(pub [u8; 64]);
 
 impl NameType {
-    pub fn generate_random() -> NameType {
-        let mut arr: [u8; 64] = unsafe { mem::uninitialized() };
-        for i in 0..64 {
-            arr[i] = rand::random::<u8>();
-        }
-        NameType(arr)
-    }
-
-    fn closer_to_target(lhs: &NameType, rhs: &NameType, target: &NameType) -> bool {
+   fn closer_to_target(lhs: &NameType, rhs: &NameType, target: &NameType) -> bool {
         for i in 0..lhs.0.len() {
             let res_0 = lhs.0[i] ^ target.0[i];
             let res_1 = rhs.0[i] ^ target.0[i];
@@ -81,6 +74,16 @@ impl NameType {
             }
         }
         false
+    }
+}
+
+impl Random for NameType {
+     fn generate_random() -> NameType {
+        let mut arr: [u8; 64] = unsafe { mem::uninitialized() };
+        for i in 0..64 {
+            arr[i] = rand::random::<u8>();
+        }
+        NameType(arr)
     }
 }
 
@@ -132,6 +135,7 @@ impl Decodable for NameType {
 mod test {
     extern crate cbor;
 
+    use Random;
     use super::*;
 
     #[test]
