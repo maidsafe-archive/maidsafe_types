@@ -43,7 +43,6 @@ use std::fmt;
 /// // de-reference id value from the NameType
 /// let maidsafe_types::NameType(id) = name_type;
 /// ```
-#[derive(Eq)]
 pub struct NameType(pub [u8; 64]);
 
 impl NameType {
