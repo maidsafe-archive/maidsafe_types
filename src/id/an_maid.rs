@@ -26,6 +26,8 @@ use sodiumoxide::crypto;
 use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
+use Random;
+use std::fmt;
 
 /// The following key types use the internal cbor tag to identify them and this
 /// should be carried through to any json representation if stored on disk
@@ -53,32 +55,44 @@ pub struct AnMaid {
 	name: NameType,
 }
 
-fn partial_eq_helper(lhs: &AnMaid, rhs: &AnMaid) -> bool {   
-    let lhs_sign_public_key = (lhs.public_keys.0).0;
-    let rhs_sign_public_key = (rhs.public_keys.0).0;
-    
-    let lhs_assym_public_key = (lhs.public_keys.1).0;
-    let rhs_assym_public_key = (rhs.public_keys.1).0;
-    
-    let lhs_sign_secret_key = (lhs.secret_keys.0).0;
-    let rhs_sign_secret_key = (rhs.secret_keys.0).0;
-    
-    let lhs_assym_secret_key = (lhs.secret_keys.1).0;
-    let rhs_assym_secret_key = (rhs.secret_keys.1).0;
-        
-    lhs_sign_public_key.iter().zip(rhs_sign_public_key.iter()).all(|(a,b)| a == b) &&
-    lhs_assym_public_key.iter().zip(rhs_assym_public_key.iter()).all(|(a,b)| a == b) &&
-    lhs_sign_secret_key.iter().zip(rhs_sign_secret_key.iter()).all(|(a,b)| a == b) &&
-    lhs_assym_secret_key.iter().zip(rhs_assym_secret_key.iter()).all(|(a,b)| a == b) &&
-    lhs.name == rhs.name
-}
-
 impl PartialEq for AnMaid {
     fn eq(&self, other: &AnMaid) -> bool {
-        partial_eq_helper(&self, other)
+        self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.secret_keys.0 .0.iter().chain(self.secret_keys.1 .0.iter()))).zip(
+            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.secret_keys.0 .0.iter().chain(other.secret_keys.1 .0.iter())))).all(|a| a.0 == a.1) &&
+            self.name == other.name
+    }  
+}
+
+impl Clone for AnMaid {
+    fn clone(&self) -> Self {
+        AnMaid {
+            public_keys: self.public_keys.clone(),
+            secret_keys: self.secret_keys.clone(),
+            name: self.name.clone()
+        }
     }
-    fn ne(&self, other: &AnMaid) -> bool {
-        !partial_eq_helper(&self, other)
+}
+
+impl Random for AnMaid {    
+    fn generate_random() -> AnMaid {
+        let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
+        let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
+        
+        AnMaid {
+            public_keys: (pub_sign_key, pub_asym_key),
+            secret_keys: (sec_sign_key, sec_asym_key),
+            name: NameType::generate_random()
+        }
+    }
+}
+
+
+impl fmt::Debug for AnMaid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let (crypto::sign::PublicKey(public_key), crypto::asymmetricbox::PublicKey(assym_public_key)) = self.public_keys;
+        let (crypto::sign::SecretKey(secret_key), crypto::asymmetricbox::SecretKey(assym_secret_key)) = self.secret_keys;
+        write!(f, "AnMaid( public_keys: ({:?}, {:?}), secret_keys: ({:?}, {:?}) )",
+             public_key, assym_public_key, secret_key.to_vec(), assym_secret_key)
     }
 }
 
@@ -154,10 +168,8 @@ impl Decodable for AnMaid {
 }
 
 #[test]
-fn serialisation_an_maid() {
-	let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
-	let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
-    let obj_before = AnMaid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType([3u8; 64]));
+fn serialisation_an_maid() {	
+    let obj_before = AnMaid::generate_random();
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
 
@@ -175,4 +187,14 @@ fn serialisation_an_maid() {
 	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
 	assert!(compare_u8_array(&sec_sign_arr_before, &sec_sign_arr_after));
 	assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
+}
+
+#[test]
+fn equality_assertion_an_maid() {
+    let first_obj = AnMaid::generate_random();
+    let second_obj = AnMaid::generate_random();
+    let cloned_obj = second_obj.clone();
+    
+    assert!(first_obj != second_obj);
+    assert!(second_obj == cloned_obj);    
 }
