@@ -49,6 +49,7 @@ use std::fmt;
 /// let ref name = an_maid.get_name();
 /// ```
 ///
+#[derive(Clone)]
 pub struct AnMaid {
 	public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 	secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
@@ -61,16 +62,6 @@ impl PartialEq for AnMaid {
             other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.secret_keys.0 .0.iter().chain(other.secret_keys.1 .0.iter())))).all(|a| a.0 == a.1) &&
             self.name == other.name
     }  
-}
-
-impl Clone for AnMaid {
-    fn clone(&self) -> Self {
-        AnMaid {
-            public_keys: self.public_keys.clone(),
-            secret_keys: self.secret_keys.clone(),
-            name: self.name.clone()
-        }
-    }
 }
 
 impl Random for AnMaid {    
@@ -91,8 +82,8 @@ impl fmt::Debug for AnMaid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (crypto::sign::PublicKey(public_key), crypto::asymmetricbox::PublicKey(assym_public_key)) = self.public_keys;
         let (crypto::sign::SecretKey(secret_key), crypto::asymmetricbox::SecretKey(assym_secret_key)) = self.secret_keys;
-        write!(f, "AnMaid( public_keys: ({:?}, {:?}), secret_keys: ({:?}, {:?}) )",
-             public_key, assym_public_key, secret_key.to_vec(), assym_secret_key)
+        write!(f, "AnMaid( public_keys: ({:?}, {:?}), secret_keys: ({:?}, {:?}), name: {:?} )",
+             public_key, assym_public_key, secret_key.to_vec(), assym_secret_key, self.name)
     }
 }
 
@@ -175,18 +166,8 @@ fn serialisation_an_maid() {
 
 	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
 	let obj_after: AnMaid = d.decode().next().unwrap().unwrap();
-
-	let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
-    let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
-	let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = obj_before.get_secret_keys();
-	let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = obj_after.get_secret_keys();
-	let NameType(name_before) = *obj_before.get_name();
-	let NameType(name_after) = *obj_after.get_name();
-    assert!(compare_u8_array(&name_before, &name_after));
-	assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
-	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-	assert!(compare_u8_array(&sec_sign_arr_before, &sec_sign_arr_after));
-	assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
+		
+	assert_eq!(obj_before, obj_after);
 }
 
 #[test]
