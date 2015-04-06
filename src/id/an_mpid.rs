@@ -19,6 +19,7 @@
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
+extern crate rand;
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -26,6 +27,9 @@ use sodiumoxide::crypto;
 use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
+use Random;
+use std::mem;
+use std::fmt;
 
 /// AnMpid
 ///
@@ -73,6 +77,68 @@ impl RoutingTrait for AnMpid {
     fn get_owner(&self) -> Option<Vec<u8>> {
         Some(array_as_vector(&self.name.0))
     }
+}
+
+impl Clone for AnMpid {
+	fn clone(&self) -> Self {
+		let public_keys_clone: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey)  = self.public_keys.clone();
+		let secret_keys_clone: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)   = self.secret_keys.clone();
+		let name_clone = self.name.clone();
+
+		AnMpid{
+			public_keys: public_keys_clone,
+			secret_keys: secret_keys_clone,
+			name: name_clone
+		}
+	}
+}
+
+impl fmt::Debug for AnMpid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    	let (crypto::sign::PublicKey(sign_pub_key), crypto::asymmetricbox::PublicKey(asym_pub_key)) = self.public_keys;
+    	let (crypto::sign::SecretKey(sign_sec_key), crypto::asymmetricbox::SecretKey(asym_sec_key)) = self.secret_keys;
+
+        write!(f, "AnMpid(public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}), name: {:?})", sign_pub_key, asym_pub_key, sign_sec_key.to_vec(), asym_sec_key, self.name)
+    }
+}
+
+impl PartialEq for AnMpid {
+	fn eq(&self, other: &AnMpid) -> bool {		
+		if self.name != other.name {
+			return false;
+		}
+		let crypto::sign::PublicKey(self_sig_pub_key) = self.public_keys.0;  
+		let crypto::sign::SecretKey(self_sig_sec_key) = self.secret_keys.0;  
+		let crypto::asymmetricbox::PublicKey(self_asym_pub_key) = self.public_keys.1;  
+		let crypto::asymmetricbox::SecretKey(self_asym_sec_key) = self.secret_keys.1;
+
+		let crypto::sign::PublicKey(other_sig_pub_key) = other.public_keys.0;  
+		let crypto::sign::SecretKey(other_sig_sec_key) = other.secret_keys.0;  
+		let crypto::asymmetricbox::PublicKey(other_asym_pub_key) = other.public_keys.1;  
+		let crypto::asymmetricbox::SecretKey(other_asym_sec_key) = other.secret_keys.1;
+
+		self_sig_pub_key.iter().zip(other_sig_pub_key.iter()).all(|(a,b)| a == b) &&
+		self_asym_pub_key.iter().zip(other_asym_pub_key.iter()).all(|(a,b)| a == b) &&
+		self_sig_sec_key.iter().zip(other_sig_sec_key.iter()).all(|(a,b)| a == b) &&
+		self_asym_sec_key.iter().zip(other_asym_sec_key.iter()).all(|(a,b)| a == b)		
+	}
+}
+
+impl Random for AnMpid {
+	fn generate_random() -> AnMpid {
+		let mut arr: [u8; 64] = unsafe { mem::uninitialized() };
+        for i in 0..64 {
+            arr[i] = rand::random::<u8>();
+        }
+
+        let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
+        let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();        
+		AnMpid {
+			public_keys: (sign_pub_key, asym_pub_key),
+			secret_keys: (sign_sec_key, asym_sec_key),
+			name: NameType(arr)
+		}
+	}
 }
 
 impl AnMpid {
