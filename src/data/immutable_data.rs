@@ -24,6 +24,9 @@ use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use common::NameType;
 use traits::RoutingTrait;
 use sodiumoxide::crypto;
+use std::fmt;
+use rand;
+use Random;
 
 /// ImmutableData
 ///
@@ -37,6 +40,7 @@ use sodiumoxide::crypto;
 /// let ref value = immutable_data.get_value();
 /// ```
 ///
+#[derive(Clone)]
 pub struct ImmutableData {
 	name: NameType,
 	value: Vec<u8>,
@@ -49,12 +53,24 @@ impl RoutingTrait for ImmutableData {
 	}
 }
 
+impl PartialEq for ImmutableData {
+    fn eq(&self, other: &ImmutableData) -> bool {
+        self.name == other.name && self.value == other.value
+    }
+}
+
+impl fmt::Debug for ImmutableData {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ImmutableData( name: {:?}, value: {:?}", self.name, self.value)
+    }
+}
+
 impl ImmutableData {
 	#[allow(dead_code)]
 	pub fn new(name: NameType, value: Vec<u8>) -> ImmutableData {
 		ImmutableData {
-		name: name,
-		value: value,
+    		name: name,
+    		value: value,
 		}
 	}
 
@@ -66,6 +82,20 @@ impl ImmutableData {
 		&self.value
 	}
 
+}
+
+#[allow(unused_variables)]
+impl Random for ImmutableData {
+    fn generate_random() -> ImmutableData {     
+        let mut data = Vec::with_capacity(64);         
+        for i in 0..data.len() {
+            data.push(rand::random::<u8>());
+        }
+        ImmutableData {            
+            name: NameType::generate_random(),
+            value: data,
+        }
+    }
 }
 
 impl Encodable for ImmutableData {
@@ -82,24 +112,33 @@ impl Decodable for ImmutableData {
 	}
 }
 #[cfg(test)]
-mod test {
-use helper::*;
-use super::*;
-use cbor::{ Encoder, Decoder};
-use rustc_serialize::{Decodable, Encodable};
-use common::NameType;
-
-#[test]
-fn serialisation_immutable_data() {
-	let obj_before = ImmutableData::new(NameType([3u8; 64]), vec![99u8; 10]);
-	let mut e = Encoder::from_memory();
-	e.encode(&[&obj_before]).unwrap();
-
-	let mut d = Decoder::from_bytes(e.as_bytes());
-	let obj_after: ImmutableData = d.decode().next().unwrap().unwrap();
-	let id_before = obj_before.get_name().get_id();
-	let id_after = obj_after.get_name().get_id();
-	assert!(compare_u8_array(&id_before, &id_after));
-	assert_eq!(obj_before.get_value(), obj_after.get_value());
-}
+mod test {    
+    use super::*;
+    use cbor::{ Encoder, Decoder};
+    use rustc_serialize::{Decodable, Encodable};
+    use Random;
+    
+    #[test]
+    fn serialisation_immutable_data() {
+    	let obj_before = ImmutableData::generate_random();
+    	let mut e = Encoder::from_memory();
+    	e.encode(&[&obj_before]).unwrap();
+    
+    	let mut d = Decoder::from_bytes(e.as_bytes());
+    	let obj_after: ImmutableData = d.decode().next().unwrap().unwrap();
+    	    	
+    	assert_eq!(obj_before, obj_after);
+    }
+    
+    #[test]
+    fn equality_assertion_immutable_data() {
+        let first_obj = ImmutableData::generate_random();
+        let second_obj = ImmutableData::generate_random();
+        let cloned_obj = second_obj.clone();
+        
+        assert!(first_obj != second_obj);
+        assert!(second_obj == cloned_obj);    
+    }
+        
+    
 }
