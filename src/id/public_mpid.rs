@@ -19,6 +19,7 @@
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
+extern crate rand;
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -26,6 +27,9 @@ use sodiumoxide::crypto;
 use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
+use std::fmt;
+use Random;
+use std::mem;
 
 /// PublicMpid
 ///
@@ -61,6 +65,7 @@ use traits::RoutingTrait;
 /// // getting PublicMpid::name
 /// let name: &maidsafe_types::NameType = public_mpid.get_name();
 /// ```
+#[derive(Clone)]
 pub struct PublicMpid {
 public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 mpid_signature: crypto::sign::Signature,
@@ -91,6 +96,42 @@ impl RoutingTrait for PublicMpid {
     fn get_owner(&self) -> Option<Vec<u8>> {
         Some(array_as_vector(&self.owner.0))
     }
+}
+
+impl PartialEq for PublicMpid {
+	fn eq(&self, other: &PublicMpid) -> bool {
+        self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.mpid_signature.0 .iter().chain(self.signature.0 .iter()))).zip(
+            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.mpid_signature.0 .iter().chain(other.signature.0 .iter())))).all(|a| a.0 == a.1) &&
+            self.name == other.name
+    }
+}
+
+impl fmt::Debug for PublicMpid {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "PublicMpid {{ public_keys:({:?}, {:?}), mpid_signature:{:?}, owner:{:?}, signature:{:?}, name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(), 
+        	self.mpid_signature.0.to_vec(), self.owner, self.signature.0.to_vec(), self.name)
+    }
+}
+
+impl Random for PublicMpid {
+	fn generate_random() -> PublicMpid {
+        let (sign_pub_key, _) = crypto::sign::gen_keypair();
+        let (asym_pub_key, _) = crypto::asymmetricbox::gen_keypair();        
+        let mut mpid_signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
+        let mut signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
+        for i in 0..64 {
+            mpid_signature_arr[i] = rand::random::<u8>();
+            signature_arr[i] = rand::random::<u8>();
+        }
+
+		PublicMpid {
+			public_keys: (sign_pub_key, asym_pub_key),
+			mpid_signature: crypto::sign::Signature(mpid_signature_arr),
+			owner: NameType::generate_random(),
+			signature: crypto::sign::Signature(signature_arr),
+			name: NameType::generate_random()
+		}
+	}
 }
 
 impl PublicMpid {
@@ -159,29 +200,22 @@ impl Decodable for PublicMpid {
 
 #[test]
 fn serialisation_public_mpid() {
-	let (pub_sign_key, _) = crypto::sign::gen_keypair();
-	let (pub_asym_key, _) = crypto::asymmetricbox::gen_keypair();
-
-	let obj_before = PublicMpid::new((pub_sign_key, pub_asym_key), crypto::sign::Signature([5u8; 64]),
-	NameType([5u8; 64]), crypto::sign::Signature([5u8; 64]), NameType([3u8; 64]))                                                                                        ;
+	let obj_before = PublicMpid::generate_random();
 
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
 
 	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-	let obj_after: PublicMpid = d.decode()                                                                                                                               .next().unwrap().unwrap();
+	let obj_after: PublicMpid = d.decode().next().unwrap().unwrap();
 
-	let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys()                            ;
-	let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
-	let (&crypto::sign::Signature(mpid_signature_before), &crypto::sign::Signature(mpid_signature_after)) = (obj_before.get_mpid_signature(), obj_after.get_mpid_signature());
-	let (&crypto::sign::Signature(signature_before), &crypto::sign::Signature(signature_after))                                                                          = (obj_before.get_signature(), obj_after.get_signature());
-	let (&NameType(name_before), &NameType(name_after)) = (obj_before.get_name(), obj_after.get_name());
-	let (&NameType(owner_before), &NameType(owner_after)) = (obj_after.get_owner(), obj_after.get_owner())                                                               ;
+	assert_eq!(obj_before, obj_after);
+}
 
-	assert!(compare_u8_array(&name_before, &name_after));
-	assert!(compare_u8_array(&owner_before, &owner_after));
-	assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
-	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-	assert!(compare_u8_array(&mpid_signature_before, &mpid_signature_after))                                                                                    ;
-	assert!(compare_u8_array(&signature_before, &signature_after));
+#[test]
+fn equality_assertion_public_mpid() {
+	let public_mpid_first = PublicMpid::generate_random();
+	let public_mpid_second = public_mpid_first.clone();
+	let public_mpid_third = PublicMpid::generate_random();
+	assert_eq!(public_mpid_first, public_mpid_second);
+	assert!(public_mpid_first != public_mpid_third);
 }

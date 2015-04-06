@@ -26,6 +26,8 @@ use sodiumoxide::crypto;
 use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
+use Random;
+use std::fmt;
 
 /// The following key types use the internal cbor tag to identify them and this
 /// should be carried through to any json representation if stored on disk
@@ -47,11 +49,42 @@ use traits::RoutingTrait;
 /// let ref name = an_maid.get_name();
 /// ```
 ///
-
+#[derive(Clone)]
 pub struct AnMaid {
 	public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 	secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
 	name: NameType,
+}
+
+impl PartialEq for AnMaid {
+    fn eq(&self, other: &AnMaid) -> bool {
+        self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.secret_keys.0 .0.iter().chain(self.secret_keys.1 .0.iter()))).zip(
+            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.secret_keys.0 .0.iter().chain(other.secret_keys.1 .0.iter())))).all(|a| a.0 == a.1) &&
+            self.name == other.name
+    }  
+}
+
+impl Random for AnMaid {    
+    fn generate_random() -> AnMaid {
+        let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
+        let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
+        
+        AnMaid {
+            public_keys: (pub_sign_key, pub_asym_key),
+            secret_keys: (sec_sign_key, sec_asym_key),
+            name: NameType::generate_random()
+        }
+    }
+}
+
+
+impl fmt::Debug for AnMaid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let (crypto::sign::PublicKey(public_key), crypto::asymmetricbox::PublicKey(assym_public_key)) = self.public_keys;
+        let (crypto::sign::SecretKey(secret_key), crypto::asymmetricbox::SecretKey(assym_secret_key)) = self.secret_keys;
+        write!(f, "AnMaid( public_keys: ({:?}, {:?}), secret_keys: ({:?}, {:?}), name: {:?} )",
+             public_key, assym_public_key, secret_key.to_vec(), assym_secret_key, self.name)
+    }
 }
 
 impl RoutingTrait for AnMaid {
@@ -126,25 +159,23 @@ impl Decodable for AnMaid {
 }
 
 #[test]
-fn serialisation_an_maid() {
-	let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
-	let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
-																																																																					 let obj_before = AnMaid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType([3u8; 64]));
+fn serialisation_an_maid() {	
+    let obj_before = AnMaid::generate_random();
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
 
 	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
 	let obj_after: AnMaid = d.decode().next().unwrap().unwrap();
+		
+	assert_eq!(obj_before, obj_after);
+}
 
-	let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
-																																																																					 let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
-	let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = obj_before.get_secret_keys();
-	let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = obj_after.get_secret_keys();
-	let NameType(name_before) = *obj_before.get_name();
-	let NameType(name_after) = *obj_after.get_name();
-																																																																					 assert!(compare_u8_array(&name_before, &name_after));
-	assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
-	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-	assert!(compare_u8_array(&sec_sign_arr_before, &sec_sign_arr_after));
-	assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
+#[test]
+fn equality_assertion_an_maid() {
+    let first_obj = AnMaid::generate_random();
+    let second_obj = AnMaid::generate_random();
+    let cloned_obj = second_obj.clone();
+    
+    assert!(first_obj != second_obj);
+    assert!(second_obj == cloned_obj);    
 }
