@@ -26,6 +26,10 @@ use sodiumoxide::crypto;
 use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
+use Random;
+use rand;
+use std::mem;
+use std::fmt;
 
 /// PublicAnMaid
 ///
@@ -44,10 +48,44 @@ use traits::RoutingTrait;
 /// let ref name = pub_an_maid.get_name();
 /// ```
 ///
+#[derive(Clone)]
 pub struct PublicAnMaid {
 	public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 	signature: crypto::sign::Signature,
 	name: NameType,
+}
+
+impl PartialEq for PublicAnMaid {
+    fn eq(&self, other: &PublicAnMaid) -> bool {
+        self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.signature.0.iter())).zip(
+            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.signature.0.iter())))
+            .all(|a| a.0 == a.1) && self.name == other.name
+    }  
+}
+
+impl Random for PublicAnMaid {
+    fn generate_random() -> PublicAnMaid {
+        let (pub_sign_key, _) = crypto::sign::gen_keypair();
+        let (pub_asym_key, _) = crypto::asymmetricbox::gen_keypair();
+        let mut arr: [u8; 64] = unsafe { mem::uninitialized() };
+        for i in 0..64 {
+            arr[i] = rand::random::<u8>();
+        }
+        PublicAnMaid {
+            public_keys: (pub_sign_key, pub_asym_key),
+            signature: crypto::sign::Signature(arr),
+            name: NameType::generate_random()
+        }
+    }
+}
+
+impl fmt::Debug for PublicAnMaid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let (crypto::sign::PublicKey(public_key), crypto::asymmetricbox::PublicKey(assym_public_key)) = self.public_keys;
+        let crypto::sign::Signature(signature) = self.signature;
+        write!(f, "PublicAnMaid( public_keys: ({:?}, {:?}), signature: {:?}, name: {:?} )",
+             public_key, assym_public_key, signature.to_vec(), self.name)
+    }
 }
 
 impl RoutingTrait for PublicAnMaid {
@@ -79,9 +117,9 @@ impl PublicAnMaid {
 						 signature: crypto::sign::Signature,
 						 name: NameType) -> PublicAnMaid {
 		PublicAnMaid {
-		public_keys: public_keys,
-		signature: signature,
-		name: name
+    		public_keys: public_keys,
+    		signature: signature,
+    		name: name
 		}
 	}
 	pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
@@ -123,27 +161,23 @@ impl Decodable for PublicAnMaid {
 
 
 #[test]
-fn serialisation_public_anmaid() {
-	let (pub_sign_key, _) = crypto::sign::gen_keypair();
-	let (pub_asym_key, _) = crypto::asymmetricbox::gen_keypair();
-
-	let obj_before = PublicAnMaid::new((pub_sign_key, pub_asym_key),
-	crypto::sign::Signature([5u8; 64]), NameType([99u8; 64]));
-
+fn serialisation_public_anmaid() {	
+	let obj_before = PublicAnMaid::generate_random();
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
 
 	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
 	let obj_after: PublicAnMaid = d.decode().next().unwrap().unwrap();
+	
+	assert_eq!(obj_before, obj_after);
+}
 
-	let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
-	let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
-	let &crypto::sign::Signature(signature_arr_before) = obj_before.get_signature();
-	let &crypto::sign::Signature(signature_arr_after) = obj_after.get_signature();
-	let NameType(name_before) = *obj_before.get_name();
-	let NameType(name_after) = *obj_after.get_name();
-	assert!(compare_u8_array(&name_before, &name_after));
-	assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
-	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-	assert!(compare_u8_array(&signature_arr_before, &signature_arr_after));
+#[test]
+fn equality_assertion_public_anmaid() {
+    let first_obj = PublicAnMaid::generate_random();
+    let second_obj = PublicAnMaid::generate_random();
+    let cloned_obj = second_obj.clone();
+    
+    assert!(first_obj != second_obj);
+    assert!(second_obj == cloned_obj);   
 }

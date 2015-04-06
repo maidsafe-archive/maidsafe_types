@@ -32,6 +32,7 @@
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
+extern crate rand;
 
 pub mod id;
 pub mod common;
