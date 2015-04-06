@@ -26,6 +26,7 @@ use sodiumoxide::crypto;
 use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
+use Random;
 
 /// Maid
 ///
@@ -58,32 +59,12 @@ pub struct Maid {
     name: NameType,
 }
 
-impl RoutingTrait for Maid {
-    fn get_name(&self) -> NameType {
-        let sign_arr = &(&self.public_keys.0).0;
-        let asym_arr = &(&self.public_keys.1).0;
-
-        let mut arr_combined = [0u8; 64 * 2];
-
-        for i in 0..sign_arr.len() {
-            arr_combined[i] = sign_arr[i];
-        }
-        for i in 0..asym_arr.len() {
-            arr_combined[64 + i] = asym_arr[i];
-        }
-
-        let digest = crypto::hash::sha512::hash(&arr_combined);
-
-        NameType(digest.0)
-    }
-}
-
 impl Maid {
     pub fn generate() -> Maid {
         let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
         let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
 
-        return Maid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType([6u8; 64]));
+        return Maid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType::generate_random());
     }
 
     pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
@@ -120,6 +101,26 @@ impl Maid {
 
     pub fn get_name(&self) -> &NameType {
         &self.name
+    }
+}
+
+impl RoutingTrait for Maid {
+    fn get_name(&self) -> NameType {
+        let sign_arr = &(&self.public_keys.0).0;
+        let asym_arr = &(&self.public_keys.1).0;
+
+        let mut arr_combined = [0u8; 64 * 2];
+
+        for i in 0..sign_arr.len() {
+            arr_combined[i] = sign_arr[i];
+        }
+        for i in 0..asym_arr.len() {
+            arr_combined[64 + i] = asym_arr[i];
+        }
+
+        let digest = crypto::hash::sha512::hash(&arr_combined);
+
+        NameType(digest.0)
     }
 }
 
