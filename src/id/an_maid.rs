@@ -47,11 +47,39 @@ use traits::RoutingTrait;
 /// let ref name = an_maid.get_name();
 /// ```
 ///
-
 pub struct AnMaid {
 	public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 	secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
 	name: NameType,
+}
+
+fn partial_eq_helper(lhs: &AnMaid, rhs: &AnMaid) -> bool {   
+    let lhs_sign_public_key = (lhs.public_keys.0).0;
+    let rhs_sign_public_key = (rhs.public_keys.0).0;
+    
+    let lhs_assym_public_key = (lhs.public_keys.1).0;
+    let rhs_assym_public_key = (rhs.public_keys.1).0;
+    
+    let lhs_sign_secret_key = (lhs.secret_keys.0).0;
+    let rhs_sign_secret_key = (rhs.secret_keys.0).0;
+    
+    let lhs_assym_secret_key = (lhs.secret_keys.1).0;
+    let rhs_assym_secret_key = (rhs.secret_keys.1).0;
+        
+    lhs_sign_public_key.iter().zip(rhs_sign_public_key.iter()).all(|(a,b)| a == b) &&
+    lhs_assym_public_key.iter().zip(rhs_assym_public_key.iter()).all(|(a,b)| a == b) &&
+    lhs_sign_secret_key.iter().zip(rhs_sign_secret_key.iter()).all(|(a,b)| a == b) &&
+    lhs_assym_secret_key.iter().zip(rhs_assym_secret_key.iter()).all(|(a,b)| a == b) &&
+    lhs.name == rhs.name
+}
+
+impl PartialEq for AnMaid {
+    fn eq(&self, other: &AnMaid) -> bool {
+        partial_eq_helper(&self, other)
+    }
+    fn ne(&self, other: &AnMaid) -> bool {
+        !partial_eq_helper(&self, other)
+    }
 }
 
 impl RoutingTrait for AnMaid {
@@ -129,7 +157,7 @@ impl Decodable for AnMaid {
 fn serialisation_an_maid() {
 	let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
 	let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
-																																																																					 let obj_before = AnMaid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType([3u8; 64]));
+    let obj_before = AnMaid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType([3u8; 64]));
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
 
@@ -137,12 +165,12 @@ fn serialisation_an_maid() {
 	let obj_after: AnMaid = d.decode().next().unwrap().unwrap();
 
 	let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
-																																																																					 let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
+    let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
 	let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = obj_before.get_secret_keys();
 	let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = obj_after.get_secret_keys();
 	let NameType(name_before) = *obj_before.get_name();
 	let NameType(name_after) = *obj_after.get_name();
-																																																																					 assert!(compare_u8_array(&name_before, &name_after));
+    assert!(compare_u8_array(&name_before, &name_after));
 	assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
 	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
 	assert!(compare_u8_array(&sec_sign_arr_before, &sec_sign_arr_after));
