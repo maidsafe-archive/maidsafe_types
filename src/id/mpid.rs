@@ -25,7 +25,8 @@ use sodiumoxide::crypto;
 use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
-
+use std::fmt;
+use Random;
 
 /// Mpid
 ///
@@ -53,9 +54,46 @@ use traits::RoutingTrait;
 /// let name: &maidsafe_types::NameType = mpid.get_name();
 /// ```
 pub struct Mpid {
-public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-name: NameType
+	public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+	secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+	name: NameType
+}
+
+impl Clone for Mpid {
+	fn clone(&self) -> Self {
+		Mpid {
+			public_keys: self.public_keys.clone(),
+			secret_keys: self.secret_keys.clone(),
+			name: self.name.clone()
+		}
+	}
+}
+
+impl PartialEq for Mpid {
+	fn eq(&self, other: &Mpid) -> bool {
+        self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.secret_keys.0 .0.iter().chain(self.secret_keys.1 .0.iter()))).zip(
+            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.secret_keys.0 .0.iter().chain(other.secret_keys.1 .0.iter())))).all(|a| a.0 == a.1) &&
+            self.name == other.name
+    }
+}
+
+impl fmt::Debug for Mpid {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Mpid {{ public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}), name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(), 
+        	self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec(), self.name)
+    }
+}
+
+impl Random for Mpid {
+	fn generate_random() -> Mpid {
+        let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
+        let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();        
+		Mpid {
+			public_keys: (sign_pub_key, asym_pub_key),
+			secret_keys: (sign_sec_key, asym_sec_key),
+			name: NameType::generate_random()
+		}
+	}
 }
 
 impl RoutingTrait for Mpid {
@@ -152,4 +190,13 @@ fn serialisation_mpid() {
 	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
 	assert!(compare_u8_array(&sec_sign_arr_before, &sec_sign_arr_after));
 	assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
+}
+
+#[test]
+fn equality_assertion_mpid() {
+	let mpid_first = Mpid::generate_random();
+	let mpid_second = mpid_first.clone();
+	let mpid_third = Mpid::generate_random();
+	assert_eq!(mpid_first, mpid_second);
+	assert!(mpid_first != mpid_third);
 }
