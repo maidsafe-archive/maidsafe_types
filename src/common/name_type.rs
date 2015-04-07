@@ -47,6 +47,7 @@ use Random;
 pub struct NameType(pub [u8; 64]);
 
 impl NameType {
+   #[allow(dead_code)]
    fn closer_to_target(lhs: &NameType, rhs: &NameType, target: &NameType) -> bool {
         for i in 0..lhs.0.len() {
             let res_0 = lhs.0[i] ^ target.0[i];
@@ -161,5 +162,14 @@ mod test {
     fn name_type_validity_assertion() {
         assert!(NameType([1u8;64]).is_valid());
         assert!(!NameType([0u8; 64]).is_valid());
+    }
+
+    #[test]
+    fn closer_to_target() {
+        let obj0 = NameType::generate_random();
+        let obj0_clone = obj0.clone();
+        let obj1 = NameType::generate_random();
+        assert!(NameType::closer_to_target(&obj0_clone, &obj1, &obj0));
+        assert!(!NameType::closer_to_target(&obj1, &obj0_clone, &obj0));
     }
 }
