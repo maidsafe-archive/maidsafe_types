@@ -15,14 +15,20 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
+extern crate rand;
+
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use helper::*;
 use std::cmp::*;
+use std::mem;
+use std::fmt;
+use Random;
 
 /// NameType struct
 ///
@@ -38,39 +44,61 @@ use std::cmp::*;
 /// // de-reference id value from the NameType
 /// let maidsafe_types::NameType(id) = name_type;
 /// ```
-#[derive(Eq)]
 pub struct NameType(pub [u8; 64]);
+
+impl NameType {
+   #[allow(dead_code)]
+   fn closer_to_target(lhs: &NameType, rhs: &NameType, target: &NameType) -> bool {
+        for i in 0..lhs.0.len() {
+            let res_0 = lhs.0[i] ^ target.0[i];
+            let res_1 = rhs.0[i] ^ target.0[i];
+
+            if res_0 != res_1 {
+                return res_0 < res_1
+            }
+        }
+        false
+    }
+
+    pub fn new(id: [u8;64]) -> NameType {
+        NameType(id)
+    }
+
+    pub fn get_id(&self) -> [u8;64] {
+        self.0
+    }
+
+    pub fn is_valid(&self) -> bool {
+        for it in self.0.iter() {
+            if *it != 0 {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+impl Random for NameType {
+     fn generate_random() -> NameType {
+        let mut arr: [u8; 64] = unsafe { mem::uninitialized() };
+        for i in 0..64 {
+            arr[i] = rand::random::<u8>();
+        }
+        NameType(arr)
+    }
+}
+
+impl fmt::Debug for NameType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.0.to_vec())
+    }
+}
 
 impl PartialEq for NameType {
   fn eq(&self, other: &NameType) -> bool {
   	self.0.iter().zip(other.0.iter()).all(|(a,b)| a == b) 
   }
-  fn ne(&self, other: &NameType) -> bool {
-    !self.0.iter().zip(other.0.iter()).all(|(a,b)| a == b)
-  }
 }
-    
-
-impl NameType {
-
-  pub fn new(id: [u8;64]) -> NameType {
-    NameType(id)
-  }
-
-  pub fn get_id(&self) -> [u8;64] {
-    self.0
-  }
-  
-  pub fn is_valid(&self) -> bool {
-  	for it in self.0.iter() {
-    if *it != 0 {
-      return true;
-    }
-   }
-   false
-  }
-}
-
 
 impl Clone for NameType {
   fn clone(&self) -> Self {
@@ -101,27 +129,47 @@ impl Decodable for NameType {
   }
 }
 
-#[test]
-fn serialisation_name_type() {
-  let obj_before = NameType([99u8; 64]);
-  let mut e = cbor::Encoder::from_memory();
-  e.encode(&[&obj_before]).unwrap();
+#[cfg(test)]
+mod test {
+    extern crate cbor;
 
-  let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-  let obj_after: NameType = d.decode().next().unwrap().unwrap();
-  assert!(obj_before == obj_after);
-}
+    use Random;
+    use super::*;
 
-#[test]
-fn name_type_equal_assertion() {
-	let type1 = NameType([1u8;64]);
-	let type2 = NameType([1u8;64]);
-	let type3 = NameType([2u8;64]);
-	assert!(type1 == type2);
-	assert!(type1 != type3);
-}
+    #[test]
+    fn serialisation_name_type() {
+      let obj_before = NameType::generate_random();
+      let mut e = cbor::Encoder::from_memory();
+      e.encode(&[&obj_before]).unwrap();
 
-#[test]
-fn name_type_validity_assertion() {
-	assert!(NameType([1u8;64]).is_valid());
+      let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+      let obj_after: NameType = d.decode().next().unwrap().unwrap();
+      assert_eq!(obj_before, obj_after);
+    }
+
+    #[test]
+    fn name_type_equal_assertion() {
+        let type1 = NameType::generate_random();
+        let type1_clone = type1.clone();
+        let type2 = NameType::generate_random();
+        assert_eq!(type1, type1_clone);
+        assert!(type1 == type1_clone);
+        assert!(!(type1 != type1_clone));
+        assert!(type1 != type2);
+    }
+
+    #[test]
+    fn name_type_validity_assertion() {
+        assert!(NameType([1u8;64]).is_valid());
+        assert!(!NameType([0u8; 64]).is_valid());
+    }
+
+    #[test]
+    fn closer_to_target() {
+        let obj0 = NameType::generate_random();
+        let obj0_clone = obj0.clone();
+        let obj1 = NameType::generate_random();
+        assert!(NameType::closer_to_target(&obj0_clone, &obj1, &obj0));
+        assert!(!NameType::closer_to_target(&obj1, &obj0_clone, &obj0));
+    }
 }

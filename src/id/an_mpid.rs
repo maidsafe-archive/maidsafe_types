@@ -19,6 +19,7 @@
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
+extern crate rand;
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -26,6 +27,8 @@ use sodiumoxide::crypto;
 use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
+use Random;
+use std::fmt;
 
 /// AnMpid
 ///
@@ -45,6 +48,7 @@ use traits::RoutingTrait;
 /// let ref name = an_mpid.get_name();
 /// ```
 ///
+#[derive(Clone)]
 pub struct AnMpid {
 	public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 	secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
@@ -75,6 +79,33 @@ impl RoutingTrait for AnMpid {
     }
 }
 
+impl fmt::Debug for AnMpid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "AnMpid {{ public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}), name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(), 
+        	self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec(), self.name)
+    }
+}
+
+impl PartialEq for AnMpid {
+	fn eq(&self, other: &AnMpid) -> bool {
+		self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.secret_keys.0 .0.iter().chain(self.secret_keys.1 .0.iter()))).zip(
+            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.secret_keys.0 .0.iter().chain(other.secret_keys.1 .0.iter())))).all(|a| a.0 == a.1) &&
+            self.name == other.name	
+	}
+}
+
+impl Random for AnMpid {
+	fn generate_random() -> AnMpid {
+        let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
+        let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();        
+		AnMpid {
+			public_keys: (sign_pub_key, asym_pub_key),
+			secret_keys: (sign_sec_key, asym_sec_key),
+			name: NameType::generate_random()
+		}
+	}
+}
+
 impl AnMpid {
 	pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 						 secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
@@ -102,11 +133,11 @@ impl Encodable for AnMpid {
 		let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
 
 		CborTagEncode::new(5483_001, &(
-				array_as_vector(&pub_sign_vec),
-					array_as_vector(&pub_asym_vec),
-					array_as_vector(&sec_sign_vec),
-					array_as_vector(&sec_asym_vec),
-				&self.name)).encode(e)
+			array_as_vector(&pub_sign_vec),
+			array_as_vector(&pub_asym_vec),
+			array_as_vector(&sec_sign_vec),
+			array_as_vector(&sec_asym_vec),
+			&self.name)).encode(e)
 	}
 }
 
@@ -124,27 +155,21 @@ impl Decodable for AnMpid {
 
 #[test]
 fn serialisation_an_mpid() {
-	let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
-	let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
-
-																																																																					 let obj_before = AnMpid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), NameType([3u8; 64]));
-
+	let obj_before = AnMpid::generate_random();
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
 
 	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
 	let obj_after: AnMpid = d.decode().next().unwrap().unwrap();
 
-	let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
-																																																																					 let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
-	let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = obj_before.get_secret_keys();
-	let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = obj_after.get_secret_keys();
-	let NameType(name_before) = *obj_before.get_name();
-	let NameType(name_after) = *obj_after.get_name();
+	assert_eq!(obj_before, obj_after);
+}
 
-																																																																					 assert!(compare_u8_array(&name_before, &name_after));
-	assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
-	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-	assert!(compare_u8_array(&sec_sign_arr_before, &sec_sign_arr_after));
-	assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
+#[test] 
+fn equality_assertion_an_mpid() {	
+	let an_maid_first = AnMpid::generate_random();
+	let an_maid_second = an_maid_first.clone();
+	let an_maid_third = AnMpid::generate_random();
+	assert_eq!(an_maid_first, an_maid_second);
+	assert!(an_maid_first != an_maid_third);
 }

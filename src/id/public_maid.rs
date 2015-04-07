@@ -18,6 +18,7 @@
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
+extern crate rand;
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -25,6 +26,9 @@ use sodiumoxide::crypto;
 use helper::*;
 use common::NameType;
 use traits::RoutingTrait;
+use std::fmt;
+use Random;
+use std::mem;
 
 /// PublicMaid
 ///
@@ -60,6 +64,8 @@ use traits::RoutingTrait;
 /// // getting PublicMaid::name
 /// let name: &maidsafe_types::NameType = public_maid.get_name();
 /// ```
+
+#[derive(Clone)]
 pub struct PublicMaid {
 	public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 	maid_signature: crypto::sign::Signature,
@@ -90,6 +96,42 @@ impl RoutingTrait for PublicMaid {
     fn get_owner(&self) -> Option<Vec<u8>> {
         Some(array_as_vector(&self.owner.0))
     }
+}
+
+impl PartialEq for PublicMaid {
+	fn eq(&self, other: &PublicMaid) -> bool {
+        self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.maid_signature.0 .iter().chain(self.signature.0 .iter()))).zip(
+            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.maid_signature.0 .iter().chain(other.signature.0 .iter())))).all(|a| a.0 == a.1) &&
+            self.name == other.name
+    }
+}
+
+impl fmt::Debug for PublicMaid {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "PublicMaid {{ public_keys:({:?}, {:?}), maid_signature:{:?}, owner:{:?}, signature:{:?}, name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(), 
+        	self.maid_signature.0.to_vec(), self.owner, self.signature.0.to_vec(), self.name)
+    }
+}
+
+impl Random for PublicMaid {
+	fn generate_random() -> PublicMaid {
+        let (sign_pub_key, _) = crypto::sign::gen_keypair();
+        let (asym_pub_key, _) = crypto::asymmetricbox::gen_keypair();        
+        let mut maid_signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
+        let mut signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
+        for i in 0..64 {
+            maid_signature_arr[i] = rand::random::<u8>();
+            signature_arr[i] = rand::random::<u8>();
+        }
+
+		PublicMaid {
+			public_keys: (sign_pub_key, asym_pub_key),
+			maid_signature: crypto::sign::Signature(maid_signature_arr),
+			owner: NameType::generate_random(),
+			signature: crypto::sign::Signature(signature_arr),
+			name: NameType::generate_random()
+		}
+	}
 }
 
 impl PublicMaid {
@@ -134,12 +176,12 @@ impl Encodable for PublicMaid {
 		let crypto::sign::Signature(maid_signature) = self.maid_signature;
 		let crypto::sign::Signature(signature) = self.signature;
 		CborTagEncode::new(5483_001, &(
-				array_as_vector(&pub_sign_vec),
-					array_as_vector(&pub_asym_vec),
-					array_as_vector(&maid_signature),
-				&self.owner,
-					array_as_vector(&signature),
-				&self.name)).encode(e)
+			array_as_vector(&pub_sign_vec),
+			array_as_vector(&pub_asym_vec),
+			array_as_vector(&maid_signature),
+			&self.owner,
+			array_as_vector(&signature),
+			&self.name)).encode(e)
 	}
 }
 
@@ -158,11 +200,7 @@ impl Decodable for PublicMaid {
 
 #[test]
 fn serialisation_public_maid() {
-	let (pub_sign_key, _) = crypto::sign::gen_keypair();
-	let (pub_asym_key, _) = crypto::asymmetricbox::gen_keypair();
-
-	let obj_before = PublicMaid::new((pub_sign_key, pub_asym_key), crypto::sign::Signature([5u8; 64]),
-	NameType([5u8; 64]), crypto::sign::Signature([5u8; 64]), NameType([3u8; 64]));
+	let obj_before = PublicMaid::generate_random();
 
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
@@ -170,17 +208,14 @@ fn serialisation_public_maid() {
 	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
 	let obj_after: PublicMaid = d.decode().next().unwrap().unwrap();
 
-	let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
-	let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
-	let (&crypto::sign::Signature(maid_signature_before), &crypto::sign::Signature(maid_signature_after)) = (obj_before.get_maid_signature(), obj_after.get_maid_signature());
-	let (&crypto::sign::Signature(signature_before), &crypto::sign::Signature(signature_after)) = (obj_before.get_signature(), obj_after.get_signature());
-	let (&NameType(name_before), &NameType(name_after)) = (obj_before.get_name(), obj_after.get_name());
-	let (&NameType(owner_before), &NameType(owner_after)) = (obj_after.get_owner(), obj_after.get_owner());
+	assert_eq!(obj_before, obj_after);
+}
 
-	assert!(compare_u8_array(&name_before, &name_after));
-	assert!(compare_u8_array(&owner_before, &owner_after));
-	assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
-	assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-	assert!(compare_u8_array(&maid_signature_before, &maid_signature_after));
-	assert!(compare_u8_array(&signature_before, &signature_after));
+#[test]
+fn equality_assertion_public_maid() {
+	let public_maid_first = PublicMaid::generate_random();
+	let public_maid_second = public_maid_first.clone();
+	let public_maid_third = PublicMaid::generate_random();
+	assert_eq!(public_maid_first, public_maid_second);
+	assert!(public_maid_first != public_maid_third);
 }

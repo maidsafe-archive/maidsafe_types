@@ -18,12 +18,14 @@
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
+extern crate rand;
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use common::NameType;
 use traits::RoutingTrait;
 use helper::*;
+use Random;
 
 /// StructuredData
 ///
@@ -43,9 +45,29 @@ use helper::*;
 /// let ref value = structured_data.get_value();
 /// ```
 ///
+#[derive(Clone, PartialEq, Debug)]
 pub struct StructuredData {
 	name: (NameType, NameType),  /// name + owner of this StructuredData
 	value: Vec<Vec<NameType>>,
+}
+
+impl Random for StructuredData {
+    fn generate_random() -> StructuredData {
+        let outer_limit = rand::random::<u8>() as usize;
+        let mut outer = Vec::<Vec<NameType>>::with_capacity(outer_limit);
+        for _ in 0..rand::random::<u8>() {
+            let inner_limit = rand::random::<u8>() as usize;
+            let mut inner = Vec::<NameType>::with_capacity(inner_limit);
+            for _ in 0..inner_limit {
+                inner.push(NameType::generate_random());
+            }
+            outer.push(inner);
+        }
+        StructuredData {
+            name: (NameType::generate_random(), NameType::generate_random()),
+            value: outer,
+        }
+    }
 }
 
 impl RoutingTrait for StructuredData {
@@ -75,7 +97,7 @@ impl StructuredData {
 
 impl Encodable for StructuredData {
 	fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
-				CborTagEncode::new(5483_002, &(&self.name, &self.value)).encode(e)
+		CborTagEncode::new(5483_002, &(&self.name, &self.value)).encode(e)
 	}
 }
 
@@ -89,22 +111,17 @@ impl Decodable for StructuredData {
 
 #[test]
 fn serialisation_structured_data() {
-	let mut value = Vec::new();
-	value.push(Vec::new());
-	match value.last_mut() {
-		Some(v) => v.push(NameType([7u8; 64])),
-		None => ()
-	}
-	let obj_before = StructuredData::new((NameType([3u8; 64]), NameType([5u8; 64])), value);
+	let obj_before = StructuredData::generate_random();
+    let obj_before_clone = obj_before.clone();
+	let obj_before1 = StructuredData::generate_random();
+
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
 
 	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
 	let obj_after: StructuredData = d.decode().next().unwrap().unwrap();
 
-  let name_before = obj_before.get_name();
-  let name_after = obj_after.get_name();
-  	
-	assert!(name_before.0 == name_after.0);
-	assert!(name_before.1 == name_after.1);
+	assert_eq!(obj_before, obj_after);
+	assert!(!(obj_before != obj_before_clone));
+	assert!(obj_before != obj_before1);
 }

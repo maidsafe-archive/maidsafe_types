@@ -33,6 +33,7 @@
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
+extern crate rand;
 
 pub mod id;
 pub mod common;
@@ -46,6 +47,10 @@ pub use data::{ImmutableData, StructuredData};
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+
+pub trait Random {
+    fn generate_random() -> Self;
+}
 
 fn array_as_vector(arr: &[u8]) -> Vec<u8> {
   let mut vector = Vec::new();
