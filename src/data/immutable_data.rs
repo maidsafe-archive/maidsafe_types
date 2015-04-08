@@ -51,6 +51,10 @@ impl RoutingTrait for ImmutableData {
         let digest = crypto::hash::sha512::hash(&self.name.0);
         NameType(digest.0)
 	}
+
+    fn get_type_id(&self) -> Option<u64> {
+        Some(0)
+    }
 }
 
 impl PartialEq for ImmutableData {

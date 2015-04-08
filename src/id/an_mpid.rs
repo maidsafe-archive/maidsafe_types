@@ -77,6 +77,10 @@ impl RoutingTrait for AnMpid {
     fn get_owner(&self) -> Option<Vec<u8>> {
         Some(array_as_vector(&self.name.0))
     }
+
+    fn get_type_id(&self) -> Option<u64> {
+        Some(6)
+    }
 }
 
 impl fmt::Debug for AnMpid {

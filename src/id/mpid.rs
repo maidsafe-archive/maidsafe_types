@@ -105,6 +105,10 @@ impl RoutingTrait for Mpid {
 
         NameType(digest.0)
     }
+
+    fn get_type_id(&self) -> Option<u64> {
+        Some(7)
+    }
 }
 
 impl Mpid {
