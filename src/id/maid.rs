@@ -147,6 +147,10 @@ impl RoutingTrait for Maid {
 
         NameType(digest.0)
     }
+
+    fn get_type_id(&self) -> Option<u64> {
+        Some(3)
+    }
 }
 
 impl Encodable for Maid {
