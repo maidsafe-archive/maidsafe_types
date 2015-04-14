@@ -19,7 +19,6 @@
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
-extern crate core;
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -36,7 +35,8 @@ use Random;
 ///
 /// ```
 /// // Create an ImmutableData using the new function.
-/// let immutable_data = maidsafe_types::ImmutableData::new(maidsafe_types::NameType([0u8; 64]),  vec![99u8; 10]);
+/// use maidsafe_types::traits::RoutingTrait;
+/// let immutable_data = maidsafe_types::ImmutableData::new(vec![99u8; 10]);
 /// // Retrieving values
 /// let ref name_type = immutable_data.get_name();
 /// let ref value = immutable_data.get_value();
@@ -86,13 +86,14 @@ impl ImmutableData {
 #[allow(unused_variables)]
 impl Random for ImmutableData {
     fn generate_random() -> ImmutableData {
-        let mut data = Vec::with_capacity(64);
-        for i in 0..data.len() {
-            data.push(rand::random::<u8>());
+        use rand::Rng;
+        let size = 64;
+        let mut data = Vec::with_capacity(size);
+        let mut rng = rand::thread_rng();
+        for i in 0..size {
+            data.push(rng.gen());
         }
-        ImmutableData {
-            value: data,
-        }
+        ImmutableData::new(data)
     }
 }
 
@@ -116,24 +117,17 @@ mod test {
     use cbor::{ Encoder, Decoder};
     use rustc_serialize::{Decodable, Encodable};
     use Random;
-    use common::NameType;
 
     #[test]
     fn creation() {
-        let ascii = "012456789ABCDEF".to_string().into_bytes();
+        use rustc_serialize::hex::ToHex;
         let data = "this is a known string".to_string().into_bytes();
-        let expected_name = "c937425f55ed0096a97eea1ccb5585d0242c517afe\
-                             eb9a18f8f5a209adc852213fa6b210694f1b86f55b\
-                             8cfc35b8d9c577af61e0304e79c10bfc1e4661d9ae15".to_string();
+        let expected_name = "8758b09d420bdb901d68fdd6888b38ce9ede06aad7f\
+                             e1e0ea81feffc76260554b9d46fb6ea3b169ff8bb02\
+                             ef14a03a122da52f3063bcb1bfb22cffc614def522".to_string();
         let chunk = ImmutableData::new(data);
-        let actual_name =
-            chunk.calculate_name().0.iter()
-                                    .fold(Vec::<u8>::new(), |mut value, byte| {
-                                        value.push(*ascii.iter().skip((byte & 0x0F) as usize).take(1).next().unwrap());
-                                        value.push(*ascii.iter().skip((byte >> 4) as usize).take(1).next().unwrap());
-                                        value
-                                     });
-        assert_eq!(&expected_name, String::from_utf8(actual_name).as_ref().unwrap());
+        let actual_name = chunk.calculate_name().0.as_ref().to_hex();
+        assert_eq!(&expected_name, &actual_name);
     }
 
     #[test]
