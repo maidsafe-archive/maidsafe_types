@@ -30,6 +30,8 @@
 //! 
 //! [Project github page](https://github.com/dirvine/maidsafe_types) 
 
+#![feature(core)]
+
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
