@@ -1,34 +1,34 @@
-/*  Copyright 2014 MaidSafe.net limited
-
-    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
-    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
-    licence you accepted on initial access to the Software (the "Licences").
-
-    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
-    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
-    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
-    available at: http://www.maidsafe.net/licenses
-
-    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
-    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
-    OF ANY KIND, either express or implied.
-
-    See the Licences for the specific language governing permissions and limitations relating to
-    use of the MaidSafe Software.                                                                 */
+// Copyright 2015 MaidSafe.net limited
+//
+// This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License, version
+// 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which licence you
+// accepted on initial access to the Software (the "Licences").
+//
+// By contributing code to the MaidSafe Software, or to this project generally, you agree to be
+// bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
+// directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at
+// http://maidsafe.net/licenses
+//
+// Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
+// under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.
+//
+// See the Licences for the specific language governing permissions and limitations relating to use
+// of the MaidSafe Software.
 
 #![crate_name = "maidsafe_types"]
 #![crate_type = "lib"]
 #![doc(html_logo_url = "http://maidsafe.net/img/Resources/branding/maidsafe_logo.fab2.png",
        html_favicon_url = "http://maidsafe.net/img/favicon.ico",
               html_root_url = "http://dirvine.github.io/dirvine/maidsafe_types/")]
-//! #Safe Network Data Types  
-//! 
+//! #Safe Network Data Types
+//!
 //! This library implements the fundimental data types used on the SAFE Network
 //! The serialisation mechnism used is ``cbor``` which is an IETF Rfc [7049](http://tools.ietf.org/html/rfc7049)
 //! for serialising data and is an attempt to upgrade messagepack and ASN.1
 //! On disk serialisation is [JSON](https://www.ietf.org/rfc/rfc4627.txt)
-//! 
-//! [Project github page](https://github.com/dirvine/maidsafe_types) 
+//!
+//! [Project github page](https://github.com/dirvine/maidsafe_types)
 
 extern crate rustc_serialize;
 extern crate sodiumoxide;
@@ -83,7 +83,7 @@ impl Encodable for PayloadTypeTag {
       PayloadTypeTag::PublicMaid => type_tag = "PublicMaid",
       PayloadTypeTag::PublicAnMaid => type_tag = "PublicAnMaid",
       PayloadTypeTag::ImmutableData => type_tag = "ImmutableData",
-      PayloadTypeTag::StructuredData => type_tag = "StructuredData",     
+      PayloadTypeTag::StructuredData => type_tag = "StructuredData",
       PayloadTypeTag::Unknown => type_tag = "Unknown",
     };
     CborTagEncode::new(5483_100, &(&type_tag)).encode(e)
