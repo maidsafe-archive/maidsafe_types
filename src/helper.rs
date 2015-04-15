@@ -45,3 +45,6 @@ pub fn vector_as_u8_64_array(vector: Vec<u8>) -> [u8;64] {
 pub fn compare_u8_array(lhs: &[u8], rhs: &[u8])->bool {
   lhs.iter().zip(rhs.iter()).all(|(a,b)| a == b)
 }
+#[test]
+fn dummy()  {
+}

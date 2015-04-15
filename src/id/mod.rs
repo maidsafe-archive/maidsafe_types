@@ -31,3 +31,6 @@ pub use self::mpid::*;
 pub use self::public_maid::*;
 pub use self::public_mpid::*;
 pub use self::public_an_maid::*;
+#[test]
+fn dummy()  {
+}
