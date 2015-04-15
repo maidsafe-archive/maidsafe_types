@@ -30,3 +30,6 @@ pub trait RoutingTrait {
 	fn refresh(&self)->bool { false } // is this an account transfer type
 	fn merge(&self)->bool { false } // how do we merge these
 }
+#[test]
+fn dummy()  {
+}

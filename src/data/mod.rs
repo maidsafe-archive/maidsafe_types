@@ -20,3 +20,6 @@ mod structured_data;
 mod immutable_data;
 pub use self::structured_data::*;
 pub use self::immutable_data::*;
+#[test]
+fn dummy()  {
+}

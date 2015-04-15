@@ -18,3 +18,6 @@
 
 mod name_type;
 pub use self::name_type::*;
+#[test]
+fn dummy()  {
+}
