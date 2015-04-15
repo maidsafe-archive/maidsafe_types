@@ -1,20 +1,20 @@
-/*  Copyright 2014 MaidSafe.net limited
-
-    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
-    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
-    licence you accepted on initial access to the Software (the "Licences").
-
-    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
-    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
-    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
-    available at: http://www.maidsafe.net/licenses
-
-    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
-    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
-    OF ANY KIND, either express or implied.
-
-    See the Licences for the specific language governing permissions and limitations relating to
-    use of the MaidSafe Software.                                                                 */
+// Copyright 2015 MaidSafe.net limited
+//
+// This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License, version
+// 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which licence you
+// accepted on initial access to the Software (the "Licences").
+//
+// By contributing code to the MaidSafe Software, or to this project generally, you agree to be
+// bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
+// directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at
+// http://maidsafe.net/licenses
+//
+// Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
+// under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.
+//
+// See the Licences for the specific language governing permissions and limitations relating to use
+// of the MaidSafe Software.
 
 extern crate rustc_serialize;
 extern crate sodiumoxide;
@@ -60,7 +60,7 @@ impl PartialEq for PublicAnMaid {
         self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.signature.0.iter())).zip(
             other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.signature.0.iter())))
             .all(|a| a.0 == a.1) && self.name == other.name
-    }  
+    }
 }
 
 impl Random for PublicAnMaid {
@@ -161,14 +161,14 @@ impl Decodable for PublicAnMaid {
 
 
 #[test]
-fn serialisation_public_anmaid() {	
+fn serialisation_public_anmaid() {
 	let obj_before = PublicAnMaid::generate_random();
 	let mut e = cbor::Encoder::from_memory();
 	e.encode(&[&obj_before]).unwrap();
 
 	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
 	let obj_after: PublicAnMaid = d.decode().next().unwrap().unwrap();
-	
+
 	assert_eq!(obj_before, obj_after);
 }
 
@@ -177,7 +177,7 @@ fn equality_assertion_public_anmaid() {
     let first_obj = PublicAnMaid::generate_random();
     let second_obj = PublicAnMaid::generate_random();
     let cloned_obj = second_obj.clone();
-    
+
     assert!(first_obj != second_obj);
-    assert!(second_obj == cloned_obj);   
+    assert!(second_obj == cloned_obj);
 }

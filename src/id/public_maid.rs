@@ -1,20 +1,21 @@
-/*  Copyright 2014 MaidSafe.net limited
+// Copyright 2015 MaidSafe.net limited
+//
+// This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License, version
+// 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which licence you
+// accepted on initial access to the Software (the "Licences").
+//
+// By contributing code to the MaidSafe Software, or to this project generally, you agree to be
+// bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
+// directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at
+// http://maidsafe.net/licenses
+//
+// Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
+// under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.
+//
+// See the Licences for the specific language governing permissions and limitations relating to use
+// of the MaidSafe Software.
 
-    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
-    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
-    licence you accepted on initial access to the Software (the "Licences").
-
-    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
-    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
-    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
-    available at: http://www.maidsafe.net/licenses
-
-    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
-    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
-    OF ANY KIND, either express or implied.
-
-    See the Licences for the specific language governing permissions and limitations relating to
-    use of the MaidSafe Software.                                                                 */
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
@@ -108,7 +109,7 @@ impl PartialEq for PublicMaid {
 
 impl fmt::Debug for PublicMaid {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "PublicMaid {{ public_keys:({:?}, {:?}), maid_signature:{:?}, owner:{:?}, signature:{:?}, name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(), 
+        write!(f, "PublicMaid {{ public_keys:({:?}, {:?}), maid_signature:{:?}, owner:{:?}, signature:{:?}, name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
         	self.maid_signature.0.to_vec(), self.owner, self.signature.0.to_vec(), self.name)
     }
 }
@@ -116,7 +117,7 @@ impl fmt::Debug for PublicMaid {
 impl Random for PublicMaid {
 	fn generate_random() -> PublicMaid {
         let (sign_pub_key, _) = crypto::sign::gen_keypair();
-        let (asym_pub_key, _) = crypto::asymmetricbox::gen_keypair();        
+        let (asym_pub_key, _) = crypto::asymmetricbox::gen_keypair();
         let mut maid_signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
         let mut signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
         for i in 0..64 {
