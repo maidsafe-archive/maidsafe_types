@@ -24,8 +24,6 @@ use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
-use common::NameType;
-use traits::RoutingTrait;
 use Random;
 use std::fmt;
 
@@ -39,143 +37,127 @@ use std::fmt;
 /// extern crate sodiumoxide;
 /// extern crate maidsafe_types;
 /// // Generating publick and secret keys using sodiumoxide
-/// let (pub_sign_key, sec_sign_key) = sodiumoxide::crypto::sign::gen_keypair();
-/// let (pub_asym_key, sec_asym_key) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
 /// // Create AnMaid
-/// let an_maid = maidsafe_types::AnMaid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), maidsafe_types::NameType([3u8; 64]));
+/// let an_maid : maidsafe_types::AnMaid = maidsafe_types::Random::generate_random();
 /// // Retrieving the values
-/// let ref publicKeys = an_maid.get_public_keys();
-/// let ref secretKeys = an_maid.get_secret_keys();
-/// let ref name = an_maid.get_name();
+/// let ref publicKeys = an_maid.get_public_key();
 /// ```
 ///
 #[derive(Clone)]
 pub struct AnMaid {
-	public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-	secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-	name: NameType,
+    public_key: crypto::sign::PublicKey,
+    secret_key: crypto::sign::SecretKey
 }
 
 impl PartialEq for AnMaid {
     fn eq(&self, other: &AnMaid) -> bool {
-        self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.secret_keys.0 .0.iter().chain(self.secret_keys.1 .0.iter()))).zip(
-            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.secret_keys.0 .0.iter().chain(other.secret_keys.1 .0.iter())))).all(|a| a.0 == a.1) &&
-            self.name == other.name
+        // Private key is mathematically linked, so just check public key
+        let mut compare_public = self.public_key.0.iter().zip(other.public_key.0.iter());
+        compare_public.all(|(&a, &b)| a == b)
     }
 }
 
 impl Random for AnMaid {
     fn generate_random() -> AnMaid {
         let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
-        let (pub_asym_key, sec_asym_key) = crypto::asymmetricbox::gen_keypair();
 
         AnMaid {
-            public_keys: (pub_sign_key, pub_asym_key),
-            secret_keys: (sec_sign_key, sec_asym_key),
-            name: NameType::generate_random()
+            public_key: pub_sign_key,
+            secret_key: sec_sign_key
         }
     }
 }
-
 
 impl fmt::Debug for AnMaid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let (crypto::sign::PublicKey(public_key), crypto::asymmetricbox::PublicKey(assym_public_key)) = self.public_keys;
-        let (crypto::sign::SecretKey(secret_key), crypto::asymmetricbox::SecretKey(assym_secret_key)) = self.secret_keys;
-        write!(f, "AnMaid( public_keys: ({:?}, {:?}), secret_keys: ({:?}, {:?}), name: {:?} )",
-             public_key, assym_public_key, secret_key.to_vec(), assym_secret_key, self.name)
-    }
-}
-
-impl RoutingTrait for AnMaid {
-    fn get_name(&self) -> NameType {
-        let sign_arr = &(&self.public_keys.0).0;
-        let asym_arr = &(&self.public_keys.1).0;
-
-        let mut arr_combined = [0u8; 64 * 2];
-
-        for i in 0..sign_arr.len() {
-            arr_combined[i] = sign_arr[i];
-        }
-        for i in 0..asym_arr.len() {
-            arr_combined[64 + i] = asym_arr[i];
-        }
-
-        let digest = crypto::hash::sha512::hash(&arr_combined);
-
-        NameType(digest.0)
-    }
-
-    fn get_owner(&self) -> Option<Vec<u8>> {
-        Some(array_as_vector(&self.name.0))
+        let crypto::sign::PublicKey(ref public_key) = self.public_key;
+        write!(f, "AnMaid( public_key: {:?} )", public_key)
     }
 }
 
 impl AnMaid {
-	pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-						 secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-						 name_type: NameType) -> AnMaid {
-		AnMaid {
-			public_keys: public_keys,
-			secret_keys: secret_keys,
-			name: name_type
-		}
-	}
-	pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
-		&self.public_keys
-	}
-	pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
-		&self.secret_keys
-	}
-	pub fn get_name(&self) -> &NameType {
-		&self.name
-	}
+    pub fn get_public_key(&self) -> &crypto::sign::PublicKey {
+        &self.public_key
+    }
+
+    pub fn sign(&self, data : &[u8]) -> Vec<u8> {
+        return crypto::sign::sign(&data, &self.secret_key)
+    }
 }
 
 impl Encodable for AnMaid {
-	fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-		let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
-		let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
+    fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+        let crypto::sign::PublicKey(ref pub_sign_vec) = self.public_key;
+        let crypto::sign::SecretKey(ref sec_sign_vec) = self.secret_key;
 
-		CborTagEncode::new(5483_001, &(
-            array_as_vector(&pub_sign_vec),
-            array_as_vector(&pub_asym_vec),
-            array_as_vector(&sec_sign_vec),
-            array_as_vector(&sec_asym_vec),
-            &self.name)).encode(e)
-	}
+        CborTagEncode::new(5483_001, &(
+            array_as_vector(pub_sign_vec),
+            array_as_vector(sec_sign_vec))).encode(e)
+    }
 }
 
 impl Decodable for AnMaid {
-	fn decode<D: Decoder>(d: &mut D)-> Result<AnMaid, D::Error> {
-		try!(d.read_u64());
-		let(pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec, name) = try!(Decodable::decode(d));
-		let pub_keys = (crypto::sign::PublicKey(vector_as_u8_32_array(pub_sign_vec)),
-				crypto::asymmetricbox::PublicKey(vector_as_u8_32_array(pub_asym_vec)));
-		let sec_keys = (crypto::sign::SecretKey(vector_as_u8_64_array(sec_sign_vec)),
-				crypto::asymmetricbox::SecretKey(vector_as_u8_32_array(sec_asym_vec)));
-		Ok(AnMaid::new(pub_keys, sec_keys, name))
-	}
+    fn decode<D: Decoder>(d: &mut D)-> Result<AnMaid, D::Error> {
+        try!(d.read_u64());
+        let(pub_sign_vec, sec_sign_vec) = try!(Decodable::decode(d));
+        let pub_key = crypto::sign::PublicKey(vector_as_u8_32_array(pub_sign_vec));
+        let sec_key = crypto::sign::SecretKey(vector_as_u8_64_array(sec_sign_vec));
+        Ok(AnMaid{ public_key: pub_key, secret_key: sec_key })
+    }
 }
 
-#[test]
-fn serialisation_an_maid() {
-    let obj_before = AnMaid::generate_random();
-	let mut e = cbor::Encoder::from_memory();
-	e.encode(&[&obj_before]).unwrap();
+#[cfg(test)]
+mod test {
+    use cbor;
+    use rand;
+    use rand::Rng;
+    use Random;
+    use sodiumoxide::crypto;
+    use super::AnMaid;
 
-	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-	let obj_after: AnMaid = d.decode().next().unwrap().unwrap();
+    #[test]
+    fn serialisation_an_maid() {
+        let obj_before = AnMaid::generate_random();
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&obj_before]).unwrap();
 
-	assert_eq!(obj_before, obj_after);
-}
+        let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+        let obj_after: AnMaid = d.decode().next().unwrap().unwrap();
 
-#[test]
-fn equality_assertion_an_maid() {
-    let first_obj = AnMaid::generate_random();
-    let second_obj = AnMaid::generate_random();
-    let cloned_obj = second_obj.clone();
+        assert_eq!(obj_before, obj_after);
+    }
 
-    assert!(first_obj != second_obj);
-    assert!(second_obj == cloned_obj);
+    #[test]
+    fn equality_assertion_an_maid() {
+        let first_obj = AnMaid::generate_random();
+        let second_obj = AnMaid::generate_random();
+        let cloned_obj = second_obj.clone();
+
+        assert!(first_obj != second_obj);
+        assert!(second_obj == cloned_obj);
+    }
+
+    #[test]
+    fn generation() {
+        let maid1 = AnMaid::generate_random();
+        let maid2 = AnMaid::generate_random();
+        let maid2_clone = maid2.clone();
+
+        assert_eq!(maid2, maid2_clone);
+        assert!(!(maid2 != maid2_clone));
+        assert!(maid1 != maid2);
+
+        let random_bytes = rand::thread_rng().gen_iter::<u8>().take(100).collect::<Vec<u8>>();
+        {
+            let sign1 = maid1.sign(&random_bytes);
+            let sign2 = maid2.sign(&random_bytes);
+            assert!(sign1 != sign2);
+
+            assert!(crypto::sign::verify(&sign1, &maid1.get_public_key()).is_some());
+            assert!(crypto::sign::verify(&sign2, &maid1.get_public_key()).is_none());
+
+            assert!(crypto::sign::verify(&sign2, &maid2.get_public_key()).is_some());
+            assert!(crypto::sign::verify(&sign2, &maid1.get_public_key()).is_none());
+        }
+    }
 }
