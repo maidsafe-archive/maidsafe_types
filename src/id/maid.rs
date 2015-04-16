@@ -25,8 +25,6 @@ use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
-use common::NameType;
-use traits::RoutingTrait;
 use Random;
 use std::cmp;
 use std::fmt;
@@ -35,45 +33,22 @@ use std::fmt;
 ///
 /// #Examples
 /// ```
-/// extern crate sodiumoxide;
-/// extern crate maidsafe_types;
-///
-/// // Generating sign and asymmetricbox keypairs,
-/// let (pub_sign_key, sec_sign_key) = sodiumoxide::crypto::sign::gen_keypair(); // returns (PublicKey, SecretKey)
-/// let (pub_asym_key, sec_asym_key) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
+/// use maidsafe_types::Random;
 ///
 /// // Creating new Maid
-/// let maid  = maidsafe_types::id::maid::Maid::new((pub_sign_key, pub_asym_key),
-///                     (sec_sign_key, sec_asym_key),
-///                     maidsafe_types::NameType([6u8; 64]));
+/// let maid  = maidsafe_types::id::maid::Maid::generate_random();
 ///
 /// // getting Maid::public_keys
 /// let &(pub_sign, pub_asym) = maid.get_public_keys();
 ///
-/// // getting Maid::secret_keys
-/// let &(sec_sign, sec_asym) = maid.get_public_keys();
-///
-/// // getting Maid::name
-/// let name: &maidsafe_types::NameType = maid.get_name();
 /// ```
 #[derive(Clone)]
 pub struct Maid {
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-    secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-    name: NameType,
+    secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
 }
 
 impl Maid {
-    pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-               secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-               name_type: NameType) -> Maid {
-        Maid {
-            public_keys: public_keys,
-            secret_keys: secret_keys,
-            name: name_type
-        }
-    }
-
     pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
         &self.public_keys
     }
@@ -95,10 +70,6 @@ impl Maid {
         from : &crypto::asymmetricbox::PublicKey) -> Result<Vec<u8>, ::CryptoError> {
         return crypto::asymmetricbox::open(&data, &nonce, &from, &self.secret_keys.1).ok_or(::CryptoError::Unknown);
     }
-
-    pub fn get_name(&self) -> &NameType {
-        &self.name
-    }
 }
 
 impl Random for Maid {
@@ -108,45 +79,23 @@ impl Random for Maid {
 
         Maid {
             public_keys: (sign_keys.0, asym_keys.0),
-            secret_keys: (sign_keys.1, asym_keys.1),
-            name: NameType::generate_random(),
+            secret_keys: (sign_keys.1, asym_keys.1)
         }
     }
 }
 
 impl cmp::PartialEq for Maid {
     fn eq(&self, other: &Maid) -> bool {
-        self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.secret_keys.0 .0.iter().chain(self.secret_keys.1 .0.iter()))).zip(
-            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.secret_keys.0 .0.iter().chain(other.secret_keys.1 .0.iter())))).all(|a| a.0 == a.1) &&
-            self.name == other.name
+        // Private keys are mathematically linked, so just check public keys
+        let compare_public_0 = self.public_keys.0 .0.iter().zip(other.public_keys.0 .0.iter());
+        let compare_public_1 = self.public_keys.1 .0.iter().zip(other.public_keys.1 .0.iter());
+        compare_public_0.chain(compare_public_1).all(|(&a, &b)| a == b)
     }
 }
 
 impl fmt::Debug for Maid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Maid {{ public_keys: ({:?}, {:?}), secret_keys: ({:?}, {:?}), name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
-        self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec(), self.name)
-    }
-}
-
-
-impl RoutingTrait for Maid {
-    fn get_name(&self) -> NameType {
-        let sign_arr = &(&self.public_keys.0).0;
-        let asym_arr = &(&self.public_keys.1).0;
-
-        let mut arr_combined = [0u8; 64 * 2];
-
-        for i in 0..sign_arr.len() {
-            arr_combined[i] = sign_arr[i];
-        }
-        for i in 0..asym_arr.len() {
-            arr_combined[64 + i] = asym_arr[i];
-        }
-
-        let digest = crypto::hash::sha512::hash(&arr_combined);
-
-        NameType(digest.0)
+        write!(f, "Maid {{ public_keys: ({:?}, {:?}) }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec())
     }
 }
 
@@ -159,20 +108,19 @@ impl Encodable for Maid {
             array_as_vector(&pub_sign_vec),
             array_as_vector(&pub_asym_vec),
             array_as_vector(&sec_sign_vec),
-            array_as_vector(&sec_asym_vec),
-            &self.name)).encode(e)
+            array_as_vector(&sec_asym_vec))).encode(e)
     }
 }
 
 impl Decodable for Maid {
     fn decode<D: Decoder>(d: &mut D)-> Result<Maid, D::Error> {
         try!(d.read_u64());
-        let(pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec, name) = try!(Decodable::decode(d));
+        let(pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec) = try!(Decodable::decode(d));
         let pub_keys = (crypto::sign::PublicKey(vector_as_u8_32_array(pub_sign_vec)),
                         crypto::asymmetricbox::PublicKey(vector_as_u8_32_array(pub_asym_vec)));
         let sec_keys = (crypto::sign::SecretKey(vector_as_u8_64_array(sec_sign_vec)),
                         crypto::asymmetricbox::SecretKey(vector_as_u8_32_array(sec_asym_vec)));
-        Ok(Maid::new(pub_keys, sec_keys, name))
+        Ok(Maid{ public_keys: pub_keys, secret_keys: sec_keys })
     }
 }
 
@@ -193,9 +141,7 @@ fn serialisation_maid() {
     let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
     let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = &obj_before.secret_keys;
     let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = &obj_after.secret_keys;
-    let (&NameType(name_before), &NameType(name_after)) = (obj_before.get_name(), obj_after.get_name());
 
-    assert!(compare_u8_array(&name_before, &name_after));
     assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
     assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
     assert!(compare_u8_array(&sec_sign_arr_before, &sec_sign_arr_after));
