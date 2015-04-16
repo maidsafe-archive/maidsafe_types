@@ -117,6 +117,7 @@ mod test {
     use cbor::{ Encoder, Decoder};
     use rustc_serialize::{Decodable, Encodable};
     use Random;
+    use traits::routing_trait::RoutingTrait;
 
     #[test]
     fn creation() {
@@ -128,6 +129,7 @@ mod test {
         let chunk = ImmutableData::new(data);
         let actual_name = chunk.calculate_name().0.as_ref().to_hex();
         assert_eq!(&expected_name, &actual_name);
+        assert_eq!(&chunk.calculate_name(), &chunk.get_name());
     }
 
     #[test]
