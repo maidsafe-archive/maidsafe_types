@@ -94,15 +94,17 @@ impl RoutingTrait for PublicMpid {
     }
 
     fn get_owner(&self) -> Option<Vec<u8>> {
-        Some(array_as_vector(&self.owner.0))
+        Some(self.owner.0.as_ref().to_vec())
     }
 }
 
 impl PartialEq for PublicMpid {
-	fn eq(&self, other: &PublicMpid) -> bool {
-        self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.mpid_signature.0 .iter().chain(self.signature.0 .iter()))).zip(
-            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.mpid_signature.0 .iter().chain(other.signature.0 .iter())))).all(|a| a.0 == a.1) &&
-            self.name == other.name
+    fn eq(&self, other: &PublicMpid) -> bool {
+        let pub1_equal = slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
+        let pub2_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
+        let sig1_equal = slice_equal(&self.mpid_signature.0, &other.mpid_signature.0);
+        let sig2_equal = slice_equal(&self.signature.0, &other.signature.0);
+        return pub1_equal && pub2_equal && sig1_equal && sig2_equal && self.name == other.name;
     }
 }
 
@@ -176,26 +178,36 @@ impl Encodable for PublicMpid {
 		let crypto::sign::Signature(mpid_signature) = self.mpid_signature;
 		let crypto::sign::Signature(signature) = self.signature;
 		CborTagEncode::new(5483_001, &(
-				array_as_vector(&pub_sign_vec),
-					array_as_vector(&pub_asym_vec),
-					array_as_vector(&mpid_signature),
+				pub_sign_vec.as_ref(),
+		                pub_asym_vec.as_ref(),
+				mpid_signature.as_ref(),
 				&self.owner,
-					array_as_vector(&signature),
+			        signature.as_ref(),
 				&self.name)).encode(e)
 	}
 }
 
 impl Decodable for PublicMpid {
-	fn decode<D: Decoder>(d: &mut D)-> Result<PublicMpid, D::Error> {
-		try!(d.read_u64());
-		let (pub_sign_vec, pub_asym_vec, mpid_signature, owner, signature, name) = try!(Decodable::decode(d));
-		let pub_keys = (crypto::sign::PublicKey(vector_as_u8_32_array(pub_sign_vec)),
-				crypto::asymmetricbox::PublicKey(vector_as_u8_32_array(pub_asym_vec)));
-		let parsed_mpid_signature = crypto::sign::Signature(vector_as_u8_64_array(mpid_signature));
-		let parsed_signature = crypto::sign::Signature(vector_as_u8_64_array(signature));
+    fn decode<D: Decoder>(d: &mut D)-> Result<PublicMpid, D::Error> {
+	try!(d.read_u64());
 
-		Ok(PublicMpid::new(pub_keys, parsed_mpid_signature, owner, parsed_signature, name))
-	}
+	let (pub_sign_vec, pub_asym_vec, mpid_signature_vec, owner, signature_vec, name) : (Vec<u8>, Vec<u8>, Vec<u8>, NameType, Vec<u8>, NameType) = try!(Decodable::decode(d));
+        let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
+        let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
+        let mpid_signature_arr = convert_to_array!(mpid_signature_vec, crypto::sign::SIGNATUREBYTES);
+        let signature_arr = convert_to_array!(signature_vec, crypto::sign::SIGNATUREBYTES);
+
+        if pub_sign_arr.is_none() || pub_asym_arr.is_none() || mpid_signature_arr.is_none() || signature_arr.is_none() {
+            return Err(d.error("Bad PublicMaid size"));
+        }
+
+	let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
+			crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
+	let parsed_mpid_signature = crypto::sign::Signature(mpid_signature_arr.unwrap());
+	let parsed_signature = crypto::sign::Signature(signature_arr.unwrap());
+
+	Ok(PublicMpid::new(pub_keys, parsed_mpid_signature, owner, parsed_signature, name))
+    }
 }
 
 #[test]

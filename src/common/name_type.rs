@@ -30,6 +30,8 @@ use std::mem;
 use std::fmt;
 use Random;
 
+pub const NAME_TYPE_LEN : usize = 64;
+
 /// NameType struct
 ///
 /// #Examples
@@ -44,7 +46,7 @@ use Random;
 /// // de-reference id value from the NameType
 /// let maidsafe_types::NameType(id) = name_type;
 /// ```
-pub struct NameType(pub [u8; 64]);
+pub struct NameType(pub [u8; NAME_TYPE_LEN]);
 
 impl NameType {
    #[allow(dead_code)]
@@ -60,11 +62,11 @@ impl NameType {
         false
     }
 
-    pub fn new(id: [u8;64]) -> NameType {
+    pub fn new(id: [u8; NAME_TYPE_LEN]) -> NameType {
         NameType(id)
     }
 
-    pub fn get_id(&self) -> [u8;64] {
+    pub fn get_id(&self) -> [u8; NAME_TYPE_LEN] {
         self.0
     }
 
@@ -80,8 +82,8 @@ impl NameType {
 
 impl Random for NameType {
      fn generate_random() -> NameType {
-        let mut arr: [u8; 64] = unsafe { mem::uninitialized() };
-        for i in 0..64 {
+        let mut arr: [u8; NAME_TYPE_LEN] = unsafe { mem::uninitialized() };
+        for i in 0..NAME_TYPE_LEN {
             arr[i] = rand::random::<u8>();
         }
         NameType(arr)
@@ -95,38 +97,41 @@ impl fmt::Debug for NameType {
 }
 
 impl PartialEq for NameType {
-  fn eq(&self, other: &NameType) -> bool {
-  	self.0.iter().zip(other.0.iter()).all(|(a,b)| a == b) 
-  }
+    fn eq(&self, other: &NameType) -> bool {
+  	slice_equal(&self.0, &other.0)
+    }
 }
 
 impl Clone for NameType {
-  fn clone(&self) -> Self {
-    let mut arr_cloned = [0u8; 64];
-    let &NameType(arr_self) = self;
+    fn clone(&self) -> Self {
+        let mut arr_cloned = [0u8; NAME_TYPE_LEN];
+        let &NameType(arr_self) = self;
 
-    for i in 0..arr_self.len() {
-      arr_cloned[i] = arr_self[i];
+        for i in 0..arr_self.len() {
+            arr_cloned[i] = arr_self[i];
+        }
+
+        NameType(arr_cloned)
     }
-
-    NameType(arr_cloned)
-  }
 }
 
 
 impl Encodable for NameType {
-  fn encode<E: Encoder>(& self, e: &mut E)->Result<(), E::Error> {
-    let NameType(id) = * self;
-    CborTagEncode::new(5483_000, &(array_as_vector(&id))).encode(e)
-  }
+    fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+        CborTagEncode::new(5483_000, &(self.0.as_ref())).encode(e)
+    }
 }
 
 impl Decodable for NameType {
-  fn decode<D: Decoder>(d: &mut D)->Result<NameType, D::Error> {
-    try!(d.read_u64());
-    let id = try!(Decodable::decode(d));
-    Ok(NameType(vector_as_u8_64_array(id)))
-  }
+    fn decode<D: Decoder>(d: &mut D)->Result<NameType, D::Error> {
+        try!(d.read_u64());
+        let id : Vec<u8> = try!(Decodable::decode(d));
+
+        match convert_to_array!(id, NAME_TYPE_LEN) {
+            Some(id_arr) => Ok(NameType(id_arr)),
+            None => Err(d.error("Bad NameType size"))
+        }
+    }
 }
 
 #[cfg(test)]
@@ -160,8 +165,8 @@ mod test {
 
     #[test]
     fn name_type_validity_assertion() {
-        assert!(NameType([1u8;64]).is_valid());
-        assert!(!NameType([0u8; 64]).is_valid());
+        assert!(NameType([1u8; NAME_TYPE_LEN]).is_valid());
+        assert!(!NameType([0u8; NAME_TYPE_LEN]).is_valid());
     }
 
     #[test]

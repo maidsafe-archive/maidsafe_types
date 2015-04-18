@@ -52,8 +52,7 @@ pub struct AnMaid {
 impl PartialEq for AnMaid {
     fn eq(&self, other: &AnMaid) -> bool {
         // Private key is mathematically linked, so just check public key
-        let mut compare_public = self.public_key.0.iter().zip(other.public_key.0.iter());
-        compare_public.all(|(&a, &b)| a == b)
+        slice_equal(&self.public_key.0, &other.public_key.0)
     }
 }
 
@@ -87,21 +86,23 @@ impl AnMaid {
 
 impl Encodable for AnMaid {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-        let crypto::sign::PublicKey(ref pub_sign_vec) = self.public_key;
-        let crypto::sign::SecretKey(ref sec_sign_vec) = self.secret_key;
-
-        CborTagEncode::new(5483_001, &(
-            array_as_vector(pub_sign_vec),
-            array_as_vector(sec_sign_vec))).encode(e)
+        CborTagEncode::new(5483_001, &(self.public_key.0.as_ref(), self.secret_key.0.as_ref())).encode(e)
     }
 }
 
 impl Decodable for AnMaid {
     fn decode<D: Decoder>(d: &mut D)-> Result<AnMaid, D::Error> {
         try!(d.read_u64());
-        let(pub_sign_vec, sec_sign_vec) = try!(Decodable::decode(d));
-        let pub_key = crypto::sign::PublicKey(vector_as_u8_32_array(pub_sign_vec));
-        let sec_key = crypto::sign::SecretKey(vector_as_u8_64_array(sec_sign_vec));
+        let(pub_sign_vec, sec_sign_vec) : (Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
+        let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
+        let sec_sign_arr = convert_to_array!(sec_sign_vec, crypto::sign::SECRETKEYBYTES);
+
+        if pub_sign_arr.is_none() || sec_sign_arr.is_none() {
+            return Err(d.error("Bad AnMaid size"));
+        }
+
+        let pub_key = crypto::sign::PublicKey(pub_sign_arr.unwrap());
+        let sec_key = crypto::sign::SecretKey(sec_sign_arr.unwrap());
         Ok(AnMaid{ public_key: pub_key, secret_key: sec_key })
     }
 }
