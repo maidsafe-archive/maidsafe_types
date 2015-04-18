@@ -16,35 +16,111 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
-pub fn array_as_vector(arr: &[u8]) -> Vec<u8> {
-  let mut vector = Vec::new();
-  for i in arr.iter() {
-    vector.push(*i);
-  }
-  vector
+///
+/// Returns true if both slices are equal in length, and have equal contents
+///
+pub fn slice_equal<T: PartialEq>(lhs: &[T], rhs: &[T]) -> bool {
+    lhs.len() == rhs.len() && lhs.iter().zip(rhs.iter()).all(|(a, b)| a == b)
 }
 
-pub fn vector_as_u8_32_array(vector: Vec<u8>) -> [u8;32] {
-  let mut arr = [0u8;32];
-  for i in (0..32) {
-    arr[i] = vector[i];
-  }
-  arr
+///
+/// Convert a container to an array. If the container is not the exact size specified, None is
+/// returned. Otherwise, all of the elements are moved into the array.
+///
+/// ```
+/// let mut data = Vec::<usize>::new();
+/// data.push(1);
+/// data.push(2);
+/// assert!(convert_to_array(data, 2).is_some());
+/// assert!(convert_to_array(data, 3).is_none());
+/// ```
+macro_rules! convert_to_array {
+    ($container:ident, $size:expr) => {{
+        if $container.len() != $size {
+            None
+        } else {
+            use std::mem;
+            let mut arr : [_; $size] = unsafe { mem::uninitialized() };
+            for element in $container.into_iter().enumerate() {
+                let old_val = mem::replace(&mut arr[element.0], element.1);
+                unsafe { mem::forget(old_val) };
+            }
+            Some(arr)
+        }
+    }};
 }
 
-pub fn vector_as_u8_64_array(vector: Vec<u8>) -> [u8;64] {
-  let mut arr = [0u8;64];
-  for i in (0..64) {
-    arr[i] = vector[i];
-  }
-  arr
-}
+#[cfg(test)]
+mod test {
+    use super::*;
 
+    #[test]
+    fn compare_u8_equal()  {
+        let data = "some data".to_string().into_bytes();
+        assert!(slice_equal(&data, &data));
 
-#[allow(dead_code)]
-pub fn compare_u8_array(lhs: &[u8], rhs: &[u8])->bool {
-  lhs.iter().zip(rhs.iter()).all(|(a,b)| a == b)
-}
-#[test]
-fn dummy()  {
+        let data_copy = data.clone();
+        assert!(slice_equal(&data, &data_copy));
+        assert!(slice_equal(&data_copy, &data));
+    }
+
+    #[test]
+    fn compare_u8_not_equal()  {
+        let data1 = "some data".to_string().into_bytes();
+        let data2 = "some daty".to_string().into_bytes();
+        assert!(!slice_equal(&data1, &data2));
+        assert!(!slice_equal(&data2, &data1));
+    }
+
+    #[test]
+    fn compare_u8_unequal_length()  {
+        let data1 = "some dat".to_string().into_bytes();
+        let data2 = "some data".to_string().into_bytes();
+        assert!(!slice_equal(&data1, &data2));
+        assert!(!slice_equal(&data2, &data1));
+    }
+
+    #[test]
+    fn compare_string_equal() {
+        let one = "some string".to_string();
+        let two = "some two".to_string();
+
+        let mut data = Vec::<String>::with_capacity(2);
+        data.push(one);
+        data.push(two);
+
+        assert!(slice_equal(&data, &data));
+
+        let data2 = data.clone();
+        assert!(slice_equal(&data, &data2));
+        assert!(slice_equal(&data2, &data));
+    }
+
+    #[test]
+    fn copy_strings_to_array() {
+        let one = "some string".to_string();
+        let two = "some two".to_string();
+
+        let mut data = Vec::<String>::with_capacity(2);
+        data.push(one);
+        data.push(two);
+
+        let data2 = data.clone();
+        let result = convert_to_array!(data2, 2).unwrap();
+        assert!(slice_equal(&data, &result));
+    }
+
+    #[test]
+    fn copy_strings_to_bad_array() {
+        let one = "some string".to_string();
+        let two = "some two".to_string();
+
+        let mut data = Vec::<String>::with_capacity(2);
+        data.push(one);
+        data.push(two);
+
+        let data2 = data.clone();
+        assert!(convert_to_array!(data2, 1).is_none());
+        assert!(convert_to_array!(data, 3).is_none());
+    }
 }

@@ -87,9 +87,9 @@ impl Random for Maid {
 impl cmp::PartialEq for Maid {
     fn eq(&self, other: &Maid) -> bool {
         // Private keys are mathematically linked, so just check public keys
-        let compare_public_0 = self.public_keys.0 .0.iter().zip(other.public_keys.0 .0.iter());
-        let compare_public_1 = self.public_keys.1 .0.iter().zip(other.public_keys.1 .0.iter());
-        compare_public_0.chain(compare_public_1).all(|(&a, &b)| a == b)
+        let public0_equal =  slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
+        let public1_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
+        return public0_equal && public1_equal;
     }
 }
 
@@ -105,21 +105,31 @@ impl Encodable for Maid {
         let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
 
         CborTagEncode::new(5483_001, &(
-            array_as_vector(&pub_sign_vec),
-            array_as_vector(&pub_asym_vec),
-            array_as_vector(&sec_sign_vec),
-            array_as_vector(&sec_asym_vec))).encode(e)
+            pub_sign_vec.as_ref(),
+            pub_asym_vec.as_ref(),
+            sec_sign_vec.as_ref(),
+            sec_asym_vec.as_ref())).encode(e)
     }
 }
 
 impl Decodable for Maid {
     fn decode<D: Decoder>(d: &mut D)-> Result<Maid, D::Error> {
         try!(d.read_u64());
-        let(pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec) = try!(Decodable::decode(d));
-        let pub_keys = (crypto::sign::PublicKey(vector_as_u8_32_array(pub_sign_vec)),
-                        crypto::asymmetricbox::PublicKey(vector_as_u8_32_array(pub_asym_vec)));
-        let sec_keys = (crypto::sign::SecretKey(vector_as_u8_64_array(sec_sign_vec)),
-                        crypto::asymmetricbox::SecretKey(vector_as_u8_32_array(sec_asym_vec)));
+        let (pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
+
+        let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
+        let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
+        let sec_sign_arr = convert_to_array!(sec_sign_vec, crypto::sign::SECRETKEYBYTES);
+        let sec_asym_arr = convert_to_array!(sec_asym_vec, crypto::asymmetricbox::SECRETKEYBYTES);
+
+        if pub_sign_arr.is_none() || pub_asym_arr.is_none() || sec_sign_arr.is_none() || sec_asym_arr.is_none() {
+            return Err(d.error("Bad Maid size"));
+        }
+
+        let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
+                        crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
+        let sec_keys = (crypto::sign::SecretKey(sec_sign_arr.unwrap()),
+                        crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap()));
         Ok(Maid{ public_keys: pub_keys, secret_keys: sec_keys })
     }
 }
@@ -129,6 +139,7 @@ use self::rand::Rng;
 
 #[test]
 fn serialisation_maid() {
+    use helper::*;
     let obj_before = Maid::generate_random();
 
     let mut e = cbor::Encoder::from_memory();
@@ -144,7 +155,7 @@ fn serialisation_maid() {
 
     assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
     assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-    assert!(compare_u8_array(&sec_sign_arr_before, &sec_sign_arr_after));
+    assert!(slice_equal(&sec_sign_arr_before, &sec_sign_arr_after));
     assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
 }
 

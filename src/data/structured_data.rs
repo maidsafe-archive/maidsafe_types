@@ -25,7 +25,6 @@ use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use common::NameType;
 use traits::routing_trait::RoutingTrait;
-use helper::*;
 use Random;
 
 /// StructuredData
@@ -75,7 +74,7 @@ impl RoutingTrait for StructuredData {
     }
 
     fn get_owner(&self) -> Option<Vec<u8>> {
-        Some(array_as_vector(&self.owner.0))
+        Some(self.owner.0.as_ref().to_vec())
     }
 }
 
@@ -117,7 +116,7 @@ fn creation() {
     let owner = NameType::generate_random();
     let structured_data = StructuredData::new(name.clone(), owner.clone());
     assert_eq!(&name, &structured_data.get_name());
-    assert_eq!(&array_as_vector(&owner.0), structured_data.get_owner().as_ref().unwrap());
+    assert_eq!(&owner.0.as_ref().to_vec(), structured_data.get_owner().as_ref().unwrap());
     let expected_value = Vec::<Vec<NameType>>::new();
     assert_eq!(&expected_value, structured_data.get_value());
 }

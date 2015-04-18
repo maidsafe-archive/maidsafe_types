@@ -50,16 +50,18 @@ use std::fmt;
 ///
 #[derive(Clone)]
 pub struct PublicAnMaid {
-	public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-	signature: crypto::sign::Signature,
-	name: NameType,
+        public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+        signature: crypto::sign::Signature,
+        name: NameType,
 }
 
 impl PartialEq for PublicAnMaid {
     fn eq(&self, other: &PublicAnMaid) -> bool {
-        self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.signature.0.iter())).zip(
-            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.signature.0.iter())))
-            .all(|a| a.0 == a.1) && self.name == other.name
+        // Private keys are mathematically linked, so just check public keys
+        let public0_equal = slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
+        let public1_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
+        let signature = slice_equal(&self.signature.0, &other.signature.0);
+        return public0_equal && public1_equal && signature && self.name == other.name;
     }
 }
 
@@ -108,68 +110,73 @@ impl RoutingTrait for PublicAnMaid {
     }
 
     fn get_owner(&self) -> Option<Vec<u8>> {
-        Some(array_as_vector(&self.name.0))
+        Some(self.name.0.as_ref().to_vec())
     }
 }
 
 impl PublicAnMaid {
-	pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-						 signature: crypto::sign::Signature,
-						 name: NameType) -> PublicAnMaid {
-		PublicAnMaid {
-    		public_keys: public_keys,
-    		signature: signature,
-    		name: name
-		}
-	}
-	pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
-		&self.public_keys
-	}
-	pub fn get_signature(&self) -> &crypto::sign::Signature {
-		&self.signature
-	}
-	pub fn get_name(&self) -> &NameType {
-		&self.name
-	}
+        pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+                                                 signature: crypto::sign::Signature,
+                                                 name: NameType) -> PublicAnMaid {
+                PublicAnMaid {
+                public_keys: public_keys,
+                signature: signature,
+                name: name
+                }
+        }
+        pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
+                &self.public_keys
+        }
+        pub fn get_signature(&self) -> &crypto::sign::Signature {
+                &self.signature
+        }
+        pub fn get_name(&self) -> &NameType {
+                &self.name
+        }
 }
 
 impl Encodable for PublicAnMaid {
-	fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-		let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
-		let crypto::sign::Signature(signature_arr) = self.signature;
-
-            CborTagEncode::new(5483_001, &(
-            array_as_vector(&pub_sign_vec),
-            array_as_vector(&pub_asym_vec),
-            array_as_vector(&signature_arr),
-            &self.name)).encode(e)
-	}
+    fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+       CborTagEncode::new(5483_001,
+                          &(self.public_keys.0 .0.as_ref(),
+                            self.public_keys.1 .0.as_ref(),
+                            self.signature.0.as_ref(),
+                            &self.name)).encode(e)
+    }
 }
 
 impl Decodable for PublicAnMaid {
-	fn decode<D: Decoder>(d: &mut D)-> Result<PublicAnMaid, D::Error> {
-		try!(d.read_u64());
+    fn decode<D: Decoder>(d: &mut D)-> Result<PublicAnMaid, D::Error> {
+        try!(d.read_u64());
+        let (pub_sign_vec, pub_asym_vec, signature_vec, name) : (Vec<u8>, Vec<u8>, Vec<u8>, NameType) = try!(Decodable::decode(d));
 
-		let(pub_sign_vec, pub_asym_vec, signature_vec, name) = try!(Decodable::decode(d));
-		let pub_keys = (crypto::sign::PublicKey(vector_as_u8_32_array(pub_sign_vec)),
-				crypto::asymmetricbox::PublicKey(vector_as_u8_32_array(pub_asym_vec)));
-		let signature = crypto::sign::Signature(vector_as_u8_64_array(signature_vec));
+        let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
+        let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
+        let signature_arr = convert_to_array!(signature_vec, crypto::sign::SIGNATUREBYTES);
 
-		Ok(PublicAnMaid::new(pub_keys, signature, name))
-	}
+        if pub_sign_arr.is_none() || pub_asym_arr.is_none() || signature_arr.is_none() {
+            return Err(d.error("PubAnMaid bad size"));
+        }
+
+        let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
+                        crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
+        let signature = crypto::sign::Signature(signature_arr.unwrap());
+
+        Ok(PublicAnMaid::new(pub_keys, signature, name))
+    }
 }
 
 
 #[test]
 fn serialisation_public_anmaid() {
-	let obj_before = PublicAnMaid::generate_random();
-	let mut e = cbor::Encoder::from_memory();
-	e.encode(&[&obj_before]).unwrap();
+    let obj_before = PublicAnMaid::generate_random();
+    let mut e = cbor::Encoder::from_memory();
+    e.encode(&[&obj_before]).unwrap();
 
-	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-	let obj_after: PublicAnMaid = d.decode().next().unwrap().unwrap();
+    let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+    let obj_after: PublicAnMaid = d.decode().next().unwrap().unwrap();
 
-	assert_eq!(obj_before, obj_after);
+    assert_eq!(obj_before, obj_after);
 }
 
 #[test]

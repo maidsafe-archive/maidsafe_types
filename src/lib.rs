@@ -35,12 +35,13 @@ extern crate sodiumoxide;
 extern crate cbor;
 extern crate rand;
 
+#[macro_use]
+pub mod helper;
 pub mod id;
 pub mod common;
 pub mod data;
 
 pub mod traits;
-pub mod helper;
 pub use common::NameType;
 pub use id::{Maid, Mpid, AnMaid, PublicAnMaid, AnMpid, PublicMaid, PublicMpid};
 pub use data::{ImmutableData, StructuredData};
@@ -50,14 +51,6 @@ use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 
 pub trait Random {
     fn generate_random() -> Self;
-}
-
-fn array_as_vector(arr: &[u8]) -> Vec<u8> {
-  let mut vector = Vec::new();
-  for i in arr.iter() {
-    vector.push(*i);
-  }
-  vector
 }
 
 pub enum CryptoError {
@@ -134,7 +127,7 @@ impl Payload {
   pub fn new<T>(type_tag : PayloadTypeTag, data : &T) -> Payload where T: for<'a> Encodable + Decodable {
     let mut e = cbor::Encoder::from_memory();
     e.encode(&[data]).unwrap();
-    Payload { type_tag: type_tag, payload: array_as_vector(e.as_bytes()) }
+    Payload { type_tag: type_tag, payload: e.as_bytes().to_vec() }
   }
 
   pub fn get_data<T>(&self) -> T where T: for<'a> Encodable + Decodable {
@@ -146,7 +139,7 @@ impl Payload {
   pub fn set_data<T>(&mut self, data: T) where T: for<'a> Encodable + Decodable {
     let mut e = cbor::Encoder::from_memory();
     e.encode(&[&data]).unwrap();
-    self.payload = array_as_vector(e.as_bytes())
+    self.payload = e.as_bytes().to_vec();
   }
 
   pub fn get_type_tag(&self) -> PayloadTypeTag {

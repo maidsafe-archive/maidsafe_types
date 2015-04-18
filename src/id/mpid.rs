@@ -62,10 +62,11 @@ pub struct Mpid {
 }
 
 impl PartialEq for Mpid {
-	fn eq(&self, other: &Mpid) -> bool {
-        self.public_keys.0 .0.iter().chain(self.public_keys.1 .0.iter().chain(self.secret_keys.0 .0.iter().chain(self.secret_keys.1 .0.iter()))).zip(
-            other.public_keys.0 .0.iter().chain(other.public_keys.1 .0.iter().chain(other.secret_keys.0 .0.iter().chain(other.secret_keys.1 .0.iter())))).all(|a| a.0 == a.1) &&
-            self.name == other.name
+    fn eq(&self, other: &Mpid) -> bool {
+        // Private keys are mathematically linked, so just check public keys
+        let public0_equal = slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
+        let public1_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
+        return public0_equal && public1_equal && self.name == other.name;
     }
 }
 
@@ -132,29 +133,38 @@ impl Mpid {
 }
 
 impl Encodable for Mpid {
-	fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-		let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
-		let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
+    fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+	let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
+	let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
 
-		CborTagEncode::new(5483_001, &(
-			array_as_vector(&pub_sign_vec),
-			array_as_vector(&pub_asym_vec),
-			array_as_vector(&sec_sign_vec),
-			array_as_vector(&sec_asym_vec),
-			&self.name)).encode(e)
+	CborTagEncode::new(5483_001, &(
+	    pub_sign_vec.as_ref(),
+	    pub_asym_vec.as_ref(),
+	    sec_sign_vec.as_ref(),
+	    sec_asym_vec.as_ref(),
+	    &self.name)).encode(e)
 	}
 }
 
 impl Decodable for Mpid {
-fn decode<D: Decoder>(d: &mut D)-> Result<Mpid, D::Error> {
-	try!(d.read_u64());
-	let(pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec, name) = try!(Decodable::decode(d));
-	let pub_keys = (crypto::sign::PublicKey(vector_as_u8_32_array(pub_sign_vec)),
-			crypto::asymmetricbox::PublicKey(vector_as_u8_32_array(pub_asym_vec)));
-	let sec_keys = (crypto::sign::SecretKey(vector_as_u8_64_array(sec_sign_vec)),
-			crypto::asymmetricbox::SecretKey(vector_as_u8_32_array(sec_asym_vec)));
-	Ok(Mpid::new(pub_keys, sec_keys, name))
-}
+    fn decode<D: Decoder>(d: &mut D)-> Result<Mpid, D::Error> {
+        try!(d.read_u64());
+        let(pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec, name) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, NameType) = try!(Decodable::decode(d));
+        let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
+        let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
+        let sec_sign_arr = convert_to_array!(sec_sign_vec, crypto::sign::SECRETKEYBYTES);
+        let sec_asym_arr = convert_to_array!(sec_asym_vec, crypto::asymmetricbox::SECRETKEYBYTES);
+
+        if pub_sign_arr.is_none() || pub_asym_arr.is_none() || sec_sign_arr.is_none() || sec_asym_arr.is_none() {
+            return Err(d.error("Bad Mpid size"));
+        }
+
+        let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
+		        crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
+        let sec_keys = (crypto::sign::SecretKey(sec_sign_arr.unwrap()),
+		        crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap()));
+        Ok(Mpid::new(pub_keys, sec_keys, name))
+    }
 }
 
 #[test]
