@@ -16,16 +16,13 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
-extern crate rustc_serialize;
-extern crate sodiumoxide;
-extern crate cbor;
-
 use cbor::CborTagEncode;
+use cbor;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
-use common::NameType;
-use traits::RoutingTrait;
+use routing::name_type::NameType;
+use routing::message_interface::MessageInterface;
 use std::fmt;
 use Random;
 
@@ -35,6 +32,7 @@ use Random;
 /// ```
 /// extern crate sodiumoxide;
 /// extern crate maidsafe_types;
+/// extern crate routing;
 ///
 /// // Generating sign and asymmetricbox keypairs,
 /// let (pub_sign_key, sec_sign_key) = sodiumoxide::crypto::sign::gen_keypair(); // returns (PublicKey, SecretKey)
@@ -43,7 +41,7 @@ use Random;
 /// // Creating new Mpid
 /// let mpid  = maidsafe_types::id::mpid::Mpid::new((pub_sign_key, pub_asym_key),
 ///                     (sec_sign_key, sec_asym_key),
-///                     maidsafe_types::NameType([6u8; 64]));
+///                     routing::name_type::NameType([6u8; 64]));
 ///
 /// // getting Mpid::public_keys
 /// let &(pub_sign, pub_asym) = mpid.get_public_keys();
@@ -52,7 +50,7 @@ use Random;
 /// let &(sec_sign, sec_asym) = mpid.get_public_keys();
 ///
 /// // getting Mpid::name
-/// let name: &maidsafe_types::NameType = mpid.get_name();
+/// let name: &routing::name_type::NameType = mpid.get_name();
 /// ```
 #[derive(Clone)]
 pub struct Mpid {
@@ -89,7 +87,7 @@ impl Random for Mpid {
 	}
 }
 
-impl RoutingTrait for Mpid {
+impl MessageInterface for Mpid {
     fn get_name(&self) -> NameType {
         let sign_arr = &(&self.public_keys.0).0;
         let asym_arr = &(&self.public_keys.1).0;

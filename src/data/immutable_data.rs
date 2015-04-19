@@ -16,38 +16,21 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
-extern crate rustc_serialize;
-extern crate sodiumoxide;
-extern crate cbor;
-
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
-use common::NameType;
-use traits::RoutingTrait;
+use routing::name_type::NameType;
+use routing::message_interface::MessageInterface;
 use sodiumoxide::crypto;
 use std::fmt;
 use rand;
 use Random;
 
-/// ImmutableData
-///
-/// #Examples
-///
-/// ```
-/// // Create an ImmutableData using the new function.
-/// use maidsafe_types::traits::RoutingTrait;
-/// let immutable_data = maidsafe_types::ImmutableData::new(vec![99u8; 10]);
-/// // Retrieving values
-/// let ref name_type = immutable_data.get_name();
-/// let ref value = immutable_data.get_value();
-/// ```
-///
 #[derive(Clone)]
 pub struct ImmutableData {
     value: Vec<u8>,
 }
 
-impl RoutingTrait for ImmutableData {
+impl MessageInterface for ImmutableData {
     fn get_name(&self) -> NameType {
         self.calculate_name()
     }
@@ -117,7 +100,7 @@ mod test {
     use cbor::{ Encoder, Decoder};
     use rustc_serialize::{Decodable, Encodable};
     use Random;
-    use traits::routing_trait::RoutingTrait;
+    use routing::message_interface::MessageInterface;
 
     #[test]
     fn creation() {

@@ -23,24 +23,11 @@ extern crate rand;
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
-use common::NameType;
-use traits::routing_trait::RoutingTrait;
+use routing::name_type::NameType;
+use routing::message_interface::MessageInterface;
 use Random;
 
-/// StructuredData
-///
-/// #Examples
-///
-/// ```
-/// use maidsafe_types::traits::RoutingTrait;
-/// // Create a StructuredData
-/// let structured_data = maidsafe_types::StructuredData::new(maidsafe_types::NameType([3u8; 64]), maidsafe_types::NameType([5u8; 64]));
-/// // Retrieving the values
-/// let name = structured_data.get_name();
-/// let owner = structured_data.get_owner();
-/// let ref value = structured_data.get_value();
-/// ```
-///
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct StructuredData {
     name: NameType,
@@ -68,7 +55,7 @@ impl Random for StructuredData {
     }
 }
 
-impl RoutingTrait for StructuredData {
+impl MessageInterface for StructuredData {
     fn get_name(&self) -> NameType {
         self.name.clone()
     }

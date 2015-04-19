@@ -16,17 +16,13 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
-extern crate rustc_serialize;
-extern crate sodiumoxide;
-extern crate cbor;
-extern crate rand;
-
 use cbor::CborTagEncode;
+use cbor;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
-use common::NameType;
-use traits::RoutingTrait;
+use routing::name_type::NameType;
+use routing::message_interface::MessageInterface;
 use Random;
 use std::fmt;
 
@@ -36,12 +32,13 @@ use std::fmt;
 /// ```
 /// extern crate sodiumoxide;
 /// extern crate maidsafe_types;
+/// extern crate routing;
 ///
 /// // Generating publick and secret keys using sodiumoxide
 /// let (pub_sign_key, sec_sign_key) = sodiumoxide::crypto::sign::gen_keypair();
 /// let (pub_asym_key, sec_asym_key) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
 /// // Create AnMpid
-/// let an_mpid = maidsafe_types::AnMpid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), maidsafe_types::NameType([3u8; 64]));
+/// let an_mpid = maidsafe_types::AnMpid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key), routing::name_type::NameType([3u8; 64]));
 /// // Retrieving the values
 /// let ref publicKeys = an_mpid.get_public_keys();
 /// let ref secret_keys = an_mpid.get_secret_keys();
@@ -55,7 +52,7 @@ pub struct AnMpid {
 	name: NameType,
 }
 
-impl RoutingTrait for AnMpid {
+impl MessageInterface for AnMpid {
     fn get_name(&self) -> NameType {
         let sign_arr = &(&self.public_keys.0).0;
         let asym_arr = &(&self.public_keys.1).0;
@@ -163,6 +160,7 @@ impl Decodable for AnMpid {
 	Ok(AnMpid::new(pub_keys, sec_keys, name))
     }
 }
+
 
 #[test]
 fn serialisation_an_mpid() {

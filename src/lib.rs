@@ -34,15 +34,13 @@ extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
 extern crate rand;
+extern crate routing;
 
 #[macro_use]
 pub mod helper;
 pub mod id;
-pub mod common;
 pub mod data;
 
-pub mod traits;
-pub use common::NameType;
 pub use id::{Maid, Mpid, AnMaid, PublicAnMaid, AnMpid, PublicMaid, PublicMpid};
 pub use data::{ImmutableData, StructuredData};
 

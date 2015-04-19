@@ -16,20 +16,17 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
-extern crate rustc_serialize;
-extern crate sodiumoxide;
-extern crate cbor;
-extern crate rand;
-
 use cbor::CborTagEncode;
+use cbor;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
-use common::NameType;
-use traits::RoutingTrait;
+use routing::name_type::NameType;
+use routing::message_interface::MessageInterface;
 use std::fmt;
 use Random;
 use std::mem;
+use rand;
 
 /// PublicMpid
 ///
@@ -38,6 +35,7 @@ use std::mem;
 /// ```
 /// extern crate sodiumoxide;
 /// extern crate maidsafe_types;
+/// extern crate routing;
 ///
 /// // Generating sign and asymmetricbox keypairs,
 /// let (pub_sign_key, _) = sodiumoxide::crypto::sign::gen_keypair(); // returns (PublicKey, SecretKey)
@@ -46,9 +44,9 @@ use std::mem;
 /// // Creating new PublicMpid
 /// let public_mpid  = maidsafe_types::PublicMpid::new((pub_sign_key, pub_asym_key),
 ///                     sodiumoxide::crypto::sign::Signature([2u8; 64]),
-///                     maidsafe_types::NameType([8u8; 64]),
+///                     routing::name_type::NameType([8u8; 64]),
 ///                     sodiumoxide::crypto::sign::Signature([5u8; 64]),
-///                     maidsafe_types::NameType([6u8; 64]));
+///                    routing::name_type::NameType([6u8; 64]));
 ///
 /// // getting PublicMpid::public_keys
 /// let &(pub_sign, pub_asym) = public_mpid.get_public_keys();
@@ -57,13 +55,13 @@ use std::mem;
 /// let mpid_signature: &sodiumoxide::crypto::sign::Signature = public_mpid.get_mpid_signature();
 ///
 /// // getting PublicMpid::owner
-/// let owner: &maidsafe_types::NameType = public_mpid.get_owner();
+/// let owner: &routing::name_type::NameType = public_mpid.get_owner();
 ///
 /// // getting PublicMpid::signature
 /// let signature: &sodiumoxide::crypto::sign::Signature = public_mpid.get_signature();
 ///
 /// // getting PublicMpid::name
-/// let name: &maidsafe_types::NameType = public_mpid.get_name();
+/// let name: &routing::name_type::NameType = public_mpid.get_name();
 /// ```
 #[derive(Clone)]
 pub struct PublicMpid {
@@ -74,7 +72,7 @@ signature: crypto::sign::Signature,
 name: NameType
 }
 
-impl RoutingTrait for PublicMpid {
+impl MessageInterface for PublicMpid {
     fn get_name(&self) -> NameType {
         let sign_arr = &(&self.public_keys.0).0;
         let asym_arr = &(&self.public_keys.1).0;

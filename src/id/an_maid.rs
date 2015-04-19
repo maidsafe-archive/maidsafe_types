@@ -16,11 +16,8 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
-extern crate rustc_serialize;
-extern crate sodiumoxide;
-extern crate cbor;
-
 use cbor::CborTagEncode;
+use cbor;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;

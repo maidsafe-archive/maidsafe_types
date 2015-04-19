@@ -16,16 +16,13 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
-extern crate rustc_serialize;
-extern crate sodiumoxide;
-extern crate cbor;
-
 use cbor::CborTagEncode;
+use cbor;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
-use common::NameType;
-use traits::RoutingTrait;
+use routing::name_type::NameType;
+use routing::message_interface::MessageInterface;
 use Random;
 use rand;
 use std::mem;
@@ -37,11 +34,12 @@ use std::fmt;
 /// ```
 /// extern crate sodiumoxide;
 /// extern crate maidsafe_types;
-/// // Generating publick and secret keys using sodiumoxide
+/// extern crate routing;
+/// // Generating public and secret keys using sodiumoxide
 /// let (pub_sign_key, _) = sodiumoxide::crypto::sign::gen_keypair();
 /// let (pub_asym_key, _) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
 /// // Create PublicAnMaid
-/// let pub_an_maid = maidsafe_types::PublicAnMaid::new((pub_sign_key, pub_asym_key), sodiumoxide::crypto::sign::Signature([5u8; 64]), maidsafe_types::NameType([99u8; 64]));
+/// let pub_an_maid = maidsafe_types::PublicAnMaid::new((pub_sign_key, pub_asym_key), sodiumoxide::crypto::sign::Signature([5u8; 64]), routing::name_type::NameType([99u8; 64]));
 /// // Retrieving the values
 /// let ref publicKeys = pub_an_maid.get_public_keys();
 /// let ref signature = pub_an_maid.get_signature();
@@ -90,7 +88,7 @@ impl fmt::Debug for PublicAnMaid {
     }
 }
 
-impl RoutingTrait for PublicAnMaid {
+impl MessageInterface for PublicAnMaid {
     fn get_name(&self) -> NameType {
         let sign_arr = &(&self.public_keys.0).0;
         let asym_arr = &(&self.public_keys.1).0;
