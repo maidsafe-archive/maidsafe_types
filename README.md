@@ -4,7 +4,7 @@
 |:------:|:-------:|:-------:|:-------:|:-------:|
 |[![](http://meritbadge.herokuapp.com/maidsafe_types)](https://crates.io/crates/maidsafe_types)|[![Build Status](https://travis-ci.org/dirvine/maidsafe_types.svg?branch=master)](https://travis-ci.org/dirvine/maidsafe_types)|[![Build Status](https://drone.io/github.com/dirvine/maidsafe_types/status.png)](https://drone.io/github.com/dirvine/maidsafe_types/latest)|[![Build status](https://ci.appveyor.com/api/projects/status/jsuo65sa631h0kav?svg=true)](https://ci.appveyor.com/project/dirvine/maidsafe-types)|[![Coverage Status](https://coveralls.io/repos/dirvine/maidsafe_types/badge.svg)](https://coveralls.io/r/dirvine/maidsafe_types)|
 
-| [Documentation](http://dirvine.github.io/maidsafe_types/) | [MaidSafe System Documention](http://systemdocs.maidsafe.net/) | [MaidSafe web site](http://www.maidsafe.net) | [Safe Community site](https://forum.safenetwork.io) |
+| [ API Documentation](http://dirvine.github.io/maidsafe_types/) | [MaidSafe System Documention](http://systemdocs.maidsafe.net/) | [MaidSafe web site](http://www.maidsafe.net) | [Safe Community site](https://forum.safenetwork.io) |
 
 
 ###Pre-requisite:
