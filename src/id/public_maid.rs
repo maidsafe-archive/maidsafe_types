@@ -223,6 +223,36 @@ fn serialisation_public_maid() {
 }
 
 #[test]
+fn bad_deserialisation_public_maid() {
+    let mut array1 = Vec::<u8>::new();
+    let mut array2 = Vec::<u8>::new();
+    let mut array3 = Vec::<u8>::new();
+    let mut array4 = Vec::<u8>::new();
+
+    let verify = |a : &Vec<u8>, b : &Vec<u8>, c : &Vec<u8>, d : &Vec<u8>| {
+        let mut e = cbor::Encoder::from_memory();
+        let name = NameType([1u8; 64]);
+        CborTagEncode::new(65, &(a, b, c, &name, d, &name)).encode(&mut e).unwrap();
+        let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+        d.decode::<PublicMaid>().next().unwrap().is_ok()
+    };
+
+    assert!(!verify(&array1, &array2, &array3, &array4));
+
+    array1.extend((0..crypto::sign::PUBLICKEYBYTES).map(|_| 0));
+    assert!(!verify(&array1, &array2, &array3, &array4));
+
+    array2.extend((0..crypto::asymmetricbox::PUBLICKEYBYTES).map(|_| 0));
+    assert!(!verify(&array1, &array2, &array3, &array4));
+
+    array3.extend((0..crypto::sign::SIGNATUREBYTES).map(|_| 0));
+    assert!(!verify(&array1, &array2, &array3, &array4));
+
+    array4.extend((0..crypto::sign::SIGNATUREBYTES).map(|_| 0));
+    assert!(verify(&array1, &array2, &array3, &array4));
+}
+
+#[test]
 fn equality_assertion_public_maid() {
 	let public_maid_first = PublicMaid::generate_random();
 	let public_maid_second = public_maid_first.clone();

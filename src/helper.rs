@@ -16,6 +16,8 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
+use sodiumoxide::crypto;
+
 ///
 /// Returns true if both slices are equal in length, and have equal contents
 ///
@@ -48,6 +50,37 @@ macro_rules! convert_to_array {
             Some(arr)
         }
     }};
+}
+
+///
+/// SodiumOxide does not allow detached mode of the signature. This detaches the signature
+/// from the data. Panics if data isn't at least crypto::sign::SIGNATUREBYTES in length;
+/// recommended to be used only with the sodium oxide sign function directly.
+///
+/// ```
+/// extern crate maidsafe_types;
+/// extern crate sodiumoxide;
+///
+/// let keys = sodiumoxide::crypto::sign::gen_keypair();
+/// let data = "some data".to_string().into_bytes();
+/// let signature : sodiumoxide::crypto::sign::Signature =
+///     maidsafe_types::helper::detach_signature(sodiumoxide::crypto::sign::sign(&data, &keys.1));
+/// ```
+pub fn detach_signature(mut data: Vec<u8>) -> crypto::sign::Signature {
+    data.truncate(crypto::sign::SIGNATUREBYTES);
+    crypto::sign::Signature(convert_to_array!(data, crypto::sign::SIGNATUREBYTES).unwrap())
+}
+
+///
+/// SodiumOxide does not allow detached mode of the signature. This re-attaches the signature
+/// to the data so that it can be used in the verify function of sodium oxide.
+///
+pub fn attach_signature(signature: &crypto::sign::Signature, data: &[u8]) -> Vec<u8> {
+    let mut attached = Vec::<u8>::with_capacity(signature.0.len() + data.len());
+    for byte in signature.0.iter().chain(data.iter()) {
+        attached.push(*byte);
+    }
+    return attached;
 }
 
 #[cfg(test)]
