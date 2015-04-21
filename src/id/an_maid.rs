@@ -35,7 +35,7 @@ use std::fmt;
 /// extern crate maidsafe_types;
 /// // Generating publick and secret keys using sodiumoxide
 /// // Create AnMaid
-/// let an_maid : maidsafe_types::AnMaid = maidsafe_types::Random::generate_random();
+/// let an_maid : maidsafe_types::AnMaid = maidsafe_types::AnMaid::new();
 /// // Retrieving the values
 /// let ref publicKeys = an_maid.get_public_key();
 /// ```
@@ -53,16 +53,6 @@ impl PartialEq for AnMaid {
     }
 }
 
-impl Random for AnMaid {
-    fn generate_random() -> AnMaid {
-        let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
-
-        AnMaid {
-            public_key: pub_sign_key,
-            secret_key: sec_sign_key
-        }
-    }
-}
 
 impl fmt::Debug for AnMaid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -72,8 +62,21 @@ impl fmt::Debug for AnMaid {
 }
 
 impl AnMaid {
+    pub fn new() -> AnMaid {
+        let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
+
+        AnMaid {
+            public_key: pub_sign_key,
+            secret_key: sec_sign_key
+        }
+    }
+
     pub fn get_public_key(&self) -> &crypto::sign::PublicKey {
         &self.public_key
+    }
+
+    pub fn get_secret_key(&self) -> &crypto::sign::SecretKey {
+        &self.secret_key
     }
 
     pub fn sign(&self, data : &[u8]) -> Vec<u8> {
@@ -112,6 +115,12 @@ mod test {
     use Random;
     use sodiumoxide::crypto;
     use super::AnMaid;
+
+    impl Random for AnMaid {
+        fn generate_random() -> AnMaid {
+            AnMaid::new()
+        }
+    }
 
     #[test]
     fn serialisation_an_maid() {
