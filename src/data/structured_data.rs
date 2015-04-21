@@ -25,7 +25,7 @@ use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use routing::name_type::NameType;
 use routing::message_interface::MessageInterface;
-use Random;
+
 
 
 #[derive(Clone, PartialEq, Debug)]
@@ -35,25 +35,6 @@ pub struct StructuredData {
     value: Vec<Vec<NameType>>,
 }
 
-impl Random for StructuredData {
-    fn generate_random() -> StructuredData {
-        let outer_limit = rand::random::<u8>() as usize;
-        let mut outer = Vec::<Vec<NameType>>::with_capacity(outer_limit);
-        for _ in 0..rand::random::<u8>() {
-            let inner_limit = rand::random::<u8>() as usize;
-            let mut inner = Vec::<NameType>::with_capacity(inner_limit);
-            for _ in 0..inner_limit {
-                inner.push(NameType::generate_random());
-            }
-            outer.push(inner);
-        }
-        StructuredData {
-            name: NameType::generate_random(),
-            owner: NameType::generate_random(),
-            value: outer,
-        }
-    }
-}
 
 impl MessageInterface for StructuredData {
     fn get_name(&self) -> NameType {
@@ -96,31 +77,61 @@ impl Decodable for StructuredData {
         Ok(structured)
     }
 }
+#[cfg(test)]
+mod test {
+    use super::*;
+    use cbor::{ Encoder, Decoder };
+    use rustc_serialize::{Decodable, Encodable};
+    use routing::name_type::NameType;
+    use routing::message_interface::MessageInterface;
+    use Random;
+    use rand;
+
+    impl Random for StructuredData {
+        fn generate_random() -> StructuredData {
+            let outer_limit = rand::random::<u8>() as usize;
+            let mut outer = Vec::<Vec<NameType>>::with_capacity(outer_limit);
+            for _ in 0..rand::random::<u8>() {
+                let inner_limit = rand::random::<u8>() as usize;
+                let mut inner = Vec::<NameType>::with_capacity(inner_limit);
+                for _ in 0..inner_limit {
+                    inner.push(NameType::generate_random());
+                }
+                outer.push(inner);
+            }
+            StructuredData {
+                name: NameType::generate_random(),
+                owner: NameType::generate_random(),
+                value: outer,
+            }
+        }
+    }
 
 #[test]
-fn creation() {
-    let name = NameType::generate_random();
-    let owner = NameType::generate_random();
-    let structured_data = StructuredData::new(name.clone(), owner.clone());
-    assert_eq!(&name, &structured_data.get_name());
-    assert_eq!(&owner.0.as_ref().to_vec(), structured_data.get_owner().as_ref().unwrap());
-    let expected_value = Vec::<Vec<NameType>>::new();
-    assert_eq!(&expected_value, structured_data.get_value());
-}
+    fn creation() {
+        let name = NameType::generate_random();
+        let owner = NameType::generate_random();
+        let structured_data = StructuredData::new(name.clone(), owner.clone());
+        assert_eq!(&name, &structured_data.get_name());
+        assert_eq!(&owner.0.as_ref().to_vec(), structured_data.get_owner().as_ref().unwrap());
+        let expected_value = Vec::<Vec<NameType>>::new();
+        assert_eq!(&expected_value, structured_data.get_value());
+    }
 
 #[test]
-fn serialisation_structured_data() {
-    let obj_before = StructuredData::generate_random();
-    let obj_before_clone = obj_before.clone();
-    let obj_before1 = StructuredData::generate_random();
+    fn serialisation_structured_data() {
+        let obj_before = StructuredData::generate_random();
+        let obj_before_clone = obj_before.clone();
+        let obj_before1 = StructuredData::generate_random();
 
-    let mut e = cbor::Encoder::from_memory();
-    e.encode(&[&obj_before]).unwrap();
+        let mut e = Encoder::from_memory();
+        e.encode(&[&obj_before]).unwrap();
 
-    let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-    let obj_after: StructuredData = d.decode().next().unwrap().unwrap();
+        let mut d = Decoder::from_bytes(e.as_bytes());
+        let obj_after: StructuredData = d.decode().next().unwrap().unwrap();
 
-    assert_eq!(obj_before, obj_after);
-    assert!(!(obj_before != obj_before_clone));
-    assert!(obj_before != obj_before1);
+        assert_eq!(obj_before, obj_after);
+        assert!(!(obj_before != obj_before_clone));
+        assert!(obj_before != obj_before1);
+    }  
 }

@@ -24,9 +24,6 @@ use helper::*;
 use routing::name_type::NameType;
 use routing::message_interface::MessageInterface;
 use std::fmt;
-use Random;
-use std::mem;
-use rand;
 
 /// PublicMpid
 ///
@@ -113,27 +110,6 @@ impl fmt::Debug for PublicMpid {
     }
 }
 
-impl Random for PublicMpid {
-	fn generate_random() -> PublicMpid {
-        let (sign_pub_key, _) = crypto::sign::gen_keypair();
-        let (asym_pub_key, _) = crypto::asymmetricbox::gen_keypair();
-        let mut mpid_signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
-        let mut signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
-        for i in 0..64 {
-            mpid_signature_arr[i] = rand::random::<u8>();
-            signature_arr[i] = rand::random::<u8>();
-        }
-
-		PublicMpid {
-			public_keys: (sign_pub_key, asym_pub_key),
-			mpid_signature: crypto::sign::Signature(mpid_signature_arr),
-			owner: NameType::generate_random(),
-			signature: crypto::sign::Signature(signature_arr),
-			name: NameType::generate_random()
-		}
-	}
-}
-
 impl PublicMpid {
 	pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 						 mpid_signature: crypto::sign::Signature,
@@ -208,24 +184,58 @@ impl Decodable for PublicMpid {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use cbor;
+    use sodiumoxide::crypto;
+    use routing::name_type::NameType;   
+    use Random;
+    use rand;
+    use std::mem;
+
+    impl Random for PublicMpid {
+		fn generate_random() -> PublicMpid {
+	        let (sign_pub_key, _) = crypto::sign::gen_keypair();
+	        let (asym_pub_key, _) = crypto::asymmetricbox::gen_keypair();
+	        let mut mpid_signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
+	        let mut signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
+	        for i in 0..64 {
+	            mpid_signature_arr[i] = rand::random::<u8>();
+	            signature_arr[i] = rand::random::<u8>();
+	        }
+
+			PublicMpid {
+				public_keys: (sign_pub_key, asym_pub_key),
+				mpid_signature: crypto::sign::Signature(mpid_signature_arr),
+				owner: NameType::generate_random(),
+				signature: crypto::sign::Signature(signature_arr),
+				name: NameType::generate_random()
+			}
+		}
+	}
+
+
 #[test]
-fn serialisation_public_mpid() {
-	let obj_before = PublicMpid::generate_random();
+	fn serialisation_public_mpid() {
+		let obj_before = PublicMpid::generate_random();
 
-	let mut e = cbor::Encoder::from_memory();
-	e.encode(&[&obj_before]).unwrap();
+		let mut e = cbor::Encoder::from_memory();
+		e.encode(&[&obj_before]).unwrap();
 
-	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-	let obj_after: PublicMpid = d.decode().next().unwrap().unwrap();
+		let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+		let obj_after: PublicMpid = d.decode().next().unwrap().unwrap();
 
-	assert_eq!(obj_before, obj_after);
-}
+		assert_eq!(obj_before, obj_after);
+	}
 
 #[test]
-fn equality_assertion_public_mpid() {
-	let public_mpid_first = PublicMpid::generate_random();
-	let public_mpid_second = public_mpid_first.clone();
-	let public_mpid_third = PublicMpid::generate_random();
-	assert_eq!(public_mpid_first, public_mpid_second);
-	assert!(public_mpid_first != public_mpid_third);
+	fn equality_assertion_public_mpid() {
+		let public_mpid_first = PublicMpid::generate_random();
+		let public_mpid_second = public_mpid_first.clone();
+		let public_mpid_third = PublicMpid::generate_random();
+		assert_eq!(public_mpid_first, public_mpid_second);
+		assert!(public_mpid_first != public_mpid_third);
+	}
+	
 }

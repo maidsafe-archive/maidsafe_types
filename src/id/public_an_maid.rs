@@ -23,9 +23,6 @@ use sodiumoxide::crypto;
 use helper::*;
 use routing::name_type::NameType;
 use routing::message_interface::MessageInterface;
-use Random;
-use rand;
-use std::mem;
 use std::fmt;
 
 /// PublicAnMaid
@@ -60,22 +57,6 @@ impl PartialEq for PublicAnMaid {
         let public1_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
         let signature = slice_equal(&self.signature.0, &other.signature.0);
         return public0_equal && public1_equal && signature && self.name == other.name;
-    }
-}
-
-impl Random for PublicAnMaid {
-    fn generate_random() -> PublicAnMaid {
-        let (pub_sign_key, _) = crypto::sign::gen_keypair();
-        let (pub_asym_key, _) = crypto::asymmetricbox::gen_keypair();
-        let mut arr: [u8; 64] = unsafe { mem::uninitialized() };
-        for i in 0..64 {
-            arr[i] = rand::random::<u8>();
-        }
-        PublicAnMaid {
-            public_keys: (pub_sign_key, pub_asym_key),
-            signature: crypto::sign::Signature(arr),
-            name: NameType::generate_random()
-        }
     }
 }
 
@@ -164,25 +145,52 @@ impl Decodable for PublicAnMaid {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use cbor;
+    use sodiumoxide::crypto;
+    use routing::name_type::NameType;   
+    use Random;
+    use rand;
+    use std::mem;
+
+    impl Random for PublicAnMaid {
+        fn generate_random() -> PublicAnMaid {
+            let (pub_sign_key, _) = crypto::sign::gen_keypair();
+            let (pub_asym_key, _) = crypto::asymmetricbox::gen_keypair();
+            let mut arr: [u8; 64] = unsafe { mem::uninitialized() };
+            for i in 0..64 {
+                arr[i] = rand::random::<u8>();
+            }
+            PublicAnMaid {
+                public_keys: (pub_sign_key, pub_asym_key),
+                signature: crypto::sign::Signature(arr),
+                name: NameType::generate_random()
+            }
+        }
+    }
 
 #[test]
-fn serialisation_public_anmaid() {
-    let obj_before = PublicAnMaid::generate_random();
-    let mut e = cbor::Encoder::from_memory();
-    e.encode(&[&obj_before]).unwrap();
+    fn serialisation_public_anmaid() {
+        let obj_before = PublicAnMaid::generate_random();
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&obj_before]).unwrap();
 
-    let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-    let obj_after: PublicAnMaid = d.decode().next().unwrap().unwrap();
+        let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+        let obj_after: PublicAnMaid = d.decode().next().unwrap().unwrap();
 
-    assert_eq!(obj_before, obj_after);
-}
+        assert_eq!(obj_before, obj_after);
+    }
 
 #[test]
-fn equality_assertion_public_anmaid() {
-    let first_obj = PublicAnMaid::generate_random();
-    let second_obj = PublicAnMaid::generate_random();
-    let cloned_obj = second_obj.clone();
+    fn equality_assertion_public_anmaid() {
+        let first_obj = PublicAnMaid::generate_random();
+        let second_obj = PublicAnMaid::generate_random();
+        let cloned_obj = second_obj.clone();
 
-    assert!(first_obj != second_obj);
-    assert!(second_obj == cloned_obj);
+        assert!(first_obj != second_obj);
+        assert!(second_obj == cloned_obj);
+    }
+    
 }

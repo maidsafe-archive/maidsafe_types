@@ -23,7 +23,6 @@ use sodiumoxide::crypto;
 use helper::*;
 use routing::name_type::NameType;
 use routing::message_interface::MessageInterface;
-use Random;
 use std::fmt;
 
 /// AnMpid
@@ -92,18 +91,6 @@ impl PartialEq for AnMpid {
     }
 }
 
-impl Random for AnMpid {
-	fn generate_random() -> AnMpid {
-        let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
-        let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
-		AnMpid {
-			public_keys: (sign_pub_key, asym_pub_key),
-			secret_keys: (sign_sec_key, asym_sec_key),
-			name: NameType::generate_random()
-		}
-	}
-}
-
 impl AnMpid {
 	pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 						 secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
@@ -161,24 +148,45 @@ impl Decodable for AnMpid {
     }
 }
 
+#[cfg(test)]
+mod test {
+	use super::*;
+	use cbor::{ Encoder, Decoder };
+	use Random;
+	use sodiumoxide::crypto;
+	use routing::name_type::NameType;	
+
+	impl Random for AnMpid {
+		fn generate_random() -> AnMpid {
+	        let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
+	        let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
+			AnMpid {
+				public_keys: (sign_pub_key, asym_pub_key),
+				secret_keys: (sign_sec_key, asym_sec_key),
+				name: NameType::generate_random()
+			}
+		}
+	}
 
 #[test]
-fn serialisation_an_mpid() {
-	let obj_before = AnMpid::generate_random();
-	let mut e = cbor::Encoder::from_memory();
-	e.encode(&[&obj_before]).unwrap();
+	fn serialisation_an_mpid() {
+		let obj_before = AnMpid::generate_random();
+		let mut e = Encoder::from_memory();
+		e.encode(&[&obj_before]).unwrap();
 
-	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-	let obj_after: AnMpid = d.decode().next().unwrap().unwrap();
+		let mut d = Decoder::from_bytes(e.as_bytes());
+		let obj_after: AnMpid = d.decode().next().unwrap().unwrap();
 
-	assert_eq!(obj_before, obj_after);
-}
+		assert_eq!(obj_before, obj_after);
+	}
 
 #[test]
-fn equality_assertion_an_mpid() {
-	let an_maid_first = AnMpid::generate_random();
-	let an_maid_second = an_maid_first.clone();
-	let an_maid_third = AnMpid::generate_random();
-	assert_eq!(an_maid_first, an_maid_second);
-	assert!(an_maid_first != an_maid_third);
+	fn equality_assertion_an_mpid() {
+		let an_mpid_first = AnMpid::generate_random();
+		let an_mpid_second = an_mpid_first.clone();
+		let an_mpid_third = AnMpid::generate_random();
+		assert_eq!(an_mpid_first, an_mpid_second);
+		assert!(an_mpid_first != an_mpid_third);
+	}
+	
 }

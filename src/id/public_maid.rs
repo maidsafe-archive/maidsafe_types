@@ -24,9 +24,6 @@ use helper::*;
 use routing::name_type::NameType;
 use routing::message_interface::MessageInterface;
 use std::fmt;
-use Random;
-use std::mem;
-use rand;
 
 /// PublicMaid
 ///
@@ -114,27 +111,6 @@ impl fmt::Debug for PublicMaid {
     }
 }
 
-impl Random for PublicMaid {
-	fn generate_random() -> PublicMaid {
-        let (sign_pub_key, _) = crypto::sign::gen_keypair();
-        let (asym_pub_key, _) = crypto::asymmetricbox::gen_keypair();
-        let mut maid_signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
-        let mut signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
-        for i in 0..64 {
-            maid_signature_arr[i] = rand::random::<u8>();
-            signature_arr[i] = rand::random::<u8>();
-        }
-
-		PublicMaid {
-			public_keys: (sign_pub_key, asym_pub_key),
-			maid_signature: crypto::sign::Signature(maid_signature_arr),
-			owner: NameType::generate_random(),
-			signature: crypto::sign::Signature(signature_arr),
-			name: NameType::generate_random()
-		}
-	}
-}
-
 impl PublicMaid {
 	pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 						 maid_signature: crypto::sign::Signature,
@@ -209,24 +185,57 @@ impl Decodable for PublicMaid {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use cbor;
+    use sodiumoxide::crypto;
+    use routing::name_type::NameType;   
+    use Random;
+    use rand;
+    use std::mem;
+
+	impl Random for PublicMaid {
+		fn generate_random() -> PublicMaid {
+	        let (sign_pub_key, _) = crypto::sign::gen_keypair();
+	        let (asym_pub_key, _) = crypto::asymmetricbox::gen_keypair();
+	        let mut maid_signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
+	        let mut signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
+	        for i in 0..64 {
+	            maid_signature_arr[i] = rand::random::<u8>();
+	            signature_arr[i] = rand::random::<u8>();
+	        }
+
+			PublicMaid {
+				public_keys: (sign_pub_key, asym_pub_key),
+				maid_signature: crypto::sign::Signature(maid_signature_arr),
+				owner: NameType::generate_random(),
+				signature: crypto::sign::Signature(signature_arr),
+				name: NameType::generate_random()
+			}
+		}
+	}
+
 #[test]
-fn serialisation_public_maid() {
-	let obj_before = PublicMaid::generate_random();
+	fn serialisation_public_maid() {
+		let obj_before = PublicMaid::generate_random();
 
-	let mut e = cbor::Encoder::from_memory();
-	e.encode(&[&obj_before]).unwrap();
+		let mut e = cbor::Encoder::from_memory();
+		e.encode(&[&obj_before]).unwrap();
 
-	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-	let obj_after: PublicMaid = d.decode().next().unwrap().unwrap();
+		let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+		let obj_after: PublicMaid = d.decode().next().unwrap().unwrap();
 
-	assert_eq!(obj_before, obj_after);
-}
+		assert_eq!(obj_before, obj_after);
+	}
 
 #[test]
-fn equality_assertion_public_maid() {
-	let public_maid_first = PublicMaid::generate_random();
-	let public_maid_second = public_maid_first.clone();
-	let public_maid_third = PublicMaid::generate_random();
-	assert_eq!(public_maid_first, public_maid_second);
-	assert!(public_maid_first != public_maid_third);
+	fn equality_assertion_public_maid() {
+		let public_maid_first = PublicMaid::generate_random();
+		let public_maid_second = public_maid_first.clone();
+		let public_maid_third = PublicMaid::generate_random();
+		assert_eq!(public_maid_first, public_maid_second);
+		assert!(public_maid_first != public_maid_third);
+	}
+	
 }

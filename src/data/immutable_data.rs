@@ -22,8 +22,6 @@ use routing::name_type::NameType;
 use routing::message_interface::MessageInterface;
 use sodiumoxide::crypto;
 use std::fmt;
-use rand;
-use Random;
 
 #[derive(Clone)]
 pub struct ImmutableData {
@@ -66,20 +64,6 @@ impl ImmutableData {
     }
 }
 
-#[allow(unused_variables)]
-impl Random for ImmutableData {
-    fn generate_random() -> ImmutableData {
-        use rand::Rng;
-        let size = 64;
-        let mut data = Vec::with_capacity(size);
-        let mut rng = rand::thread_rng();
-        for i in 0..size {
-            data.push(rng.gen());
-        }
-        ImmutableData::new(data)
-    }
-}
-
 impl Encodable for ImmutableData {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
         CborTagEncode::new(5483_001, &(&self.value)).encode(e)
@@ -101,6 +85,21 @@ mod test {
     use rustc_serialize::{Decodable, Encodable};
     use Random;
     use routing::message_interface::MessageInterface;
+    use rand;
+
+    #[allow(unused_variables)]
+    impl Random for ImmutableData {
+        fn generate_random() -> ImmutableData {
+            use rand::Rng;
+            let size = 64;
+            let mut data = Vec::with_capacity(size);
+            let mut rng = rand::thread_rng();
+            for i in 0..size {
+                data.push(rng.gen());
+            }
+            ImmutableData::new(data)
+        }
+    }
 
     #[test]
     fn creation() {

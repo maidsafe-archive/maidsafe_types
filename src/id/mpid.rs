@@ -24,7 +24,6 @@ use helper::*;
 use routing::name_type::NameType;
 use routing::message_interface::MessageInterface;
 use std::fmt;
-use Random;
 
 /// Mpid
 ///
@@ -75,17 +74,6 @@ impl fmt::Debug for Mpid {
     }
 }
 
-impl Random for Mpid {
-	fn generate_random() -> Mpid {
-        let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
-        let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
-		Mpid {
-			public_keys: (sign_pub_key, asym_pub_key),
-			secret_keys: (sign_sec_key, asym_sec_key),
-			name: NameType::generate_random()
-		}
-	}
-}
 
 impl MessageInterface for Mpid {
     fn get_name(&self) -> NameType {
@@ -165,24 +153,46 @@ impl Decodable for Mpid {
     }
 }
 
+#[cfg(test)]
+mod test {
+	use super::*;
+	use cbor;
+	use sodiumoxide::crypto;
+	use routing::name_type::NameType;	
+	use Random;
+
+	impl Random for Mpid {
+		fn generate_random() -> Mpid {
+	        let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
+	        let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
+			Mpid {
+				public_keys: (sign_pub_key, asym_pub_key),
+				secret_keys: (sign_sec_key, asym_sec_key),
+				name: NameType::generate_random()
+			}
+		}
+	}
+
 #[test]
-fn serialisation_mpid() {
-	let obj_before = Mpid::generate_random();
+	fn serialisation_mpid() {
+		let obj_before = Mpid::generate_random();
 
-	let mut e = cbor::Encoder::from_memory();
-	e.encode(&[&obj_before]).unwrap();
+		let mut e = cbor::Encoder::from_memory();
+		e.encode(&[&obj_before]).unwrap();
 
-	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-	let obj_after: Mpid = d.decode().next().unwrap().unwrap();
+		let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+		let obj_after: Mpid = d.decode().next().unwrap().unwrap();
 
-	assert_eq!(obj_before, obj_after);
-}
+		assert_eq!(obj_before, obj_after);
+	}
 
 #[test]
-fn equality_assertion_mpid() {
-	let mpid_first = Mpid::generate_random();
-	let mpid_second = mpid_first.clone();
-	let mpid_third = Mpid::generate_random();
-	assert_eq!(mpid_first, mpid_second);
-	assert!(mpid_first != mpid_third);
+	fn equality_assertion_mpid() {
+		let mpid_first = Mpid::generate_random();
+		let mpid_second = mpid_first.clone();
+		let mpid_third = Mpid::generate_random();
+		assert_eq!(mpid_first, mpid_second);
+		assert!(mpid_first != mpid_third);
+	}
+	
 }
