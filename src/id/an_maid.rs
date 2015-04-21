@@ -17,7 +17,6 @@
 // of the MaidSafe Software.
 
 use cbor::CborTagEncode;
-use cbor;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
@@ -107,9 +106,12 @@ impl Decodable for AnMaid {
 #[cfg(test)]
 mod test {
     use cbor;
+    use cbor::CborTagEncode;
+    use helper::*;
     use rand;
     use rand::Rng;
     use Random;
+    use rustc_serialize::Encodable;
     use sodiumoxide::crypto;
     use super::AnMaid;
 
@@ -123,6 +125,27 @@ mod test {
         let obj_after: AnMaid = d.decode().next().unwrap().unwrap();
 
         assert_eq!(obj_before, obj_after);
+    }
+
+     #[test]
+    fn bad_deserialisation_anmaid() {
+        let mut array1 = Vec::<u8>::new();
+        let mut array2 = Vec::<u8>::new();
+
+        let verify = |a : &Vec<u8>, b : &Vec<u8>| {
+            let mut e = cbor::Encoder::from_memory();
+            CborTagEncode::new(65, &(a, b)).encode(&mut e).unwrap();
+            let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+            d.decode::<AnMaid>().next().unwrap().is_ok()
+        };
+
+        assert!(!verify(&array1, &array2));
+
+        array1.extend((0..crypto::sign::PUBLICKEYBYTES).map(|_| 0));
+        assert!(!verify(&array1, &array2));
+
+        array2.extend((0..crypto::sign::SIGNATUREBYTES).map(|_| 0));
+        assert!(verify(&array1, &array2));
     }
 
     #[test]

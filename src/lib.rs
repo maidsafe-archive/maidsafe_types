@@ -51,7 +51,9 @@ pub trait Random {
     fn generate_random() -> Self;
 }
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum CryptoError {
+    SignatureError,
     Unknown
 }
 

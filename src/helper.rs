@@ -16,6 +16,8 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
+use sodiumoxide::crypto;
+
 ///
 /// Returns true if both slices are equal in length, and have equal contents
 ///
@@ -39,19 +41,49 @@ macro_rules! convert_to_array {
         if $container.len() != $size {
             None
         } else {
-            use std::mem;
-            let mut arr : [_; $size] = unsafe { mem::uninitialized() };
+            let mut arr = [0u8; $size];
             for element in $container.into_iter().enumerate() {
-                let old_val = mem::replace(&mut arr[element.0], element.1);
-                unsafe { mem::forget(old_val) };
+                arr[element.0] = element.1;
             }
             Some(arr)
         }
     }};
 }
 
+///
+/// SodiumOxide does not allow detached mode of the signature. This detaches the signature
+/// from the data. Fails if data isn't at least crypto::sign::SIGNATUREBYTES in length;
+/// recommended to be used only with the sodium oxide sign function directly.
+///
+/// ```
+/// extern crate maidsafe_types;
+/// extern crate sodiumoxide;
+///
+/// let keys = sodiumoxide::crypto::sign::gen_keypair();
+/// let data = "some data".to_string().into_bytes();
+/// let signature : sodiumoxide::crypto::sign::Signature =
+///     maidsafe_types::helper::detach_signature(sodiumoxide::crypto::sign::sign(&data, &keys.1)).unwrap();
+/// ```
+pub fn detach_signature(mut data: Vec<u8>) -> Option<crypto::sign::Signature> {
+    data.truncate(crypto::sign::SIGNATUREBYTES);
+    convert_to_array!(data, crypto::sign::SIGNATUREBYTES).map(|data| crypto::sign::Signature(data))
+}
+
+///
+/// SodiumOxide does not allow detached mode of the signature. This re-attaches the signature
+/// to the data so that it can be used in the verify function of sodium oxide.
+///
+pub fn attach_signature(signature: &crypto::sign::Signature, data: &[u8]) -> Vec<u8> {
+    let mut attached = Vec::<u8>::with_capacity(signature.0.len() + data.len());
+    for byte in signature.0.iter().chain(data.iter()) {
+        attached.push(*byte);
+    }
+    return attached;
+}
+
 #[cfg(test)]
 mod test {
+    use sodiumoxide::crypto;
     use super::*;
 
     #[test]
@@ -97,30 +129,54 @@ mod test {
     }
 
     #[test]
-    fn copy_strings_to_array() {
-        let one = "some string".to_string();
-        let two = "some two".to_string();
-
-        let mut data = Vec::<String>::with_capacity(2);
-        data.push(one);
-        data.push(two);
-
+    fn copy_u8_to_array() {
+        let data = "some string".to_string().into_bytes();
         let data2 = data.clone();
-        let result = convert_to_array!(data2, 2).unwrap();
+        let result = convert_to_array!(data2, 11).unwrap();
         assert!(slice_equal(&data, &result));
     }
 
     #[test]
-    fn copy_strings_to_bad_array() {
-        let one = "some string".to_string();
-        let two = "some two".to_string();
-
-        let mut data = Vec::<String>::with_capacity(2);
-        data.push(one);
-        data.push(two);
-
+    fn copy_u8_to_bad_array() {
+        let data = "some string".to_string().into_bytes();
         let data2 = data.clone();
-        assert!(convert_to_array!(data2, 1).is_none());
-        assert!(convert_to_array!(data, 3).is_none());
+        assert!(convert_to_array!(data2, 10).is_none());
+        assert!(convert_to_array!(data, 12).is_none());
+    }
+
+    #[test]
+    fn detach_signature_failure() {
+        let empty = Vec::<u8>::new();
+        assert!(detach_signature(empty).is_none());
+    }
+
+    #[test]
+    fn detached_signature() {
+        let mut data = Vec::<u8>::with_capacity(crypto::sign::SIGNATUREBYTES);
+        data.extend((0..crypto::sign::SIGNATUREBYTES).map(|_| 4));
+        let truncated : Vec<u8> = data.iter().take(crypto::sign::SIGNATUREBYTES).map(|a| a.clone()).collect();
+        let detached = detach_signature(data.clone()).unwrap();
+        assert!(slice_equal(&truncated, &detached.0));
+    }
+
+    #[test]
+    fn attached_signature() {
+        let signature = crypto::sign::Signature([12u8; crypto::sign::SIGNATUREBYTES]);
+        let data = [14u8; 100];
+        let attached = attach_signature(&signature, &data);
+        assert_eq!(signature.0.len() + data.len(), attached.len());
+        assert!(slice_equal(&signature.0, &attached[0..crypto::sign::SIGNATUREBYTES]));
+        assert!(slice_equal(&data, &attached[crypto::sign::SIGNATUREBYTES..attached.len()]));
+    }
+
+    #[test]
+    fn sign_detach_then_attach_and_verify() {
+        let mut data = Vec::<u8>::with_capacity(100);
+        data.extend((0..100).map(|_| 244));
+
+        let keys = crypto::sign::gen_keypair();
+        let detached = detach_signature(crypto::sign::sign(&data, &keys.1)).unwrap();
+                     
+        assert!(crypto::sign::verify(&attach_signature(&detached, &data), &keys.0).is_some())
     }
 }

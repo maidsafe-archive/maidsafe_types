@@ -175,10 +175,40 @@ fn serialisation_an_mpid() {
 }
 
 #[test]
+fn bad_deserialisation_anmpid() {
+    let mut array1 = Vec::<u8>::new();
+    let mut array2 = Vec::<u8>::new();
+    let mut array3 = Vec::<u8>::new();
+    let mut array4 = Vec::<u8>::new();
+
+    let verify = |a : &Vec<u8>, b : &Vec<u8>, c : &Vec<u8>, d : &Vec<u8>| {
+        let mut e = cbor::Encoder::from_memory();
+        let name = NameType([1u8; 64]);
+        CborTagEncode::new(65, &(a, b, c, d, &name)).encode(&mut e).unwrap();
+        let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+        d.decode::<AnMpid>().next().unwrap().is_ok()
+    };
+
+    assert!(!verify(&array1, &array2, &array3, &array4));
+
+    array1.extend((0..crypto::sign::PUBLICKEYBYTES).map(|_| 0));
+    assert!(!verify(&array1, &array2, &array3, &array4));
+
+    array2.extend((0..crypto::asymmetricbox::PUBLICKEYBYTES).map(|_| 0));
+    assert!(!verify(&array1, &array2, &array3, &array4));
+
+    array3.extend((0..crypto::sign::SECRETKEYBYTES).map(|_| 0));
+    assert!(!verify(&array1, &array2, &array3, &array4));
+
+    array4.extend((0..crypto::asymmetricbox::SECRETKEYBYTES).map(|_| 0));
+    assert!(verify(&array1, &array2, &array3, &array4));
+}
+
+#[test]
 fn equality_assertion_an_mpid() {
-	let an_maid_first = AnMpid::generate_random();
-	let an_maid_second = an_maid_first.clone();
-	let an_maid_third = AnMpid::generate_random();
-	assert_eq!(an_maid_first, an_maid_second);
-	assert!(an_maid_first != an_maid_third);
+    let an_maid_first = AnMpid::generate_random();
+    let an_maid_second = an_maid_first.clone();
+    let an_maid_third = AnMpid::generate_random();
+    assert_eq!(an_maid_first, an_maid_second);
+    assert!(an_maid_first != an_maid_third);
 }

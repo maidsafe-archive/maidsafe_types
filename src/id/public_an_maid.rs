@@ -17,172 +17,208 @@
 // of the MaidSafe Software.
 
 use cbor::CborTagEncode;
-use cbor;
+use CryptoError;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
 use routing::name_type::NameType;
 use routing::message_interface::MessageInterface;
-use Random;
-use rand;
-use std::mem;
 use std::fmt;
+use id::an_maid::*;
 
 /// PublicAnMaid
 ///
 /// #Examples
 /// ```
-/// extern crate sodiumoxide;
-/// extern crate maidsafe_types;
-/// extern crate routing;
-/// // Generating public and secret keys using sodiumoxide
-/// let (pub_sign_key, _) = sodiumoxide::crypto::sign::gen_keypair();
-/// let (pub_asym_key, _) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
-/// // Create PublicAnMaid
-/// let pub_an_maid = maidsafe_types::PublicAnMaid::new((pub_sign_key, pub_asym_key), sodiumoxide::crypto::sign::Signature([5u8; 64]), routing::name_type::NameType([99u8; 64]));
-/// // Retrieving the values
-/// let ref publicKeys = pub_an_maid.get_public_keys();
-/// let ref signature = pub_an_maid.get_signature();
-/// let ref name = pub_an_maid.get_name();
+/// use maidsafe_types::Random;
+///
+/// let an_maid = maidsafe_types::id::AnMaid::generate_random();
+/// match maidsafe_types::id::PublicAnMaid::new(&an_maid) {
+///     Ok(pub_an_maid) => assert!(&pub_an_maid.verify_owner(&an_maid)),
+///     Err(_) => assert!(false)
+/// }
 /// ```
 ///
+
 #[derive(Clone)]
 pub struct PublicAnMaid {
-        public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-        signature: crypto::sign::Signature,
-        name: NameType,
+    owner: crypto::sign::PublicKey,
+    signature: crypto::sign::Signature
 }
 
 impl PartialEq for PublicAnMaid {
     fn eq(&self, other: &PublicAnMaid) -> bool {
         // Private keys are mathematically linked, so just check public keys
-        let public0_equal = slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
-        let public1_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
-        let signature = slice_equal(&self.signature.0, &other.signature.0);
-        return public0_equal && public1_equal && signature && self.name == other.name;
-    }
-}
-
-impl Random for PublicAnMaid {
-    fn generate_random() -> PublicAnMaid {
-        let (pub_sign_key, _) = crypto::sign::gen_keypair();
-        let (pub_asym_key, _) = crypto::asymmetricbox::gen_keypair();
-        let mut arr: [u8; 64] = unsafe { mem::uninitialized() };
-        for i in 0..64 {
-            arr[i] = rand::random::<u8>();
-        }
-        PublicAnMaid {
-            public_keys: (pub_sign_key, pub_asym_key),
-            signature: crypto::sign::Signature(arr),
-            name: NameType::generate_random()
-        }
+        let owner = slice_equal(&self.owner.0, &other.owner.0);
+        return owner && slice_equal(&self.signature.0, &other.signature.0);
     }
 }
 
 impl fmt::Debug for PublicAnMaid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let (crypto::sign::PublicKey(public_key), crypto::asymmetricbox::PublicKey(assym_public_key)) = self.public_keys;
-        let crypto::sign::Signature(signature) = self.signature;
-        write!(f, "PublicAnMaid( public_keys: ({:?}, {:?}), signature: {:?}, name: {:?} )",
-             public_key, assym_public_key, signature.to_vec(), self.name)
+        let crypto::sign::PublicKey(ref owner) = self.owner;
+        let crypto::sign::Signature(ref signature) = self.signature;
+        write!(f, "PublicAnMaid( owner: {:?}, signature: {:?}, name: {:?} )",
+             owner, signature.to_vec(), self.get_name())
     }
 }
 
 impl MessageInterface for PublicAnMaid {
     fn get_name(&self) -> NameType {
-        let sign_arr = &(&self.public_keys.0).0;
-        let asym_arr = &(&self.public_keys.1).0;
-
-        let mut arr_combined = [0u8; 64 * 2];
-
-        for i in 0..sign_arr.len() {
-            arr_combined[i] = sign_arr[i];
-        }
-        for i in 0..asym_arr.len() {
-            arr_combined[64 + i] = asym_arr[i];
-        }
-
-        let digest = crypto::hash::sha512::hash(&arr_combined);
-
-        NameType(digest.0)
+        // the signature should not be in the NAE, otherwise it couldn't be found for verification
+        NameType(crypto::hash::sha512::hash(&self.owner.0).0)
     }
 
     fn get_owner(&self) -> Option<Vec<u8>> {
-        Some(self.name.0.as_ref().to_vec())
+        Some(self.owner.0.as_ref().to_vec())
     }
 }
 
 impl PublicAnMaid {
-        pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-                                                 signature: crypto::sign::Signature,
-                                                 name: NameType) -> PublicAnMaid {
-                PublicAnMaid {
-                public_keys: public_keys,
-                signature: signature,
-                name: name
-                }
+    pub fn new(an_maid: &AnMaid) -> Result<PublicAnMaid, CryptoError> {
+        detach_signature(an_maid.sign(&an_maid.get_public_key().0))
+            .ok_or(CryptoError::SignatureError)
+            .map(|signature| PublicAnMaid { owner: an_maid.get_public_key().clone(), signature: signature } )
+    }
+
+    ///
+    /// PublicAnMaid is self signed. Verifies the AnMaid is associated
+    /// with this PublicAnMaid, and verifies the self-signature.
+    ///
+    pub fn verify_owner(&self, an_maid: &AnMaid) -> bool {
+        if slice_equal(&self.owner.0, &an_maid.get_public_key().0) {
+            let verification_block = attach_signature(&self.signature, &self.owner.0);
+            return crypto::sign::verify(&verification_block, &self.owner).is_some();
         }
-        pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
-                &self.public_keys
-        }
-        pub fn get_signature(&self) -> &crypto::sign::Signature {
-                &self.signature
-        }
-        pub fn get_name(&self) -> &NameType {
-                &self.name
-        }
+        return false;
+    }
 }
 
 impl Encodable for PublicAnMaid {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-       CborTagEncode::new(5483_001,
-                          &(self.public_keys.0 .0.as_ref(),
-                            self.public_keys.1 .0.as_ref(),
-                            self.signature.0.as_ref(),
-                            &self.name)).encode(e)
+       CborTagEncode::new(5483_001, &(self.owner.0.as_ref(), self.signature.0.as_ref())).encode(e)
     }
 }
 
 impl Decodable for PublicAnMaid {
     fn decode<D: Decoder>(d: &mut D)-> Result<PublicAnMaid, D::Error> {
         try!(d.read_u64());
-        let (pub_sign_vec, pub_asym_vec, signature_vec, name) : (Vec<u8>, Vec<u8>, Vec<u8>, NameType) = try!(Decodable::decode(d));
 
-        let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
-        let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
+        let (owner_vec, signature_vec) : (Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
+        let owner_arr = convert_to_array!(owner_vec, crypto::sign::PUBLICKEYBYTES);
         let signature_arr = convert_to_array!(signature_vec, crypto::sign::SIGNATUREBYTES);
 
-        if pub_sign_arr.is_none() || pub_asym_arr.is_none() || signature_arr.is_none() {
+        if owner_arr.is_none() || signature_arr.is_none() {
             return Err(d.error("PubAnMaid bad size"));
         }
 
-        let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
-                        crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
+        let owner = crypto::sign::PublicKey(owner_arr.unwrap());
         let signature = crypto::sign::Signature(signature_arr.unwrap());
 
-        Ok(PublicAnMaid::new(pub_keys, signature, name))
+        if crypto::sign::verify(&attach_signature(&signature, &owner.0), &owner).is_none() {
+            return Err(d.error("PubAnMaid bad self signature"));
+        }
+
+        Ok(PublicAnMaid{ owner: owner, signature: signature })
     }
 }
 
+#[cfg(test)]
+mod test {
+    use cbor;
+    use cbor::CborTagEncode;
+    use id::an_maid::*;
+    use Random;
+    use routing::name_type::NameType;
+    use rustc_serialize::Encodable;
+    use sodiumoxide::crypto;
+    use super::*;
 
-#[test]
-fn serialisation_public_anmaid() {
-    let obj_before = PublicAnMaid::generate_random();
-    let mut e = cbor::Encoder::from_memory();
-    e.encode(&[&obj_before]).unwrap();
+    #[test]
+    fn get_name_public_anmaid() {
+        use routing::message_interface::MessageInterface;
 
-    let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-    let obj_after: PublicAnMaid = d.decode().next().unwrap().unwrap();
+        let maid = AnMaid::generate_random();
+        let pub_an_maid = PublicAnMaid::new(&maid).unwrap();
+        let hashed_pub = crypto::hash::sha512::hash(&maid.get_public_key().0);
+        assert_eq!(NameType(hashed_pub.0), pub_an_maid.get_name());
+    }
 
-    assert_eq!(obj_before, obj_after);
-}
+    #[test]
+    fn get_owner_public_anmaid() {
+        use routing::message_interface::MessageInterface;
 
-#[test]
-fn equality_assertion_public_anmaid() {
-    let first_obj = PublicAnMaid::generate_random();
-    let second_obj = PublicAnMaid::generate_random();
-    let cloned_obj = second_obj.clone();
+        let maid = AnMaid::generate_random();
+        let pub_an_maid = PublicAnMaid::new(&maid).unwrap();
+        assert_eq!(maid.get_public_key().0.to_vec(), pub_an_maid.get_owner().unwrap());
+    }
 
-    assert!(first_obj != second_obj);
-    assert!(second_obj == cloned_obj);
+    #[test]
+    fn serialisation_public_anmaid() {
+        let maid = AnMaid::generate_random();
+        let obj_before = PublicAnMaid::new(&maid).unwrap();
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&obj_before]).unwrap();
+
+        let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+        let obj_after: PublicAnMaid = d.decode().next().unwrap().unwrap();
+
+        assert_eq!(obj_before, obj_after);
+    }
+
+    #[test]
+    fn bad_deserialisation_public_anmaid() {
+        let mut array1 = Vec::<u8>::new();
+        let mut array2 = Vec::<u8>::new();
+
+        let verify = |a : &Vec<u8>, b : &Vec<u8>| {
+            let mut e = cbor::Encoder::from_memory();
+            CborTagEncode::new(65, &(a, b)).encode(&mut e).unwrap();
+            let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+            d.decode::<PublicAnMaid>().next().unwrap()
+        };
+
+        assert!(verify(&array1, &array2).is_err());
+
+        array1.extend((0..crypto::sign::PUBLICKEYBYTES).map(|_| 0));
+        assert!(verify(&array1, &array2).is_err());
+
+        array2.extend((0..crypto::sign::SIGNATUREBYTES).map(|_| 0));
+        match verify(&array1, &array2).unwrap_err() {
+            cbor::CborError::Decode(decode_error) => match decode_error {
+                cbor::ReadError::Other(error_msg) => assert_eq!("PubAnMaid bad self signature".to_string(), error_msg),
+                _ => assert!(false)
+            },
+            _ => assert!(false)
+        }
+    }
+
+    #[test]
+    fn equality_assertion_public_anmaid() {
+        let maid1 = AnMaid::generate_random();
+        let maid2 = AnMaid::generate_random();
+        let first_obj = PublicAnMaid::new(&maid1).unwrap();
+        let second_obj = PublicAnMaid::new(&maid2).unwrap();
+        let cloned_obj = second_obj.clone();
+
+        assert!(first_obj != second_obj);
+        assert!(second_obj == cloned_obj);
+    }
+
+    #[test]
+    fn owner_verification_public_anmaid() {
+        let maid1 = AnMaid::generate_random();
+        let maid2 = AnMaid::generate_random();
+        let first_obj = PublicAnMaid::new(&maid1).unwrap();
+        let second_obj = PublicAnMaid::new(&maid2).unwrap();
+        let cloned_obj = second_obj.clone();
+
+        assert!(first_obj.verify_owner(&maid1));
+        assert!(second_obj.verify_owner(&maid2));
+        assert!(cloned_obj.verify_owner(&maid2));
+
+        assert!(!first_obj.verify_owner(&maid2));
+        assert!(!second_obj.verify_owner(&maid1));
+        assert!(!cloned_obj.verify_owner(&maid1));
+    }
 }
