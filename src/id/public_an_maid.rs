@@ -17,6 +17,7 @@
 // of the MaidSafe Software.
 
 use cbor::CborTagEncode;
+use CryptoError;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
@@ -32,9 +33,10 @@ use id::an_maid::*;
 /// use maidsafe_types::Random;
 ///
 /// let an_maid = maidsafe_types::id::AnMaid::generate_random();
-/// let pub_an_maid = maidsafe_types::id::PublicAnMaid::new(&an_maid);
-///
-/// assert!(&pub_an_maid.verify_owner(&an_maid));
+/// match maidsafe_types::id::PublicAnMaid::new(&an_maid) {
+///     Ok(pub_an_maid) => assert!(&pub_an_maid.verify_owner(&an_maid)),
+///     Err(_) => assert!(false)
+/// }
 /// ```
 ///
 
@@ -73,11 +75,10 @@ impl MessageInterface for PublicAnMaid {
 }
 
 impl PublicAnMaid {
-    pub fn new(an_maid: &AnMaid) -> PublicAnMaid {
-        PublicAnMaid {
-            owner: an_maid.get_public_key().clone(),
-            signature: detach_signature(an_maid.sign(&an_maid.get_public_key().0))
-        }
+    pub fn new(an_maid: &AnMaid) -> Result<PublicAnMaid, CryptoError> {
+        detach_signature(an_maid.sign(&an_maid.get_public_key().0))
+            .ok_or(CryptoError::SignatureError)
+            .map(|signature| PublicAnMaid { owner: an_maid.get_public_key().clone(), signature: signature } )
     }
 
     ///
@@ -138,7 +139,7 @@ mod test {
         use routing::message_interface::MessageInterface;
 
         let maid = AnMaid::generate_random();
-        let pub_an_maid = PublicAnMaid::new(&maid);
+        let pub_an_maid = PublicAnMaid::new(&maid).unwrap();
         let hashed_pub = crypto::hash::sha512::hash(&maid.get_public_key().0);
         assert_eq!(NameType(hashed_pub.0), pub_an_maid.get_name());
     }
@@ -148,14 +149,14 @@ mod test {
         use routing::message_interface::MessageInterface;
 
         let maid = AnMaid::generate_random();
-        let pub_an_maid = PublicAnMaid::new(&maid);
+        let pub_an_maid = PublicAnMaid::new(&maid).unwrap();
         assert_eq!(maid.get_public_key().0.to_vec(), pub_an_maid.get_owner().unwrap());
     }
 
     #[test]
     fn serialisation_public_anmaid() {
         let maid = AnMaid::generate_random();
-        let obj_before = PublicAnMaid::new(&maid);
+        let obj_before = PublicAnMaid::new(&maid).unwrap();
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&obj_before]).unwrap();
 
@@ -196,8 +197,8 @@ mod test {
     fn equality_assertion_public_anmaid() {
         let maid1 = AnMaid::generate_random();
         let maid2 = AnMaid::generate_random();
-        let first_obj = PublicAnMaid::new(&maid1);
-        let second_obj = PublicAnMaid::new(&maid2);
+        let first_obj = PublicAnMaid::new(&maid1).unwrap();
+        let second_obj = PublicAnMaid::new(&maid2).unwrap();
         let cloned_obj = second_obj.clone();
 
         assert!(first_obj != second_obj);
@@ -208,8 +209,8 @@ mod test {
     fn owner_verification_public_anmaid() {
         let maid1 = AnMaid::generate_random();
         let maid2 = AnMaid::generate_random();
-        let first_obj = PublicAnMaid::new(&maid1);
-        let second_obj = PublicAnMaid::new(&maid2);
+        let first_obj = PublicAnMaid::new(&maid1).unwrap();
+        let second_obj = PublicAnMaid::new(&maid2).unwrap();
         let cloned_obj = second_obj.clone();
 
         assert!(first_obj.verify_owner(&maid1));
