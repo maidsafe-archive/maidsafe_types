@@ -23,6 +23,7 @@ use routing::message_interface::MessageInterface;
 use sodiumoxide::crypto;
 use std::fmt;
 
+/// ImmutableData
 #[derive(Clone)]
 pub struct ImmutableData {
     value: Vec<u8>,
@@ -47,6 +48,7 @@ impl fmt::Debug for ImmutableData {
 }
 
 impl ImmutableData {
+    /// New instance of ImmutableData can be created using the new()
     pub fn new(value: Vec<u8>) -> ImmutableData {
         ImmutableData {
             value: value,
@@ -54,11 +56,12 @@ impl ImmutableData {
     }
 
     // debug cannot call RoutingTrait due to current visibility
+    /// Calculates the name for the Data based on the SHA512 Hash of the Value
     fn calculate_name(&self) -> NameType {
         let digest = crypto::hash::sha512::hash(&self.value);
         NameType(digest.0)
     }
-
+    /// Returns the vaue
     pub fn get_value(&self) -> &Vec<u8> {
         &self.value
     }

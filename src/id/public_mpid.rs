@@ -17,7 +17,6 @@
 // of the MaidSafe Software.
 
 use cbor::CborTagEncode;
-use cbor;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
@@ -111,6 +110,17 @@ impl fmt::Debug for PublicMpid {
 }
 
 impl PublicMpid {
+	/// An instance of the PublicMaid can be created by invoking the new function
+	///
+	/// #Examples
+	///
+	/// // Creating new PublicMpid
+	/// let public_mpid  = maidsafe_types::PublicMpid::new((pub_sign_key, pub_asym_key),
+	///                     sodiumoxide::crypto::sign::Signature([2u8; 64]),
+	///                     routing::name_type::NameType([8u8; 64]),
+	///                     sodiumoxide::crypto::sign::Signature([5u8; 64]),
+	///                    routing::name_type::NameType([6u8; 64]));
+	///
 	pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 						 mpid_signature: crypto::sign::Signature,
 						 owner: NameType,
@@ -124,22 +134,32 @@ impl PublicMpid {
 		name: name,
 		}
 	}
+
+	/// Returns the Symetric and Assymetric Publick keys
 	#[warn(dead_code)]
 	pub fn get_public_keys(& self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
 		&self.public_keys
 	}
+
+	/// Returns the Signature for the Mpid
 	#[warn(dead_code)]
 	pub fn get_mpid_signature(& self) -> &crypto::sign::Signature {
 		&self.mpid_signature
 	}
+
+	/// Returns the owner
 	#[warn(dead_code)]
 	pub fn get_owner(& self) -> &NameType {
 		&self.owner
 	}
+
+	/// Returns the PublicMpid Signature
 	#[warn(dead_code)]
 	pub fn get_signature(& self) -> &crypto::sign::Signature {
 		&self.signature
 	}
+
+	/// Returns the name for the PublicMpid
 	#[warn(dead_code)]
 	pub fn get_name(& self) -> &NameType {
 		&self.name

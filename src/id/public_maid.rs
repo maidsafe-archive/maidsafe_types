@@ -17,7 +17,6 @@
 // of the MaidSafe Software.
 
 use cbor::CborTagEncode;
-use cbor;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
@@ -112,6 +111,7 @@ impl fmt::Debug for PublicMaid {
 }
 
 impl PublicMaid {
+	/// An instanstance of the PublicMaid can be created using the new()
 	pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 						 maid_signature: crypto::sign::Signature,
 						 owner: NameType,
@@ -125,23 +125,23 @@ impl PublicMaid {
 		name: name,
 		}
 	}
-
+	/// Returns the PublicKeys
 	pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
 		&self.public_keys
 	}
-
+	/// Returns the Maid Signature
 	pub fn get_maid_signature(&self) -> &crypto::sign::Signature {
 		&self.maid_signature
 	}
-
+	/// Returns the Owner
 	pub fn get_owner(&self) -> &NameType {
 		&self.owner
 	}
-
+	/// Returns the Signature of PublicMaid
 	pub fn get_signature(&self) -> &crypto::sign::Signature {
 		&self.signature
 	}
-
+	/// Returns the Name
 	pub fn get_name(&self) -> &NameType {
 		&self.name
 	}

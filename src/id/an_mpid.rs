@@ -17,7 +17,6 @@
 // of the MaidSafe Software.
 
 use cbor::CborTagEncode;
-use cbor;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
@@ -92,6 +91,7 @@ impl PartialEq for AnMpid {
 }
 
 impl AnMpid {
+	/// Invoked to create an instance of AnMpid
 	pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
 						 secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
 						 name_type: NameType) -> AnMpid {
@@ -101,12 +101,15 @@ impl AnMpid {
 		name: name_type
 		}
 	}
+	/// Returns the PublicKeys
 	pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
 		&self.public_keys
 	}
+	/// Returns the SecretKeys
 	pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
 		&self.secret_keys
 	}
+	/// Returns the name
 	pub fn get_name(&self) -> &NameType {
 		&self.name
 	}

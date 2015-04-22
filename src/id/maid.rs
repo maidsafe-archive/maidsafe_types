@@ -17,7 +17,6 @@
 // of the MaidSafe Software.
 
 use cbor::CborTagEncode;
-use cbor;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
@@ -45,6 +44,8 @@ pub struct Maid {
 }
 
 impl Maid {
+    /// Invoked to create an instance of Maid
+    /// Symmetric public and secret keys of AnMaid and used to construct the Maid
     pub fn new(an_maid: &AnMaid) -> Maid {        
         let asym_keys = crypto::asymmetricbox::gen_keypair();
 
@@ -53,21 +54,21 @@ impl Maid {
             secret_keys: (an_maid.get_secret_key().clone(), asym_keys.1)
         }
     }
-
+    /// Returns the PublicKeys
     pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
         &self.public_keys
     }
-
+    /// Signs the data with the SecretKey and returns the Signed data
     pub fn sign(&self, data : &[u8]) -> Vec<u8> {
         return crypto::sign::sign(&data, &self.secret_keys.0)
     }
-
+    /// Encrypts and authenticates data. It returns a ciphertext and the Nonce.
     pub fn seal(&self, data : &[u8], to : &crypto::asymmetricbox::PublicKey) -> (Vec<u8>, crypto::asymmetricbox::Nonce) {
         let nonce = crypto::asymmetricbox::gen_nonce();
         let sealed = crypto::asymmetricbox::seal(data, &nonce, &to, &self.secret_keys.1);
         return (sealed, nonce);
     }
-
+    /// Verifies and decrypts the data
     pub fn open(
         &self,
         data : &[u8],

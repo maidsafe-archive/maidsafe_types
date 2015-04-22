@@ -16,12 +16,19 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
+/// AnMaid
 pub mod an_maid;
+/// AnMpid
 pub mod an_mpid;
+/// Maid
 pub mod maid;
+/// Mpid
 pub mod mpid;
+/// PublicMaid
 pub mod public_maid;
+/// PublicMpid
 pub mod public_mpid;
+/// PublicAnMaid
 pub mod public_an_maid;
 
 pub use self::an_maid::*;

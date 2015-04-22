@@ -23,6 +23,7 @@ use routing::message_interface::MessageInterface;
 
 
 
+/// StructuredData
 #[derive(Clone, PartialEq, Debug)]
 pub struct StructuredData {
     name: NameType,
@@ -42,6 +43,7 @@ impl MessageInterface for StructuredData {
 }
 
 impl StructuredData {
+    /// An instance of the StructuredData can be created by invoking the new()
     pub fn new(name: NameType, owner: NameType) -> StructuredData {
         StructuredData {
             name: name,
@@ -49,6 +51,7 @@ impl StructuredData {
             value: Vec::<Vec<NameType>>::new(),
         }
     }
+    /// Returns the value
     pub fn get_value(&self) -> &Vec<Vec<NameType>> {
         &self.value
     }
