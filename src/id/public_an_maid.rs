@@ -16,12 +16,13 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
+use cbor;
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
-use routing::name_type::NameType;
-use routing::message_interface::MessageInterface;
+use routing::NameType;
+use routing::sendable::Sendable;
 use std::fmt;
 
 /// PublicAnMaid
@@ -35,7 +36,7 @@ use std::fmt;
 /// let (pub_sign_key, _) = sodiumoxide::crypto::sign::gen_keypair();
 /// let (pub_asym_key, _) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
 /// // Create PublicAnMaid
-/// let pub_an_maid = maidsafe_types::PublicAnMaid::new((pub_sign_key, pub_asym_key), sodiumoxide::crypto::sign::Signature([5u8; 64]), routing::name_type::NameType([99u8; 64]));
+/// let pub_an_maid = maidsafe_types::PublicAnMaid::new((pub_sign_key, pub_asym_key), sodiumoxide::crypto::sign::Signature([5u8; 64]), routing::NameType([99u8; 64]));
 /// // Retrieving the values
 /// let ref publicKeys = pub_an_maid.get_public_keys();
 /// let ref signature = pub_an_maid.get_signature();
@@ -68,8 +69,8 @@ impl fmt::Debug for PublicAnMaid {
     }
 }
 
-impl MessageInterface for PublicAnMaid {
-    fn get_name(&self) -> NameType {
+impl Sendable for PublicAnMaid {
+    fn name(&self) -> NameType {
         let sign_arr = &(&self.public_keys.0).0;
         let asym_arr = &(&self.public_keys.1).0;
 
@@ -87,8 +88,18 @@ impl MessageInterface for PublicAnMaid {
         NameType(digest.0)
     }
 
-    fn get_owner(&self) -> Option<Vec<u8>> {
-        Some(self.name.0.as_ref().to_vec())
+    fn type_tag(&self)->u64 {
+        105
+    }
+
+    fn serialised_contents(&self)->Vec<u8> {
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&self]).unwrap();
+        e.into_bytes()      
+    }
+
+    fn owner(&self) -> Option<NameType> {
+        Some(self.name.clone())
     }
 }
 
@@ -153,7 +164,7 @@ mod test {
     use super::*;
     use cbor;
     use sodiumoxide::crypto;
-    use routing::name_type::NameType;   
+    use routing;
     use Random;
     use rand;
     use std::mem;
@@ -169,7 +180,7 @@ mod test {
             PublicAnMaid {
                 public_keys: (pub_sign_key, pub_asym_key),
                 signature: crypto::sign::Signature(arr),
-                name: NameType::generate_random()
+                name: routing::test_utils::Random::generate_random()
             }
         }
     }

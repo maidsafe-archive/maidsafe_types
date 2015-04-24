@@ -15,4 +15,5 @@ rustc-serialize = "*"
 cbor = "*"
 sodiumoxide = "*"
 rand = "*"
-routing = "0.1.1"
+[dependencies.routing]
+git = "https://github.com/dirvine/routing.git"

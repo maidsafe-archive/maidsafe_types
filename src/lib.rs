@@ -66,95 +66,95 @@ pub enum CryptoError {
 ///     MaidManager : PublicMaid, PublicAnMaid
 ///     All : Datatype -- ImmutableData, StructuredData
 pub enum PayloadTypeTag {
-  /// PublicMaid type
-  PublicMaid,
-  /// PublicAnMaid type
-  PublicAnMaid,
-  /// ImmutableData type
-  ImmutableData,
-  /// StructuredData type
-  StructuredData,
-  /// Unknown type
-  Unknown
+    /// PublicMaid type
+    PublicMaid,
+    /// PublicAnMaid type
+    PublicAnMaid,
+    /// ImmutableData type
+    ImmutableData,
+    /// StructuredData type
+    StructuredData,
+    /// Unknown type
+    Unknown
 }
 
 impl Encodable for PayloadTypeTag {
-  fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-    let mut type_tag : &str;
-    match *self {
-      PayloadTypeTag::PublicMaid => type_tag = "PublicMaid",
-      PayloadTypeTag::PublicAnMaid => type_tag = "PublicAnMaid",
-      PayloadTypeTag::ImmutableData => type_tag = "ImmutableData",
-      PayloadTypeTag::StructuredData => type_tag = "StructuredData",
-      PayloadTypeTag::Unknown => type_tag = "Unknown",
-    };
-    CborTagEncode::new(5483_100, &(&type_tag)).encode(e)
-  }
+    fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+        let mut type_tag : &str;
+        match *self {
+          PayloadTypeTag::PublicMaid => type_tag = "PublicMaid",
+          PayloadTypeTag::PublicAnMaid => type_tag = "PublicAnMaid",
+          PayloadTypeTag::ImmutableData => type_tag = "ImmutableData",
+          PayloadTypeTag::StructuredData => type_tag = "StructuredData",
+          PayloadTypeTag::Unknown => type_tag = "Unknown",
+        };
+        CborTagEncode::new(5483_100, &(&type_tag)).encode(e)
+    }
 }
 
 impl Decodable for PayloadTypeTag {
-  fn decode<D: Decoder>(d: &mut D)->Result<PayloadTypeTag, D::Error> {
-    try!(d.read_u64());
-    let mut type_tag : String;
-    type_tag = try!(Decodable::decode(d));
-    match &type_tag[..] {
-      "PublicMaid" => Ok(PayloadTypeTag::PublicMaid),
-      "PublicAnMaid" => Ok(PayloadTypeTag::PublicAnMaid),
-      "ImmutableData" => Ok(PayloadTypeTag::ImmutableData),
-      "StructuredData" => Ok(PayloadTypeTag::StructuredData),
-      _ => Ok(PayloadTypeTag::Unknown)
+    fn decode<D: Decoder>(d: &mut D)->Result<PayloadTypeTag, D::Error> {
+        try!(d.read_u64());
+        let mut type_tag : String;
+        type_tag = try!(Decodable::decode(d));
+        match &type_tag[..] {
+          "PublicMaid" => Ok(PayloadTypeTag::PublicMaid),
+          "PublicAnMaid" => Ok(PayloadTypeTag::PublicAnMaid),
+          "ImmutableData" => Ok(PayloadTypeTag::ImmutableData),
+          "StructuredData" => Ok(PayloadTypeTag::StructuredData),
+          _ => Ok(PayloadTypeTag::Unknown)
+        }
     }
-  }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 /// Encoded type serialised and ready to send on wire
 pub struct Payload {
-  type_tag : PayloadTypeTag,
-  payload : Vec<u8>
+    type_tag : PayloadTypeTag,
+    payload : Vec<u8>
 }
 
 impl Encodable for Payload {
-  fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-    CborTagEncode::new(5483_001, &(&self.type_tag, &self.payload)).encode(e)
-  }
+    fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+        CborTagEncode::new(5483_001, &(&self.type_tag, &self.payload)).encode(e)
+    }
 }
 
 impl Decodable for Payload {
-  fn decode<D: Decoder>(d: &mut D)->Result<Payload, D::Error> {
-    try!(d.read_u64());
-    let (type_tag, payload) = try!(Decodable::decode(d));
-    Ok(Payload { type_tag: type_tag, payload: payload })
-  }
+    fn decode<D: Decoder>(d: &mut D)->Result<Payload, D::Error> {
+        try!(d.read_u64());
+        let (type_tag, payload) = try!(Decodable::decode(d));
+        Ok(Payload { type_tag: type_tag, payload: payload })
+    }
 }
 
 impl Payload {
-  /// Creates an Instance of the Payload with empty payload and tag type passed as parameter.
-  pub fn dummy_new(type_tag : PayloadTypeTag) -> Payload {
-    Payload { type_tag: type_tag, payload: Vec::<u8>::new() }
-  }
-  /// Creates an instance of the Payload
-  pub fn new<T>(type_tag : PayloadTypeTag, data : &T) -> Payload where T: for<'a> Encodable + Decodable {
-    let mut e = cbor::Encoder::from_memory();
-    e.encode(&[data]).unwrap();
-    Payload { type_tag: type_tag, payload: e.as_bytes().to_vec() }
-  }
-  /// Returns the data
-  pub fn get_data<T>(&self) -> T where T: for<'a> Encodable + Decodable {
-    let mut d = cbor::Decoder::from_bytes(&self.payload[..]);
-    let obj: T = d.decode().next().unwrap().unwrap();
-    obj
-  }
-  /// Set the data for the payload
-  pub fn set_data<T>(&mut self, data: T) where T: for<'a> Encodable + Decodable {
-    let mut e = cbor::Encoder::from_memory();
-    e.encode(&[&data]).unwrap();
-    self.payload = e.as_bytes().to_vec();
-  }
-  /// Returns the PayloadTypeTag
-  pub fn get_type_tag(&self) -> PayloadTypeTag {
-    self.type_tag.clone()
-  }
+    /// Creates an Instance of the Payload with empty payload and tag type passed as parameter.
+    pub fn dummy_new(type_tag : PayloadTypeTag) -> Payload {
+        Payload { type_tag: type_tag, payload: Vec::<u8>::new() }
+    }
+    /// Creates an instance of the Payload
+    pub fn new<T>(type_tag : PayloadTypeTag, data : &T) -> Payload where T: for<'a> Encodable + Decodable {
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[data]).unwrap();
+        Payload { type_tag: type_tag, payload: e.as_bytes().to_vec() }
+    }
+    /// Returns the data
+    pub fn get_data<T>(&self) -> T where T: for<'a> Encodable + Decodable {
+        let mut d = cbor::Decoder::from_bytes(&self.payload[..]);
+        let obj: T = d.decode().next().unwrap().unwrap();
+        obj
+    }
+    /// Set the data for the payload
+    pub fn set_data<T>(&mut self, data: T) where T: for<'a> Encodable + Decodable {
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&data]).unwrap();
+        self.payload = e.as_bytes().to_vec();
+    }
+    /// Returns the PayloadTypeTag
+    pub fn get_type_tag(&self) -> PayloadTypeTag {
+        self.type_tag.clone()
+    }
 }
 #[test]
 fn dummy()  {

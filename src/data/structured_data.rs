@@ -16,12 +16,11 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
+use cbor;
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
-use routing::name_type::NameType;
-use routing::message_interface::MessageInterface;
-
-
+use routing::NameType;
+use routing::sendable::Sendable;
 
 /// StructuredData
 #[derive(Clone, PartialEq, Debug)]
@@ -31,14 +30,23 @@ pub struct StructuredData {
     value: Vec<Vec<NameType>>,
 }
 
-
-impl MessageInterface for StructuredData {
-    fn get_name(&self) -> NameType {
-        self.name.clone()
+impl Sendable for StructuredData {
+    fn name(&self) -> NameType {
+             self.name.clone()
     }
 
-    fn get_owner(&self) -> Option<Vec<u8>> {
-        Some(self.owner.0.as_ref().to_vec())
+    fn type_tag(&self)->u64 {
+        102
+    }
+
+    fn serialised_contents(&self)->Vec<u8> {
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&self]).unwrap();
+        e.into_bytes()      
+    }
+
+    fn owner(&self) -> Option<NameType> {
+        Some(self.owner.clone())
     }
 }
 
@@ -80,8 +88,9 @@ mod test {
     use super::*;
     use cbor::{ Encoder, Decoder };
     use rustc_serialize::{Decodable, Encodable};
-    use routing::name_type::NameType;
-    use routing::message_interface::MessageInterface;
+    use routing;
+    use routing::NameType;    
+    use routing::sendable::Sendable;
     use Random;
     use rand;
 
@@ -93,13 +102,13 @@ mod test {
                 let inner_limit = rand::random::<u8>() as usize;
                 let mut inner = Vec::<NameType>::with_capacity(inner_limit);
                 for _ in 0..inner_limit {
-                    inner.push(NameType::generate_random());
+                    inner.push(routing::test_utils::Random::generate_random());
                 }
                 outer.push(inner);
             }
             StructuredData {
-                name: NameType::generate_random(),
-                owner: NameType::generate_random(),
+                name: routing::test_utils::Random::generate_random(),
+                owner: routing::test_utils::Random::generate_random(),
                 value: outer,
             }
         }
@@ -107,11 +116,11 @@ mod test {
 
 #[test]
     fn creation() {
-        let name = NameType::generate_random();
-        let owner = NameType::generate_random();
+        let name : NameType = routing::test_utils::Random::generate_random();
+        let owner : NameType = routing::test_utils::Random::generate_random();
         let structured_data = StructuredData::new(name.clone(), owner.clone());
-        assert_eq!(&name, &structured_data.get_name());
-        assert_eq!(&owner.0.as_ref().to_vec(), structured_data.get_owner().as_ref().unwrap());
+        assert_eq!(&name, &structured_data.name());
+        assert_eq!(owner.0.as_ref().to_vec(), structured_data.owner().unwrap().0.as_ref().to_vec());
         let expected_value = Vec::<Vec<NameType>>::new();
         assert_eq!(&expected_value, structured_data.get_value());
     }
@@ -131,5 +140,5 @@ mod test {
         assert_eq!(obj_before, obj_after);
         assert!(!(obj_before != obj_before_clone));
         assert!(obj_before != obj_before1);
-    }  
+    }
 }

@@ -16,10 +16,11 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
+use cbor;
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
-use routing::name_type::NameType;
-use routing::message_interface::MessageInterface;
+use routing::NameType;
+use routing::sendable::Sendable;
 use sodiumoxide::crypto;
 use std::fmt;
 
@@ -29,9 +30,19 @@ pub struct ImmutableData {
     value: Vec<u8>,
 }
 
-impl MessageInterface for ImmutableData {
-    fn get_name(&self) -> NameType {
+impl Sendable for ImmutableData {
+    fn name(&self) -> NameType {
         self.calculate_name()
+    }
+
+    fn type_tag(&self)->u64 {
+        101
+    }
+
+    fn serialised_contents(&self)->Vec<u8> {
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&self]).unwrap();
+        e.into_bytes()      
     }
 }
 
@@ -86,9 +97,9 @@ mod test {
     use super::*;
     use cbor::{ Encoder, Decoder};
     use rustc_serialize::{Decodable, Encodable};
-    use Random;
-    use routing::message_interface::MessageInterface;
+    use Random;    
     use rand;
+    use routing::sendable::Sendable;
 
     #[allow(unused_variables)]
     impl Random for ImmutableData {
@@ -114,7 +125,7 @@ mod test {
         let chunk = ImmutableData::new(data);
         let actual_name = chunk.calculate_name().0.as_ref().to_hex();
         assert_eq!(&expected_name, &actual_name);
-        assert_eq!(&chunk.calculate_name(), &chunk.get_name());
+        assert_eq!(&chunk.calculate_name(), &chunk.name());
     }
 
     #[test]
@@ -126,7 +137,7 @@ mod test {
         let mut d = Decoder::from_bytes(e.as_bytes());
         let obj_after: ImmutableData = d.decode().next().unwrap().unwrap();
 
-        assert_eq!(obj_before, obj_after);
+        assert_eq!(obj_before, obj_after);        
     }
 
     #[test]
