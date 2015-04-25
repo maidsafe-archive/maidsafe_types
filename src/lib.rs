@@ -15,7 +15,6 @@
 //
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
-
 #![crate_name = "maidsafe_types"]
 #![crate_type = "lib"]
 #![doc(html_logo_url = "http://maidsafe.net/img/Resources/branding/maidsafe_logo.fab2.png",
@@ -29,16 +28,19 @@
 //! On disk serialisation is [JSON](https://www.ietf.org/rfc/rfc4627.txt)
 //!
 //! [Project github page](https://github.com/dirvine/maidsafe_types)
-
+#![deny(missing_docs)]
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
 extern crate rand;
 extern crate routing;
 
+/// Helper provides helper functions for array to vector conversions and vice versa
 #[macro_use]
 pub mod helper;
+/// Holds the structs for Id related Types such as Maid, AnMaid, Mpid, etc
 pub mod id;
+/// Holds the structs related to data such as ImmutableData and StructuredData
 pub mod data;
 
 pub use id::{Maid, Mpid, AnMaid, PublicAnMaid, AnMpid, PublicMaid, PublicMpid};
@@ -47,11 +49,15 @@ pub use data::{ImmutableData, StructuredData};
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 
+/// Random trait is used to generate random instances.
+/// Used in the test mod
 pub trait Random {
+    /// Generates a random instance and returns the created random instance
     fn generate_random() -> Self;
 }
-
+/// Crypto Error types 
 pub enum CryptoError {
+    /// Unknown Error Type
     Unknown
 }
 
@@ -60,89 +66,95 @@ pub enum CryptoError {
 ///     MaidManager : PublicMaid, PublicAnMaid
 ///     All : Datatype -- ImmutableData, StructuredData
 pub enum PayloadTypeTag {
-  PublicMaid,
-  PublicAnMaid,
-  ImmutableData,
-  StructuredData,
-  Unknown
+    /// PublicMaid type
+    PublicMaid,
+    /// PublicAnMaid type
+    PublicAnMaid,
+    /// ImmutableData type
+    ImmutableData,
+    /// StructuredData type
+    StructuredData,
+    /// Unknown type
+    Unknown
 }
 
 impl Encodable for PayloadTypeTag {
-  fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-    let mut type_tag : &str;
-    match *self {
-      PayloadTypeTag::PublicMaid => type_tag = "PublicMaid",
-      PayloadTypeTag::PublicAnMaid => type_tag = "PublicAnMaid",
-      PayloadTypeTag::ImmutableData => type_tag = "ImmutableData",
-      PayloadTypeTag::StructuredData => type_tag = "StructuredData",
-      PayloadTypeTag::Unknown => type_tag = "Unknown",
-    };
-    CborTagEncode::new(5483_100, &(&type_tag)).encode(e)
-  }
+    fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+        let mut type_tag : &str;
+        match *self {
+          PayloadTypeTag::PublicMaid => type_tag = "PublicMaid",
+          PayloadTypeTag::PublicAnMaid => type_tag = "PublicAnMaid",
+          PayloadTypeTag::ImmutableData => type_tag = "ImmutableData",
+          PayloadTypeTag::StructuredData => type_tag = "StructuredData",
+          PayloadTypeTag::Unknown => type_tag = "Unknown",
+        };
+        CborTagEncode::new(5483_100, &(&type_tag)).encode(e)
+    }
 }
 
 impl Decodable for PayloadTypeTag {
-  fn decode<D: Decoder>(d: &mut D)->Result<PayloadTypeTag, D::Error> {
-    try!(d.read_u64());
-    let mut type_tag : String;
-    type_tag = try!(Decodable::decode(d));
-    match &type_tag[..] {
-      "PublicMaid" => Ok(PayloadTypeTag::PublicMaid),
-      "PublicAnMaid" => Ok(PayloadTypeTag::PublicAnMaid),
-      "ImmutableData" => Ok(PayloadTypeTag::ImmutableData),
-      "StructuredData" => Ok(PayloadTypeTag::StructuredData),
-      _ => Ok(PayloadTypeTag::Unknown)
+    fn decode<D: Decoder>(d: &mut D)->Result<PayloadTypeTag, D::Error> {
+        try!(d.read_u64());
+        let mut type_tag : String;
+        type_tag = try!(Decodable::decode(d));
+        match &type_tag[..] {
+          "PublicMaid" => Ok(PayloadTypeTag::PublicMaid),
+          "PublicAnMaid" => Ok(PayloadTypeTag::PublicAnMaid),
+          "ImmutableData" => Ok(PayloadTypeTag::ImmutableData),
+          "StructuredData" => Ok(PayloadTypeTag::StructuredData),
+          _ => Ok(PayloadTypeTag::Unknown)
+        }
     }
-  }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 /// Encoded type serialised and ready to send on wire
 pub struct Payload {
-  type_tag : PayloadTypeTag,
-  payload : Vec<u8>
+    type_tag : PayloadTypeTag,
+    payload : Vec<u8>
 }
 
 impl Encodable for Payload {
-  fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-    CborTagEncode::new(5483_001, &(&self.type_tag, &self.payload)).encode(e)
-  }
+    fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+        CborTagEncode::new(5483_001, &(&self.type_tag, &self.payload)).encode(e)
+    }
 }
 
 impl Decodable for Payload {
-  fn decode<D: Decoder>(d: &mut D)->Result<Payload, D::Error> {
-    try!(d.read_u64());
-    let (type_tag, payload) = try!(Decodable::decode(d));
-    Ok(Payload { type_tag: type_tag, payload: payload })
-  }
+    fn decode<D: Decoder>(d: &mut D)->Result<Payload, D::Error> {
+        try!(d.read_u64());
+        let (type_tag, payload) = try!(Decodable::decode(d));
+        Ok(Payload { type_tag: type_tag, payload: payload })
+    }
 }
 
 impl Payload {
-  pub fn dummy_new(type_tag : PayloadTypeTag) -> Payload {
-    Payload { type_tag: type_tag, payload: Vec::<u8>::new() }
-  }
-
-  pub fn new<T>(type_tag : PayloadTypeTag, data : &T) -> Payload where T: for<'a> Encodable + Decodable {
-    let mut e = cbor::Encoder::from_memory();
-    e.encode(&[data]).unwrap();
-    Payload { type_tag: type_tag, payload: e.as_bytes().to_vec() }
-  }
-
-  pub fn get_data<T>(&self) -> T where T: for<'a> Encodable + Decodable {
-    let mut d = cbor::Decoder::from_bytes(&self.payload[..]);
-    let obj: T = d.decode().next().unwrap().unwrap();
-    obj
-  }
-
-  pub fn set_data<T>(&mut self, data: T) where T: for<'a> Encodable + Decodable {
-    let mut e = cbor::Encoder::from_memory();
-    e.encode(&[&data]).unwrap();
-    self.payload = e.as_bytes().to_vec();
-  }
-
-  pub fn get_type_tag(&self) -> PayloadTypeTag {
-    self.type_tag.clone()
-  }
+    /// Creates an Instance of the Payload with empty payload and tag type passed as parameter.
+    pub fn dummy_new(type_tag : PayloadTypeTag) -> Payload {
+        Payload { type_tag: type_tag, payload: Vec::<u8>::new() }
+    }
+    /// Creates an instance of the Payload
+    pub fn new<T>(type_tag : PayloadTypeTag, data : &T) -> Payload where T: for<'a> Encodable + Decodable {
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[data]).unwrap();
+        Payload { type_tag: type_tag, payload: e.as_bytes().to_vec() }
+    }
+    /// Returns the data
+    pub fn get_data<T>(&self) -> T where T: for<'a> Encodable + Decodable {
+        let mut d = cbor::Decoder::from_bytes(&self.payload[..]);
+        let obj: T = d.decode().next().unwrap().unwrap();
+        obj
+    }
+    /// Set the data for the payload
+    pub fn set_data<T>(&mut self, data: T) where T: for<'a> Encodable + Decodable {
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&data]).unwrap();
+        self.payload = e.as_bytes().to_vec();
+    }
+    /// Returns the PayloadTypeTag
+    pub fn get_type_tag(&self) -> PayloadTypeTag {
+        self.type_tag.clone()
+    }
 }
 #[test]
 fn dummy()  {

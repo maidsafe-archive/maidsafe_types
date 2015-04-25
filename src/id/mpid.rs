@@ -16,15 +16,14 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
-use cbor::CborTagEncode;
 use cbor;
+use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
-use routing::name_type::NameType;
-use routing::message_interface::MessageInterface;
+use routing::NameType;
+use routing::sendable::Sendable;
 use std::fmt;
-use Random;
 
 /// Mpid
 ///
@@ -41,7 +40,7 @@ use Random;
 /// // Creating new Mpid
 /// let mpid  = maidsafe_types::id::mpid::Mpid::new((pub_sign_key, pub_asym_key),
 ///                     (sec_sign_key, sec_asym_key),
-///                     routing::name_type::NameType([6u8; 64]));
+///                     routing::NameType([6u8; 64]));
 ///
 /// // getting Mpid::public_keys
 /// let &(pub_sign, pub_asym) = mpid.get_public_keys();
@@ -50,13 +49,13 @@ use Random;
 /// let &(sec_sign, sec_asym) = mpid.get_public_keys();
 ///
 /// // getting Mpid::name
-/// let name: &routing::name_type::NameType = mpid.get_name();
+/// let name: &routing::NameType = mpid.get_name();
 /// ```
 #[derive(Clone)]
 pub struct Mpid {
-	public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-	secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-	name: NameType
+    public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+    secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+    name: NameType
 }
 
 impl PartialEq for Mpid {
@@ -69,26 +68,15 @@ impl PartialEq for Mpid {
 }
 
 impl fmt::Debug for Mpid {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Mpid {{ public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}), name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
-        	self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec(), self.name)
+            self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec(), self.name)
     }
 }
 
-impl Random for Mpid {
-	fn generate_random() -> Mpid {
-        let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
-        let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
-		Mpid {
-			public_keys: (sign_pub_key, asym_pub_key),
-			secret_keys: (sign_sec_key, asym_sec_key),
-			name: NameType::generate_random()
-		}
-	}
-}
 
-impl MessageInterface for Mpid {
-    fn get_name(&self) -> NameType {
+impl Sendable for Mpid {
+    fn name(&self) -> NameType {
         let sign_arr = &(&self.public_keys.0).0;
         let asym_arr = &(&self.public_keys.1).0;
 
@@ -105,43 +93,56 @@ impl MessageInterface for Mpid {
 
         NameType(digest.0)
     }
+
+    fn type_tag(&self)->u64 {
+        104
+    }
+
+    fn serialised_contents(&self)->Vec<u8> {
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&self]).unwrap();
+        e.into_bytes()      
+    }
+
 }
 
 impl Mpid {
-	pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-						 secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-						 name_type: NameType) -> Mpid {
-		Mpid {
-		public_keys: public_keys,
-		secret_keys: secret_keys,
-		name: name_type
-		}
-	}
-	pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
-		&self.public_keys
-	}
-
-	pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
-		&self.secret_keys
-	}
-
-	pub fn get_name(&self) -> &NameType {
-		&self.name
-	}
+    /// A new instance of Mpid can be created by invoking the new()
+    pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+                         secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+                         name_type: NameType) -> Mpid {
+        Mpid {
+        public_keys: public_keys,
+        secret_keys: secret_keys,
+        name: name_type
+        }
+    }
+    /// Returns the PublicKeys
+    pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
+        &self.public_keys
+    }
+    /// Returns the SecretKeys
+    pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
+        &self.secret_keys
+    }
+    /// Returns the name
+    pub fn get_name(&self) -> &NameType {
+        &self.name
+    }
 }
 
 impl Encodable for Mpid {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-	let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
-	let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
+    let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
+    let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
 
-	CborTagEncode::new(5483_001, &(
-	    pub_sign_vec.as_ref(),
-	    pub_asym_vec.as_ref(),
-	    sec_sign_vec.as_ref(),
-	    sec_asym_vec.as_ref(),
-	    &self.name)).encode(e)
-	}
+    CborTagEncode::new(5483_001, &(
+        pub_sign_vec.as_ref(),
+        pub_asym_vec.as_ref(),
+        sec_sign_vec.as_ref(),
+        sec_asym_vec.as_ref(),
+        &self.name)).encode(e)
+    }
 }
 
 impl Decodable for Mpid {
@@ -158,31 +159,53 @@ impl Decodable for Mpid {
         }
 
         let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
-		        crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
+                crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
         let sec_keys = (crypto::sign::SecretKey(sec_sign_arr.unwrap()),
-		        crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap()));
+                crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap()));
         Ok(Mpid::new(pub_keys, sec_keys, name))
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use cbor;
+    use sodiumoxide::crypto;
+    use routing;    
+    use Random;
+
+    impl Random for Mpid {
+        fn generate_random() -> Mpid {
+            let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
+            let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
+            Mpid {
+                public_keys: (sign_pub_key, asym_pub_key),
+                secret_keys: (sign_sec_key, asym_sec_key),
+                name: routing::test_utils::Random::generate_random()
+            }
+        }
+    }
+
 #[test]
-fn serialisation_mpid() {
-	let obj_before = Mpid::generate_random();
+    fn serialisation_mpid() {
+        let obj_before = Mpid::generate_random();
 
-	let mut e = cbor::Encoder::from_memory();
-	e.encode(&[&obj_before]).unwrap();
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&obj_before]).unwrap();
 
-	let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-	let obj_after: Mpid = d.decode().next().unwrap().unwrap();
+        let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+        let obj_after: Mpid = d.decode().next().unwrap().unwrap();
 
-	assert_eq!(obj_before, obj_after);
-}
+        assert_eq!(obj_before, obj_after);
+    }
 
 #[test]
-fn equality_assertion_mpid() {
-	let mpid_first = Mpid::generate_random();
-	let mpid_second = mpid_first.clone();
-	let mpid_third = Mpid::generate_random();
-	assert_eq!(mpid_first, mpid_second);
-	assert!(mpid_first != mpid_third);
+    fn equality_assertion_mpid() {
+        let mpid_first = Mpid::generate_random();
+        let mpid_second = mpid_first.clone();
+        let mpid_third = Mpid::generate_random();
+        assert_eq!(mpid_first, mpid_second);
+        assert!(mpid_first != mpid_third);
+    }
+    
 }

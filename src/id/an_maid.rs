@@ -17,11 +17,9 @@
 // of the MaidSafe Software.
 
 use cbor::CborTagEncode;
-use cbor;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
-use Random;
 use std::fmt;
 
 /// The following key types use the internal cbor tag to identify them and this
@@ -33,9 +31,9 @@ use std::fmt;
 /// ```
 /// extern crate sodiumoxide;
 /// extern crate maidsafe_types;
-/// // Generating publick and secret keys using sodiumoxide
+/// // Generating public and secret keys using sodiumoxide
 /// // Create AnMaid
-/// let an_maid : maidsafe_types::AnMaid = maidsafe_types::Random::generate_random();
+/// let an_maid : maidsafe_types::AnMaid = maidsafe_types::AnMaid::new();
 /// // Retrieving the values
 /// let ref publicKeys = an_maid.get_public_key();
 /// ```
@@ -53,16 +51,6 @@ impl PartialEq for AnMaid {
     }
 }
 
-impl Random for AnMaid {
-    fn generate_random() -> AnMaid {
-        let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
-
-        AnMaid {
-            public_key: pub_sign_key,
-            secret_key: sec_sign_key
-        }
-    }
-}
 
 impl fmt::Debug for AnMaid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -72,10 +60,27 @@ impl fmt::Debug for AnMaid {
 }
 
 impl AnMaid {
+    /// An instance of AnMaid can be created by invoking the new()
+    /// Default contructed AnMaid instance is returned
+    pub fn new() -> AnMaid {
+        let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
+
+        AnMaid {
+            public_key: pub_sign_key,
+            secret_key: sec_sign_key
+        }
+    }
+
+    /// Returns the PublicKey of the AnMaid
     pub fn get_public_key(&self) -> &crypto::sign::PublicKey {
         &self.public_key
     }
+    /// Returns the SecretKey of the AnMaid
+    pub fn get_secret_key(&self) -> &crypto::sign::SecretKey {
+        &self.secret_key
+    }
 
+    /// Signs the data with the SecretKey of the AnMaid and recturns the Signed Data
     pub fn sign(&self, data : &[u8]) -> Vec<u8> {
         return crypto::sign::sign(&data, &self.secret_key)
     }
@@ -112,6 +117,12 @@ mod test {
     use Random;
     use sodiumoxide::crypto;
     use super::AnMaid;
+
+    impl Random for AnMaid {
+        fn generate_random() -> AnMaid {
+            AnMaid::new()
+        }
+    }
 
     #[test]
     fn serialisation_an_maid() {

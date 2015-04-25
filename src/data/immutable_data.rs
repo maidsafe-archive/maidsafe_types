@@ -16,23 +16,33 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
+use cbor;
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
-use routing::name_type::NameType;
-use routing::message_interface::MessageInterface;
+use routing::NameType;
+use routing::sendable::Sendable;
 use sodiumoxide::crypto;
 use std::fmt;
-use rand;
-use Random;
 
+/// ImmutableData
 #[derive(Clone)]
 pub struct ImmutableData {
     value: Vec<u8>,
 }
 
-impl MessageInterface for ImmutableData {
-    fn get_name(&self) -> NameType {
+impl Sendable for ImmutableData {
+    fn name(&self) -> NameType {
         self.calculate_name()
+    }
+
+    fn type_tag(&self)->u64 {
+        101
+    }
+
+    fn serialised_contents(&self)->Vec<u8> {
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&self]).unwrap();
+        e.into_bytes()      
     }
 }
 
@@ -49,6 +59,7 @@ impl fmt::Debug for ImmutableData {
 }
 
 impl ImmutableData {
+    /// New instance of ImmutableData can be created using the new()
     pub fn new(value: Vec<u8>) -> ImmutableData {
         ImmutableData {
             value: value,
@@ -56,27 +67,14 @@ impl ImmutableData {
     }
 
     // debug cannot call RoutingTrait due to current visibility
+    /// Calculates the name for the Data based on the SHA512 Hash of the Value
     fn calculate_name(&self) -> NameType {
         let digest = crypto::hash::sha512::hash(&self.value);
         NameType(digest.0)
     }
-
+    /// Returns the vaue
     pub fn get_value(&self) -> &Vec<u8> {
         &self.value
-    }
-}
-
-#[allow(unused_variables)]
-impl Random for ImmutableData {
-    fn generate_random() -> ImmutableData {
-        use rand::Rng;
-        let size = 64;
-        let mut data = Vec::with_capacity(size);
-        let mut rng = rand::thread_rng();
-        for i in 0..size {
-            data.push(rng.gen());
-        }
-        ImmutableData::new(data)
     }
 }
 
@@ -99,8 +97,23 @@ mod test {
     use super::*;
     use cbor::{ Encoder, Decoder};
     use rustc_serialize::{Decodable, Encodable};
-    use Random;
-    use routing::message_interface::MessageInterface;
+    use Random;    
+    use rand;
+    use routing::sendable::Sendable;
+
+    #[allow(unused_variables)]
+    impl Random for ImmutableData {
+        fn generate_random() -> ImmutableData {
+            use rand::Rng;
+            let size = 64;
+            let mut data = Vec::with_capacity(size);
+            let mut rng = rand::thread_rng();
+            for i in 0..size {
+                data.push(rng.gen());
+            }
+            ImmutableData::new(data)
+        }
+    }
 
     #[test]
     fn creation() {
@@ -112,7 +125,7 @@ mod test {
         let chunk = ImmutableData::new(data);
         let actual_name = chunk.calculate_name().0.as_ref().to_hex();
         assert_eq!(&expected_name, &actual_name);
-        assert_eq!(&chunk.calculate_name(), &chunk.get_name());
+        assert_eq!(&chunk.calculate_name(), &chunk.name());
     }
 
     #[test]
@@ -124,7 +137,7 @@ mod test {
         let mut d = Decoder::from_bytes(e.as_bytes());
         let obj_after: ImmutableData = d.decode().next().unwrap().unwrap();
 
-        assert_eq!(obj_before, obj_after);
+        assert_eq!(obj_before, obj_after);        
     }
 
     #[test]

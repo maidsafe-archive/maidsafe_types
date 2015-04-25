@@ -16,16 +16,13 @@
 // See the Licences for the specific language governing permissions and limitations relating to use
 // of the MaidSafe Software.
 
-use cbor::CborTagEncode;
 use cbor;
+use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
-use routing::name_type::NameType;
-use routing::message_interface::MessageInterface;
-use Random;
-use rand;
-use std::mem;
+use routing::NameType;
+use routing::sendable::Sendable;
 use std::fmt;
 
 /// PublicAnMaid
@@ -39,7 +36,7 @@ use std::fmt;
 /// let (pub_sign_key, _) = sodiumoxide::crypto::sign::gen_keypair();
 /// let (pub_asym_key, _) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
 /// // Create PublicAnMaid
-/// let pub_an_maid = maidsafe_types::PublicAnMaid::new((pub_sign_key, pub_asym_key), sodiumoxide::crypto::sign::Signature([5u8; 64]), routing::name_type::NameType([99u8; 64]));
+/// let pub_an_maid = maidsafe_types::PublicAnMaid::new((pub_sign_key, pub_asym_key), sodiumoxide::crypto::sign::Signature([5u8; 64]), routing::NameType([99u8; 64]));
 /// // Retrieving the values
 /// let ref publicKeys = pub_an_maid.get_public_keys();
 /// let ref signature = pub_an_maid.get_signature();
@@ -63,22 +60,6 @@ impl PartialEq for PublicAnMaid {
     }
 }
 
-impl Random for PublicAnMaid {
-    fn generate_random() -> PublicAnMaid {
-        let (pub_sign_key, _) = crypto::sign::gen_keypair();
-        let (pub_asym_key, _) = crypto::asymmetricbox::gen_keypair();
-        let mut arr: [u8; 64] = unsafe { mem::uninitialized() };
-        for i in 0..64 {
-            arr[i] = rand::random::<u8>();
-        }
-        PublicAnMaid {
-            public_keys: (pub_sign_key, pub_asym_key),
-            signature: crypto::sign::Signature(arr),
-            name: NameType::generate_random()
-        }
-    }
-}
-
 impl fmt::Debug for PublicAnMaid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (crypto::sign::PublicKey(public_key), crypto::asymmetricbox::PublicKey(assym_public_key)) = self.public_keys;
@@ -88,8 +69,8 @@ impl fmt::Debug for PublicAnMaid {
     }
 }
 
-impl MessageInterface for PublicAnMaid {
-    fn get_name(&self) -> NameType {
+impl Sendable for PublicAnMaid {
+    fn name(&self) -> NameType {
         let sign_arr = &(&self.public_keys.0).0;
         let asym_arr = &(&self.public_keys.1).0;
 
@@ -107,12 +88,23 @@ impl MessageInterface for PublicAnMaid {
         NameType(digest.0)
     }
 
-    fn get_owner(&self) -> Option<Vec<u8>> {
-        Some(self.name.0.as_ref().to_vec())
+    fn type_tag(&self)->u64 {
+        105
+    }
+
+    fn serialised_contents(&self)->Vec<u8> {
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&self]).unwrap();
+        e.into_bytes()      
+    }
+
+    fn owner(&self) -> Option<NameType> {
+        Some(self.name.clone())
     }
 }
 
 impl PublicAnMaid {
+        /// new() is invoked to create an instance of the PublicAnMaid
         pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
                                                  signature: crypto::sign::Signature,
                                                  name: NameType) -> PublicAnMaid {
@@ -122,12 +114,15 @@ impl PublicAnMaid {
                 name: name
                 }
         }
+        /// Returns the PublicKeys
         pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
                 &self.public_keys
         }
+        /// Returns the Signature
         pub fn get_signature(&self) -> &crypto::sign::Signature {
                 &self.signature
         }
+        /// Return the name
         pub fn get_name(&self) -> &NameType {
                 &self.name
         }
@@ -164,25 +159,52 @@ impl Decodable for PublicAnMaid {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use cbor;
+    use sodiumoxide::crypto;
+    use routing;
+    use Random;
+    use rand;
+    use std::mem;
+
+    impl Random for PublicAnMaid {
+        fn generate_random() -> PublicAnMaid {
+            let (pub_sign_key, _) = crypto::sign::gen_keypair();
+            let (pub_asym_key, _) = crypto::asymmetricbox::gen_keypair();
+            let mut arr: [u8; 64] = unsafe { mem::uninitialized() };
+            for i in 0..64 {
+                arr[i] = rand::random::<u8>();
+            }
+            PublicAnMaid {
+                public_keys: (pub_sign_key, pub_asym_key),
+                signature: crypto::sign::Signature(arr),
+                name: routing::test_utils::Random::generate_random()
+            }
+        }
+    }
 
 #[test]
-fn serialisation_public_anmaid() {
-    let obj_before = PublicAnMaid::generate_random();
-    let mut e = cbor::Encoder::from_memory();
-    e.encode(&[&obj_before]).unwrap();
+    fn serialisation_public_anmaid() {
+        let obj_before = PublicAnMaid::generate_random();
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&obj_before]).unwrap();
 
-    let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-    let obj_after: PublicAnMaid = d.decode().next().unwrap().unwrap();
+        let mut d = cbor::Decoder::from_bytes(e.as_bytes());
+        let obj_after: PublicAnMaid = d.decode().next().unwrap().unwrap();
 
-    assert_eq!(obj_before, obj_after);
-}
+        assert_eq!(obj_before, obj_after);
+    }
 
 #[test]
-fn equality_assertion_public_anmaid() {
-    let first_obj = PublicAnMaid::generate_random();
-    let second_obj = PublicAnMaid::generate_random();
-    let cloned_obj = second_obj.clone();
+    fn equality_assertion_public_anmaid() {
+        let first_obj = PublicAnMaid::generate_random();
+        let second_obj = PublicAnMaid::generate_random();
+        let cloned_obj = second_obj.clone();
 
-    assert!(first_obj != second_obj);
-    assert!(second_obj == cloned_obj);
+        assert!(first_obj != second_obj);
+        assert!(second_obj == cloned_obj);
+    }
+    
 }
