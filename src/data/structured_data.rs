@@ -52,16 +52,22 @@ impl Sendable for StructuredData {
 
 impl StructuredData {
     /// An instance of the StructuredData can be created by invoking the new()
-    pub fn new(name: NameType, owner: NameType) -> StructuredData {
+    pub fn new(name: NameType, owner: NameType, value: Vec<Vec<NameType>>) -> StructuredData {
         StructuredData {
             name: name,
             owner: owner,
-            value: Vec::<Vec<NameType>>::new(),
+            value: value,
         }
     }
+
     /// Returns the value
-    pub fn get_value(&self) -> &Vec<Vec<NameType>> {
-        &self.value
+    pub fn get_value(&self) -> Vec<Vec<NameType>> {
+        self.value.clone()
+    }
+
+    /// Sets the value
+    pub fn set_value(&mut self, data: Vec<Vec<NameType>>) {
+        self.value = data;
     }
 }
 
@@ -116,13 +122,9 @@ mod test {
 
 #[test]
     fn creation() {
-        let name : NameType = routing::test_utils::Random::generate_random();
-        let owner : NameType = routing::test_utils::Random::generate_random();
-        let structured_data = StructuredData::new(name.clone(), owner.clone());
-        assert_eq!(&name, &structured_data.name());
-        assert_eq!(owner.0.as_ref().to_vec(), structured_data.owner().unwrap().0.as_ref().to_vec());
-        let expected_value = Vec::<Vec<NameType>>::new();
-        assert_eq!(&expected_value, structured_data.get_value());
+        let structured_data = StructuredData::generate_random();        
+        let data = StructuredData::new(structured_data.name(), structured_data.owner().unwrap(), structured_data.get_value());        
+        assert_eq!(data, structured_data);
     }
 
 #[test]
