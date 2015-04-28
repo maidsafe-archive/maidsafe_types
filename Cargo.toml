@@ -13,6 +13,6 @@ homepage = "http://www.maidsafe.net"
 [dependencies]
 rustc-serialize = "*"
 cbor = "*"
-sodiumoxide = "*"
+sodiumoxide = "0.0.4"
 rand = "*"
 routing = "0.1.3"
