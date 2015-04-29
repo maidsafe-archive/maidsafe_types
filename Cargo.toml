@@ -2,8 +2,8 @@
 
 name = "maidsafe_types"
 version = "0.1.2"
-authors = ["David Irvine <david.irvine@maidsafe.net>"]
-description = "This is Pre alpha, and not useful, no code worth looking at."
+authors = [“MaidSafe Developers <dev@maidsafe.net>”]
+description = “Types for maidsafe clients and vaults.”
 documentation = "http://dirvine.github.io/maidsafe_types/"
 repository = "https://github.com/dirvine/maidsafe_types"
 readme = "README.md"
