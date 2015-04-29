@@ -1,5 +1,4 @@
 [package]
-
 name = "maidsafe_types"
 version = "0.1.2"
 authors = ["David Irvine <david.irvine@maidsafe.net>"]
