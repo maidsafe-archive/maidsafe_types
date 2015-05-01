@@ -52,7 +52,7 @@ impl Sendable for StructuredData {
         false
     }
 
-    fn merge<'a, I>(_: I) -> Option<Self> where I: Iterator<Item=&'a Self> {
+    fn merge<'a, I>(_: I) -> Option<Box<Sendable>> where I: Iterator<Item=&'a Self> {
         None
     }
 }
