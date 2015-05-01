@@ -47,6 +47,14 @@ impl Sendable for StructuredData {
     fn owner(&self) -> Option<NameType> {
         Some(self.owner.clone())
     }
+    
+    fn refresh(&self)->bool {
+        false
+    }
+
+    fn merge<'a, I>(_: I) -> Option<Self> where I: Iterator<Item=&'a Self> {
+        None
+    }
 }
 
 impl StructuredData {

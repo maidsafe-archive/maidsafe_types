@@ -100,6 +100,14 @@ impl Sendable for PublicAnMaid {
     fn owner(&self) -> Option<NameType> {
         Some(self.name.clone())
     }
+    
+    fn refresh(&self)->bool {
+        false
+    }
+
+    fn merge<'a, I>(_: I) -> Option<Self> where I: Iterator<Item=&'a Self> {
+        None
+    }
 }
 
 impl PublicAnMaid {
