@@ -87,7 +87,7 @@ impl Sendable for AnMpid {
         false
     }
 
-    fn merge<'a, I>(_: I) -> Option<Box<Sendable>> where I: Iterator<Item=&'a Self> {
+    fn merge<'a, I>(_: I) -> Option<Box<Sendable>> where I: Iterator<Item=&'a Sendable> {
         None
     }
 }
