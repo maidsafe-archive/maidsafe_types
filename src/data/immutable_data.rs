@@ -43,6 +43,14 @@ impl Sendable for ImmutableData {
         e.encode(&[&self]).unwrap();
         e.into_bytes()      
     }
+
+    fn refresh(&self)->bool {
+        false
+    }
+
+    fn merge<'a, I>(_: I) -> Option<Self> where I: Iterator<Item=&'a Self> {
+        None
+    }
 }
 
 impl PartialEq for ImmutableData {
