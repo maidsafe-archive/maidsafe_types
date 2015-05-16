@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 use cbor;
 use cbor::CborTagEncode;
@@ -36,13 +36,13 @@ use std::fmt;
 /// // Generating sign and asymmetricbox keypairs,
 /// let (pub_sign_key, _) = sodiumoxide::crypto::sign::gen_keypair(); // returns (PublicKey, SecretKey)
 /// let (pub_asym_key, _) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
+/// let (owner_pub_sign_key, _) = sodiumoxide::crypto::sign::gen_keypair();
 ///
 /// // Creating new PublicMpid
 /// let public_mpid  = maidsafe_types::PublicMpid::new((pub_sign_key, pub_asym_key),
 ///                     sodiumoxide::crypto::sign::Signature([2u8; 64]),
-///                     routing::NameType([8u8; 64]),
-///                     sodiumoxide::crypto::sign::Signature([5u8; 64]),
-///                    routing::NameType([6u8; 64]));
+///                     owner_pub_sign_key,
+///                     sodiumoxide::crypto::sign::Signature([5u8; 64]));
 ///
 /// // getting PublicMpid::public_keys
 /// let &(pub_sign, pub_asym) = public_mpid.get_public_keys();
@@ -50,22 +50,21 @@ use std::fmt;
 /// // getting PublicMpid::mpid_signature
 /// let mpid_signature: &sodiumoxide::crypto::sign::Signature = public_mpid.get_mpid_signature();
 ///
-/// // getting PublicMpid::owner
-/// let owner: &routing::NameType = public_mpid.get_owner();
+/// // getting PublicMaid::owner_pub_sign_key
+/// let owner_pub_sign_key: &sodiumoxide::crypto::sign::PublicKey = public_mpid.get_owner_sign_public_key();
 ///
 /// // getting PublicMpid::signature
 /// let signature: &sodiumoxide::crypto::sign::Signature = public_mpid.get_signature();
 ///
 /// // getting PublicMpid::name
-/// let name: &routing::NameType = public_mpid.get_name();
+/// let name: routing::NameType = public_mpid.get_name();
 /// ```
 #[derive(Clone)]
 pub struct PublicMpid {
-public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-mpid_signature: crypto::sign::Signature,
-owner: NameType,
-signature: crypto::sign::Signature,
-name: NameType
+    public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+    mpid_signature: crypto::sign::Signature,
+    owner_sign_public_key: crypto::sign::PublicKey,
+    signature: crypto::sign::Signature
 }
 
 impl Sendable for PublicMpid {
@@ -94,14 +93,14 @@ impl Sendable for PublicMpid {
     fn serialised_contents(&self)->Vec<u8> {
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&self]).unwrap();
-        e.into_bytes()      
+        e.into_bytes()
     }
 
 
-    fn owner(&self) -> Option<NameType> {
-        Some(self.owner.clone())
+    fn owner_sign_public_key(&self) -> Option<crypto::sign::PublicKey> {
+        Some(self.owner_sign_public_key.clone())
     }
-    
+
     fn refresh(&self)->bool {
         false
     }
@@ -115,14 +114,14 @@ impl PartialEq for PublicMpid {
         let pub2_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
         let sig1_equal = slice_equal(&self.mpid_signature.0, &other.mpid_signature.0);
         let sig2_equal = slice_equal(&self.signature.0, &other.signature.0);
-        return pub1_equal && pub2_equal && sig1_equal && sig2_equal && self.name == other.name;
+        return pub1_equal && pub2_equal && sig1_equal && sig2_equal;
     }
 }
 
 impl fmt::Debug for PublicMpid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "PublicMpid {{ public_keys:({:?}, {:?}), mpid_signature:{:?}, owner:{:?}, signature:{:?}, name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
-            self.mpid_signature.0.to_vec(), self.owner, self.signature.0.to_vec(), self.name)
+            self.mpid_signature.0.to_vec(), self.owner_sign_public_key .0.to_vec(), self.signature.0.to_vec(), self.name())
     }
 }
 
@@ -140,15 +139,13 @@ impl PublicMpid {
     ///
     pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
                          mpid_signature: crypto::sign::Signature,
-                         owner: NameType,
-                         signature: crypto::sign::Signature,
-                         name: NameType) -> PublicMpid {
+                         owner_sign_public_key: crypto::sign::PublicKey,
+                         signature: crypto::sign::Signature) -> PublicMpid {
         PublicMpid {
         public_keys: public_keys,
         mpid_signature: mpid_signature,
-        owner: owner,
-        signature: signature,
-        name: name,
+        owner_sign_public_key: owner_sign_public_key,
+        signature: signature
         }
     }
 
@@ -166,8 +163,8 @@ impl PublicMpid {
 
     /// Returns the owner
     #[warn(dead_code)]
-    pub fn get_owner(& self) -> &NameType {
-        &self.owner
+    pub fn get_owner_sign_public_key(& self) -> &crypto::sign::PublicKey {
+        &self.owner_sign_public_key
     }
 
     /// Returns the PublicMpid Signature
@@ -178,8 +175,8 @@ impl PublicMpid {
 
     /// Returns the name for the PublicMpid
     #[warn(dead_code)]
-    pub fn get_name(& self) -> &NameType {
-        &self.name
+    pub fn get_name(&self) -> NameType {
+        self.name()
     }
 }
 
@@ -188,13 +185,13 @@ impl Encodable for PublicMpid {
         let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
         let crypto::sign::Signature(mpid_signature) = self.mpid_signature;
         let crypto::sign::Signature(signature) = self.signature;
+        let crypto::sign::PublicKey(owner_pub_sign_vec) = self.owner_sign_public_key;
         CborTagEncode::new(5483_001, &(
                 pub_sign_vec.as_ref(),
-                        pub_asym_vec.as_ref(),
+                pub_asym_vec.as_ref(),
                 mpid_signature.as_ref(),
-                &self.owner,
-                    signature.as_ref(),
-                &self.name)).encode(e)
+                owner_pub_sign_vec.as_ref(),
+                signature.as_ref())).encode(e)
     }
 }
 
@@ -202,11 +199,12 @@ impl Decodable for PublicMpid {
     fn decode<D: Decoder>(d: &mut D)-> Result<PublicMpid, D::Error> {
     try!(d.read_u64());
 
-    let (pub_sign_vec, pub_asym_vec, mpid_signature_vec, owner, signature_vec, name) : (Vec<u8>, Vec<u8>, Vec<u8>, NameType, Vec<u8>, NameType) = try!(Decodable::decode(d));
+    let (pub_sign_vec, pub_asym_vec, mpid_signature_vec, owner_pub_sign_vec, signature_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
         let mpid_signature_arr = convert_to_array!(mpid_signature_vec, crypto::sign::SIGNATUREBYTES);
         let signature_arr = convert_to_array!(signature_vec, crypto::sign::SIGNATUREBYTES);
+        let owner_pub_sign_arr = convert_to_array!(owner_pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
 
         if pub_sign_arr.is_none() || pub_asym_arr.is_none() || mpid_signature_arr.is_none() || signature_arr.is_none() {
             return Err(d.error("Bad PublicMaid size"));
@@ -216,8 +214,9 @@ impl Decodable for PublicMpid {
             crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
     let parsed_mpid_signature = crypto::sign::Signature(mpid_signature_arr.unwrap());
     let parsed_signature = crypto::sign::Signature(signature_arr.unwrap());
+    let owner_sign_public_key = crypto::sign::PublicKey(owner_pub_sign_arr.unwrap());
 
-    Ok(PublicMpid::new(pub_keys, parsed_mpid_signature, owner, parsed_signature, name))
+    Ok(PublicMpid::new(pub_keys, parsed_mpid_signature, owner_sign_public_key, parsed_signature))
     }
 }
 
@@ -237,6 +236,7 @@ mod test {
             let (asym_pub_key, _) = crypto::asymmetricbox::gen_keypair();
             let mut mpid_signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
             let mut signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
+            let (owner_sign_pub_key, _) = crypto::sign::gen_keypair();
             for i in 0..64 {
                 mpid_signature_arr[i] = rand::random::<u8>();
                 signature_arr[i] = rand::random::<u8>();
@@ -245,9 +245,8 @@ mod test {
             PublicMpid {
                 public_keys: (sign_pub_key, asym_pub_key),
                 mpid_signature: crypto::sign::Signature(mpid_signature_arr),
-                owner: routing::test_utils::Random::generate_random(),
-                signature: crypto::sign::Signature(signature_arr),
-                name: routing::test_utils::Random::generate_random()
+                owner_sign_public_key: owner_sign_pub_key,
+                signature: crypto::sign::Signature(signature_arr)
             }
         }
     }
@@ -274,5 +273,5 @@ mod test {
         assert_eq!(public_mpid_first, public_mpid_second);
         assert!(public_mpid_first != public_mpid_third);
     }
-    
+
 }
