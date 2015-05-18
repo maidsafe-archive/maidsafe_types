@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 use cbor;
 use cbor::CborTagEncode;
@@ -31,7 +31,7 @@ pub struct StructuredData {
 
 impl Sendable for StructuredData {
     fn name(&self) -> NameType {
-             self.name.clone()
+        self.name.clone()
     }
 
     fn type_tag(&self)->u64 {
@@ -41,13 +41,9 @@ impl Sendable for StructuredData {
     fn serialised_contents(&self)->Vec<u8> {
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&self]).unwrap();
-        e.into_bytes()      
+        e.into_bytes()
     }
 
-    fn owner(&self) -> Option<NameType> {
-        Some(self.owner.clone())
-    }
-    
     fn refresh(&self)->bool {
         false
     }
@@ -73,6 +69,11 @@ impl StructuredData {
     /// Sets the value
     pub fn set_value(&mut self, data: Vec<Vec<NameType>>) {
         self.value = data;
+    }
+
+    /// Returns the owner
+    pub fn get_owner(&self) -> NameType {
+        self.owner.clone()
     }
 }
 
@@ -100,7 +101,7 @@ mod test {
     use cbor::{ Encoder, Decoder };
     use rustc_serialize::{Decodable, Encodable};
     use routing;
-    use routing::NameType;    
+    use routing::NameType;
     use routing::sendable::Sendable;
     use Random;
     use rand;
@@ -127,8 +128,8 @@ mod test {
 
 #[test]
     fn creation() {
-        let structured_data = StructuredData::generate_random();        
-        let data = StructuredData::new(structured_data.name(), structured_data.owner().unwrap(), structured_data.get_value());        
+        let structured_data = StructuredData::generate_random();
+        let data = StructuredData::new(structured_data.name(), structured_data.get_owner(), structured_data.get_value());
         assert_eq!(data, structured_data);
     }
 

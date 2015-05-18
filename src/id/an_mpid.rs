@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -76,11 +76,7 @@ impl Sendable for AnMpid {
     fn serialised_contents(&self)->Vec<u8> {
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&self]).unwrap();
-        e.into_bytes()      
-    }
-
-    fn owner(&self) -> Option<NameType> {
-        Some(self.name.clone())
+        e.into_bytes()
     }
 
     fn refresh(&self)->bool {
@@ -207,5 +203,5 @@ mod test {
         assert_eq!(an_mpid_first, an_mpid_second);
         assert!(an_mpid_first != an_mpid_third);
     }
-    
+
 }
