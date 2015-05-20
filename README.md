@@ -15,8 +15,8 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 
 #Todo
 - [ ] Remove name from types to enhance type invariance
-- [ ] Add type tag into ID type. Tag type will be one of the elements of the parameter which is signed by the signer. tests to be changed to reflect this.
-- [ ] Add public key of the signing key into the dependent id packets to enable in place validation. Similar to Type tag, this will be one of the elements of the parameter which is signed by the signer (owner signing key)
+- [ ] Add public key of the signing key into the dependent id packets to enable in place validation.
+- [ ] Add a member of signature type to Id types. The signature in pure keys is sign_using_own_private_key(public keys + type tag). And in dependent keys, is sign_using_owner_private_key(public keys + owner public key + type tag)
 - [ ] add SafeCoin entry type which should have i) vec<owner>, ii) vec<previous owner> and iii) vec<signature created by previous owner to verify the transaction approved by it>, and Type tag
 - [ ] Remove maid_signature and mpid_signature from PublicMaid and PublicAnMaid
 - [ ] Confirm all Id types conform to the drawn representation of the types
