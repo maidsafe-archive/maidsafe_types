@@ -1,6 +1,6 @@
 # MaidSafe Types - Change Log
 
-## [0.0.0 -  "0.1.3"]
+## [0.0.0 -  0.1.3]
 
 - Add all DataTypes for Data Put/Get 
 - Add Encode/Decode traits for all types (cbor)
