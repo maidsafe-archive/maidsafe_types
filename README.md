@@ -13,13 +13,24 @@ libsodium is a native dependency for [sodiumxoide](https://github.com/dnaq/sodiu
 For windows, download and use the [prebuilt mingw library](https://download.libsodium.org/libsodium/releases/libsodium-1.0.2-mingw.tar.gz).
 Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit System or "bin\i686-pc-windows-gnu" for a 32bit system.
 
-#Todo
-- [ ] Anonymous public types to be included as part of the body of the public type
-- [ ] Change tests to reflect the above task
-- [ ] Remove name from types to enhance type invariance
-- [ ] Add a member of signature type to Id types. The signature in pure keys is sign_using_own_private_key(public keys + type tag). And in dependent keys, is sign_using_owner_private_key(public keys + owner public key + type tag)
-- [ ] add SafeCoin entry type which should have i) owners, ii) previous owners and iii) signatures created by previous owners to verify the transaction approved by them, and iv) Type tag
-- [ ] Implement and test Sendable, Encodable, Decodable, PartialEq and fmt::Debug traits for SafeCoin Type
-- [ ] Remove maid_signature and mpid_signature from PublicMaid and PublicAnMaid
-- [ ] Provide Shona with modifications required in Types representations
-- [ ] Write tests to confirm invariants of all types
+#Todo Items
+
+## [0.1.4]
+- [ ] Remove anonymous public types
+  - [ ] Anonymous public types to be included as part of the body of the public type
+  - [ ] Change tests to reflect the above task
+
+- [ ] Modifications to Id types
+  - [ ] Remove name from types to enhance type invariance
+  - [ ] Add a member of signature type to Id types. The signature in pure keys is sign_using_own_private_key(public         keys + type tag). And in dependent keys, is sign_using_owner_private_key(public keys + owner public key +          type tag)
+  - [ ] Remove maid_signature and mpid_signature from PublicMaid and PublicAnMaid
+  - [ ] Write tests to confirm invariants of all types
+
+- [ ] SafeCoin type
+  - [ ] add SafeCoin entry type which should have i) owners, ii) previous owners and iii) signatures created by            previous owners to verify the transaction approved by them, and iv) Type tag
+  - [ ] Implement and test Sendable, Encodable, Decodable, PartialEq and fmt::Debug traits for SafeCoin Type
+  
+- [ ] Visual presentation
+  - [ ] Provide Shona with modifications required in Types representations
+  - [ ] Come up intiuitive representation of types
+
