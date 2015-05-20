@@ -14,10 +14,12 @@ For windows, download and use the [prebuilt mingw library](https://download.libs
 Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit System or "bin\i686-pc-windows-gnu" for a 32bit system.
 
 #Todo
+- [ ] PublicAnXXX types to be included as part of the body of the PublicType 
 - [ ] Remove name from types to enhance type invariance
 - [ ] Add public key of the signing key into the dependent id packets to enable in place validation.
 - [ ] Add a member of signature type to Id types. The signature in pure keys is sign_using_own_private_key(public keys + type tag). And in dependent keys, is sign_using_owner_private_key(public keys + owner public key + type tag)
 - [ ] add SafeCoin entry type which should have i) owners, ii) previous owners and iii) signatures created by previous owners to verify the transaction approved by them, and iv) Type tag
 - [ ] Implement and test Sendable, Encodable, Decodable, PartialEq and fmt::Debug traits for SafeCoin Type
 - [ ] Remove maid_signature and mpid_signature from PublicMaid and PublicAnMaid
-- [ ] Confirm all Id types conform to the drawn representation of the types by writing new tests or modifying existing ones
+- [ ] Provide Shona with modifications required in Types representations
+- [ ] Write tests to confirm invariants of all types
