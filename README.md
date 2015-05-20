@@ -17,7 +17,6 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 - [ ] Anonymous public types to be included as part of the body of the public type
 - [ ] Change tests to reflect the above task
 - [ ] Remove name from types to enhance type invariance
-- [ ] Add public key of the signing key into the dependent id packets to enable in place validation.
 - [ ] Add a member of signature type to Id types. The signature in pure keys is sign_using_own_private_key(public keys + type tag). And in dependent keys, is sign_using_owner_private_key(public keys + owner public key + type tag)
 - [ ] add SafeCoin entry type which should have i) owners, ii) previous owners and iii) signatures created by previous owners to verify the transaction approved by them, and iv) Type tag
 - [ ] Implement and test Sendable, Encodable, Decodable, PartialEq and fmt::Debug traits for SafeCoin Type
