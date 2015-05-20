@@ -19,20 +19,20 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 
 ## [0.1.4]
 - [ ] Remove anonymous public types
-  - [ ] Anonymous public types to be included as part of the body of the public type
-  - [ ] Change tests to reflect the above task
+  - [ ] [MAID-1053](https://maidsafe.atlassian.net/browse/MAID-1053) Anonymous public types to be included as part of the body of the public type
+  - [ ] [MAID-1058](https://maidsafe.atlassian.net/browse/MAID-1058) Change tests to reflect the above task
 
 - [ ] Modifications to Id types
-  - [ ] Remove name from types to enhance type invariance
-  - [ ] Add a member of signature type to Id types. The signature in pure keys is sign_using_own_private_key(public         keys + type tag). And in dependent keys, is sign_using_owner_private_key(public keys + owner public key +          type tag)
-  - [ ] Remove maid_signature and mpid_signature from PublicMaid and PublicAnMaid
-  - [ ] Write tests to confirm invariants of all types
+  - [ ] [MAID-1029](https://maidsafe.atlassian.net/browse/MAID-1029) Remove name from types to enhance type invariance
+  - [ ] [MAID-1035](https://maidsafe.atlassian.net/browse/MAID-1035) Add a member of signature type to Id types. The signature in pure keys is sign_using_own_private_key(public keys + type tag). And in dependent keys, is sign_using_owner_private_key(public keys + owner public key + type tag)
+  - [ ] [MAID-1041](https://maidsafe.atlassian.net/browse/MAID-1041) Remove maid_signature and mpid_signature from PublicMaid and PublicAnMaid
+  - [ ] [MAID-1056](https://maidsafe.atlassian.net/browse/MAID-1056) Write tests to confirm invariants of all types
 
 - [ ] SafeCoin type
-  - [ ] add SafeCoin entry type which should have i) owners, ii) previous owners and iii) signatures created by            previous owners to verify the transaction approved by them, and iv) Type tag
-  - [ ] Implement and test Sendable, Encodable, Decodable, PartialEq and fmt::Debug traits for SafeCoin Type
+  - [ ] [MAID-1036](https://maidsafe.atlassian.net/browse/MAID-1036) add SafeCoin entry type which should have i) owners, ii) previous owners and iii) signatures created by            previous owners to verify the transaction approved by them, and iv) Type tag
+  - [ ] [MAID-1044](https://maidsafe.atlassian.net/browse/MAID-1044) Implement and test Sendable, Encodable, Decodable, PartialEq and fmt::Debug traits for SafeCoin Type
   
 - [ ] Visual presentation
-  - [ ] Provide Shona with modifications required in Types representations
-  - [ ] Come up intiuitive representation of types
+  - [ ] [MAID-1047](https://maidsafe.atlassian.net/browse/MAID-1047) Provide Shona with modifications required in Types representations
+  - [ ] [MAID-1073](https://maidsafe.atlassian.net/browse/MAID-1073) Come up with intiuitive representation of types
 
