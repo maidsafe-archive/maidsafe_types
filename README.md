@@ -18,5 +18,6 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 - [ ] Add public key of the signing key into the dependent id packets to enable in place validation.
 - [ ] Add a member of signature type to Id types. The signature in pure keys is sign_using_own_private_key(public keys + type tag). And in dependent keys, is sign_using_owner_private_key(public keys + owner public key + type tag)
 - [ ] add SafeCoin entry type which should have i) owners, ii) previous owners and iii) signatures created by previous owners to verify the transaction approved by them, and iv) Type tag
+- [ ] Implement and test Sendable, Encodable and Decodable traits for SafeCoin Type
 - [ ] Remove maid_signature and mpid_signature from PublicMaid and PublicAnMaid
-- [ ] Confirm all Id types conform to the drawn representation of the types
+- [ ] Confirm all Id types conform to the drawn representation of the types by writing new tests or modifying existing ones
