@@ -14,7 +14,8 @@ For windows, download and use the [prebuilt mingw library](https://download.libs
 Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit System or "bin\i686-pc-windows-gnu" for a 32bit system.
 
 #Todo
-- [ ] PublicAnXXX types to be included as part of the body of the PublicType 
+- [ ] Anonymous public types to be included as part of the body of the public type
+- [ ] Change tests to reflect the above task
 - [ ] Remove name from types to enhance type invariance
 - [ ] Add public key of the signing key into the dependent id packets to enable in place validation.
 - [ ] Add a member of signature type to Id types. The signature in pure keys is sign_using_own_private_key(public keys + type tag). And in dependent keys, is sign_using_owner_private_key(public keys + owner public key + type tag)
