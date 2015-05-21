@@ -55,8 +55,6 @@ use std::fmt;
 /// // getting PublicMaid::signature
 /// let signature: &sodiumoxide::crypto::sign::Signature = public_maid.get_signature();
 ///
-/// // getting PublicMaid::name
-/// let name: routing::NameType = public_maid.get_name();
 /// ```
 
 #[derive(Clone)]
@@ -69,7 +67,7 @@ pub struct PublicMaid {
 
 impl Sendable for PublicMaid {
     fn name(&self) -> NameType {
-        self.get_name()
+        name(&self.public_keys)
     }
 
     fn type_tag(&self)->u64 {
@@ -134,10 +132,6 @@ impl PublicMaid {
     /// Returns the Signature of PublicMaid
     pub fn get_signature(&self) -> &crypto::sign::Signature {
         &self.signature
-    }
-    /// Returns the name
-    pub fn get_name(&self) -> NameType {
-        calculate_name(&self.public_keys)
     }
 }
 

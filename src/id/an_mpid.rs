@@ -40,7 +40,6 @@ use cbor;
 /// // Retrieving the values
 /// let ref publicKeys = an_mpid.get_public_keys();
 /// let ref secret_keys = an_mpid.get_secret_keys();
-/// let name = an_mpid.get_name();
 /// ```
 ///
 #[derive(Clone)]
@@ -51,7 +50,7 @@ pub struct AnMpid {
 
 impl Sendable for AnMpid {
     fn name(&self) -> NameType {
-        self.get_name()
+        name(&self.public_keys)
     }
 
     fn type_tag(&self)->u64 {
@@ -104,10 +103,6 @@ impl AnMpid {
     /// Returns the SecretKeys
     pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
         &self.secret_keys
-    }
-    /// Returns the name
-    pub fn get_name(&self) -> NameType {
-        calculate_name(&self.public_keys)
     }
 }
 

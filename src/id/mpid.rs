@@ -46,8 +46,6 @@ use std::fmt;
 /// // getting Mpid::secret_keys
 /// let &(sec_sign, sec_asym) = mpid.get_public_keys();
 ///
-/// // getting Mpid::name
-/// let name: routing::NameType = mpid.get_name();
 /// ```
 #[derive(Clone)]
 pub struct Mpid {
@@ -74,7 +72,7 @@ impl fmt::Debug for Mpid {
 
 impl Sendable for Mpid {
     fn name(&self) -> NameType {
-        self.get_name()
+        name(&self.public_keys)
     }
 
     fn type_tag(&self)->u64 {
@@ -107,10 +105,6 @@ impl Mpid {
     /// Returns the SecretKeys
     pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
         &self.secret_keys
-    }
-    /// Returns the name
-    pub fn get_name(&self) -> NameType {
-        calculate_name(&self.public_keys)
     }
 }
 

@@ -55,8 +55,6 @@ use std::fmt;
 /// // getting PublicMpid::signature
 /// let signature: &sodiumoxide::crypto::sign::Signature = public_mpid.get_signature();
 ///
-/// // getting PublicMpid::name
-/// let name: routing::NameType = public_mpid.get_name();
 /// ```
 
 #[derive(Clone)]
@@ -69,7 +67,7 @@ signature: crypto::sign::Signature
 
 impl Sendable for PublicMpid {
     fn name(&self) -> NameType {
-        self.get_name()
+        name(&self.public_keys)
     }
 
     fn type_tag(&self)->u64 {
@@ -156,11 +154,6 @@ impl PublicMpid {
     #[warn(dead_code)]
     pub fn get_signature(& self) -> &crypto::sign::Signature {
         &self.signature
-    }
-
-    /// Returns the name
-    pub fn get_name(&self) -> NameType {
-        calculate_name(&self.public_keys)
     }
 }
 

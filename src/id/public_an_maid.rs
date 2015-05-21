@@ -70,7 +70,7 @@ impl fmt::Debug for PublicAnMaid {
 
 impl Sendable for PublicAnMaid {
     fn name(&self) -> NameType {
-        self.get_name()
+        name(&self.public_keys)
     }
 
     fn type_tag(&self)->u64 {
@@ -84,7 +84,7 @@ impl Sendable for PublicAnMaid {
     }
 
     fn owner(&self) -> Option<NameType> {
-        Some(self.get_name())
+        Some(name(&self.public_keys))
     }
 
     fn refresh(&self)->bool {
@@ -108,11 +108,6 @@ impl PublicAnMaid {
         pub fn get_signature(&self) -> &crypto::sign::Signature {
             &self.signature
         }
-        /// Returns the name
-        pub fn get_name(&self) -> NameType {
-            calculate_name(&self.public_keys)
-        }
-
 }
 
 impl Encodable for PublicAnMaid {
