@@ -94,27 +94,19 @@ impl PublicAnMaid {
         /// new() is invoked to create an instance of the PublicAnMaid
         pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
                                                  signature: crypto::sign::Signature) -> PublicAnMaid {
-                PublicAnMaid {
-                public_keys: public_keys,
-                signature: signature
-                }
+            PublicAnMaid {public_keys: public_keys, signature: signature }
         }
         /// Returns the PublicKeys
         pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
-                &self.public_keys
+            &self.public_keys
         }
         /// Returns the Signature
         pub fn get_signature(&self) -> &crypto::sign::Signature {
-                &self.signature
+            &self.signature
         }
         /// Returns the name
         pub fn get_name(&self) -> NameType {
-            let combined_iter = (self.public_keys.0).0.into_iter().chain((self.public_keys.1).0.into_iter()).collect::<Vec<_>>();
-            let mut combined: Vec<u8> = Vec::new();
-            for iter in combined_iter {
-                combined.push(*iter);
-            }
-            NameType(crypto::hash::sha512::hash(&combined).0)
+            calculate_name(&self.public_keys)
         }
 
 }

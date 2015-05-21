@@ -13,7 +13,10 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
+
+use sodiumoxide::crypto;
+use routing::NameType;
 
 ///
 /// Returns true if both slices are equal in length, and have equal contents
@@ -47,6 +50,18 @@ macro_rules! convert_to_array {
             Some(arr)
         }
     }};
+}
+
+///
+/// Calculate and returns NameType using Public signing & encryption kets
+///
+pub fn calculate_name(public_keys: &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey)) -> NameType {
+    let combined_iter = (public_keys.0).0.into_iter().chain((public_keys.1).0.into_iter());
+    let mut combined: Vec<u8> = Vec::new();
+    for iter in combined_iter {
+        combined.push(*iter);
+    }
+    NameType(crypto::hash::sha512::hash(&combined).0)
 }
 
 #[cfg(test)]

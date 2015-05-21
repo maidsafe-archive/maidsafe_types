@@ -107,12 +107,7 @@ impl AnMpid {
     }
     /// Returns the name
     pub fn get_name(&self) -> NameType {
-        let combined_iter = (self.public_keys.0).0.into_iter().chain((self.public_keys.1).0.into_iter()).collect::<Vec<_>>();
-        let mut combined: Vec<u8> = Vec::new();
-        for iter in combined_iter {
-            combined.push(*iter);
-        }
-        NameType(crypto::hash::sha512::hash(&combined).0)
+        calculate_name(&self.public_keys)
     }
 }
 
