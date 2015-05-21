@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 use cbor;
 use cbor::CborTagEncode;
@@ -41,7 +41,7 @@ impl Sendable for ImmutableData {
     fn serialised_contents(&self)->Vec<u8> {
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&self]).unwrap();
-        e.into_bytes()      
+        e.into_bytes()
     }
 
     fn refresh(&self)->bool {
@@ -102,7 +102,7 @@ mod test {
     use super::*;
     use cbor::{ Encoder, Decoder};
     use rustc_serialize::{Decodable, Encodable};
-    use Random;    
+    use Random;
     use rand;
     use routing::sendable::Sendable;
 
@@ -142,7 +142,7 @@ mod test {
         let mut d = Decoder::from_bytes(e.as_bytes());
         let obj_after: ImmutableData = d.decode().next().unwrap().unwrap();
 
-        assert_eq!(obj_before, obj_after);        
+        assert_eq!(obj_before, obj_after);
     }
 
     #[test]

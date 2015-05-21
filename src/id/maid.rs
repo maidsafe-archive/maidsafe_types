@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -27,7 +27,6 @@ use std::fmt;
 ///
 /// #Examples
 /// ```
-/// use maidsafe_types::Random;
 /// use maidsafe_types::{Maid, AnMaid};
 /// // Creating new Maid
 /// let maid: Maid  = Maid::new(&AnMaid::new());
@@ -45,7 +44,7 @@ pub struct Maid {
 impl Maid {
     /// Invoked to create an instance of Maid
     /// Symmetric public and secret keys of AnMaid and used to construct the Maid
-    pub fn new(an_maid: &AnMaid) -> Maid {        
+    pub fn new(an_maid: &AnMaid) -> Maid {
         let asym_keys = crypto::asymmetricbox::gen_keypair();
 
         Maid {
@@ -134,7 +133,7 @@ mod test {
     use super::super::AnMaid;
     use sodiumoxide::crypto;
     use Random;
-    use rand;    
+    use rand;
     use rand::Rng;
 
     impl Random for Maid {
