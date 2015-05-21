@@ -38,19 +38,20 @@ use std::fmt;
 ///
 /// // Creating new Mpid
 /// let mpid  = maidsafe_types::id::mpid::Mpid::new((pub_sign_key, pub_asym_key),
-///                     (sec_sign_key, sec_asym_key));
+///                     (sec_sign_key, sec_asym_key),
+///                     routing::NameType([6u8; 64]));
 ///
 /// // getting Mpid::public_keys
 /// let &(pub_sign, pub_asym) = mpid.get_public_keys();
 ///
 /// // getting Mpid::secret_keys
 /// let &(sec_sign, sec_asym) = mpid.get_public_keys();
-///
 /// ```
 #[derive(Clone)]
 pub struct Mpid {
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-    secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
+    secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+    name: NameType
 }
 
 impl PartialEq for Mpid {
@@ -58,14 +59,14 @@ impl PartialEq for Mpid {
         // Private keys are mathematically linked, so just check public keys
         let public0_equal = slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
         let public1_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
-        return public0_equal && public1_equal;
+        return public0_equal && public1_equal && self.name == other.name;
     }
 }
 
 impl fmt::Debug for Mpid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Mpid {{ public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}) }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
-            self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec())
+        write!(f, "Mpid {{ public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}), name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
+            self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec(), self.name)
     }
 }
 
@@ -95,8 +96,9 @@ impl Sendable for Mpid {
 impl Mpid {
     /// A new instance of Mpid can be created by invoking the new()
     pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-                         secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)) -> Mpid {
-        Mpid {public_keys: public_keys,  secret_keys: secret_keys }
+                         secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+                         name_type: NameType) -> Mpid {
+        Mpid { public_keys: public_keys, secret_keys: secret_keys, name: name_type }
     }
     /// Returns the PublicKeys
     pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
@@ -117,14 +119,15 @@ impl Encodable for Mpid {
         pub_sign_vec.as_ref(),
         pub_asym_vec.as_ref(),
         sec_sign_vec.as_ref(),
-        sec_asym_vec.as_ref())).encode(e)
+        sec_asym_vec.as_ref(),
+        &self.name)).encode(e)
     }
 }
 
 impl Decodable for Mpid {
     fn decode<D: Decoder>(d: &mut D)-> Result<Mpid, D::Error> {
         try!(d.read_u64());
-        let(pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
+        let(pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec, name) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, NameType) = try!(Decodable::decode(d));
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
         let sec_sign_arr = convert_to_array!(sec_sign_vec, crypto::sign::SECRETKEYBYTES);
@@ -138,7 +141,7 @@ impl Decodable for Mpid {
                 crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
         let sec_keys = (crypto::sign::SecretKey(sec_sign_arr.unwrap()),
                 crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap()));
-        Ok(Mpid::new(pub_keys, sec_keys))
+        Ok(Mpid::new(pub_keys, sec_keys, name))
     }
 }
 
@@ -147,6 +150,7 @@ mod test {
     use super::*;
     use cbor;
     use sodiumoxide::crypto;
+    use routing;
     use Random;
 
     impl Random for Mpid {
@@ -155,7 +159,8 @@ mod test {
             let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
             Mpid {
                 public_keys: (sign_pub_key, asym_pub_key),
-                secret_keys: (sign_sec_key, asym_sec_key)
+                secret_keys: (sign_sec_key, asym_sec_key),
+                name: routing::test_utils::Random::generate_random()
             }
         }
     }

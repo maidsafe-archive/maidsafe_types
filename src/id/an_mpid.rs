@@ -36,7 +36,9 @@ use cbor;
 /// let (pub_sign_key, sec_sign_key) = sodiumoxide::crypto::sign::gen_keypair();
 /// let (pub_asym_key, sec_asym_key) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
 /// // Create AnMpid
-/// let an_mpid = maidsafe_types::AnMpid::new((pub_sign_key, pub_asym_key), (sec_sign_key, sec_asym_key));
+/// let an_mpid = maidsafe_types::AnMpid::new((pub_sign_key, pub_asym_key),
+///                                           (sec_sign_key, sec_asym_key),
+///                                           routing::NameType([3u8; 64]));
 /// // Retrieving the values
 /// let ref publicKeys = an_mpid.get_public_keys();
 /// let ref secret_keys = an_mpid.get_secret_keys();
@@ -45,7 +47,8 @@ use cbor;
 #[derive(Clone)]
 pub struct AnMpid {
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-    secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
+    secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+    name: NameType,
 }
 
 impl Sendable for AnMpid {
@@ -76,27 +79,26 @@ impl Sendable for AnMpid {
 
 impl fmt::Debug for AnMpid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "AnMpid {{ public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}) }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
-            self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec())
+        write!(f, "AnMpid {{ public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}), name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
+            self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec(), self.name)
     }
 }
-
 impl PartialEq for AnMpid {
     fn eq(&self, other: &AnMpid) -> bool {
         // secret keys are mathematically linked, just check public ones
-        let pub1_equal = slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
-        let pub2_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
-        return pub1_equal && pub2_equal;
+        slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
+        slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0) &&
+        self.name == other.name
     }
 }
 
 impl AnMpid {
     /// Invoked to create an instance of AnMpid
     pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-                         secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)) -> AnMpid {
-        AnMpid {public_keys: public_keys, secret_keys: secret_keys }
-    }
-    /// Returns the PublicKeys
+                         secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
+                         name_type: NameType) -> AnMpid {
+        AnMpid { public_keys: public_keys, secret_keys: secret_keys, name: name_type }
+    }    /// Returns the PublicKeys
     pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
         &self.public_keys
     }
@@ -115,14 +117,15 @@ impl Encodable for AnMpid {
         pub_sign_vec.as_ref(),
         pub_asym_vec.as_ref(),
         sec_sign_vec.as_ref(),
-        sec_asym_vec.as_ref())).encode(e)
+        sec_asym_vec.as_ref(),
+        &self.name)).encode(e)
     }
 }
 
 impl Decodable for AnMpid {
     fn decode<D: Decoder>(d: &mut D)-> Result<AnMpid, D::Error> {
     try!(d.read_u64());
-    let (pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
+    let (pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec, name) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, NameType) = try!(Decodable::decode(d));
 
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
@@ -134,10 +137,10 @@ impl Decodable for AnMpid {
         }
 
     let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
-            crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
+                    crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
     let sec_keys = (crypto::sign::SecretKey(sec_sign_arr.unwrap()),
             crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap()));
-    Ok(AnMpid::new(pub_keys, sec_keys))
+    Ok(AnMpid::new(pub_keys, sec_keys, name))
     }
 }
 
@@ -147,6 +150,7 @@ mod test {
     use cbor::{ Encoder, Decoder };
     use Random;
     use sodiumoxide::crypto;
+    use routing;
 
     impl Random for AnMpid {
         fn generate_random() -> AnMpid {
@@ -155,6 +159,7 @@ mod test {
             AnMpid {
                 public_keys: (sign_pub_key, asym_pub_key),
                 secret_keys: (sign_sec_key, asym_sec_key),
+                name: routing::test_utils::Random::generate_random()
             }
         }
     }
