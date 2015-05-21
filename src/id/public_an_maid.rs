@@ -83,12 +83,12 @@ impl Sendable for PublicAnMaid {
         e.into_bytes()
     }
 
-    fn refresh(&self)->bool {
-        false
-    }
-
     fn owner(&self) -> Option<NameType> {
         Some(self.get_name())
+    }
+
+    fn refresh(&self)->bool {
+        false
     }
 
     fn merge(&self, _: Vec<Box<Sendable>>) -> Option<Box<Sendable>> { None }
