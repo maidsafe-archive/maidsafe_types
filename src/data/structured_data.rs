@@ -24,6 +24,7 @@ use routing::sendable::Sendable;
 /// StructuredData
 #[derive(Clone, PartialEq, Debug)]
 pub struct StructuredData {
+    type_tag: u64,
     name: NameType,
     owner: NameType,
     value: Vec<Vec<NameType>>,
@@ -35,7 +36,7 @@ impl Sendable for StructuredData {
     }
 
     fn type_tag(&self)->u64 {
-        102
+        self.type_tag.clone()
     }
 
     fn serialised_contents(&self)->Vec<u8> {
@@ -58,11 +59,11 @@ impl Sendable for StructuredData {
 impl StructuredData {
     /// An instance of the StructuredData can be created by invoking the new()
     pub fn new(name: NameType, owner: NameType, value: Vec<Vec<NameType>>) -> StructuredData {
-        StructuredData {name: name, owner: owner, value: value}
+        StructuredData {type_tag: 100u64, name: name, owner: owner, value: value}
     }
 
     /// Returns the value
-    pub fn get_value(&self) -> Vec<Vec<NameType>> {
+    pub fn value(&self) -> Vec<Vec<NameType>> {
         self.value.clone()
     }
 
@@ -83,6 +84,7 @@ impl Decodable for StructuredData {
         try!(d.read_u64());
         let (name, owner, value) = try!(Decodable::decode(d));
         let structured = StructuredData {
+            type_tag: 100u64,
             name: name,
             owner: owner,
             value: value
@@ -114,6 +116,7 @@ mod test {
                 outer.push(inner);
             }
             StructuredData {
+                type_tag: 100u64,
                 name: routing::test_utils::Random::generate_random(),
                 owner: routing::test_utils::Random::generate_random(),
                 value: outer,
@@ -124,7 +127,7 @@ mod test {
 #[test]
     fn creation() {
         let structured_data = StructuredData::generate_random();
-        let data = StructuredData::new(structured_data.name(), structured_data.owner().unwrap(), structured_data.get_value());
+        let data = StructuredData::new(structured_data.name(), structured_data.owner().unwrap(), structured_data.value());
         assert_eq!(data, structured_data);
     }
 
