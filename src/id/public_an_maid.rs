@@ -87,6 +87,10 @@ impl Sendable for PublicAnMaid {
         false
     }
 
+    fn owner(&self) -> Option<NameType> {
+        Some(self.get_name())
+    }
+
     fn merge(&self, _: Vec<Box<Sendable>>) -> Option<Box<Sendable>> { None }
 }
 
