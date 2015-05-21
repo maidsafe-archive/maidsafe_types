@@ -44,25 +44,26 @@ use std::fmt;
 ///                     sodiumoxide::crypto::sign::Signature([5u8; 64]));
 ///
 /// // getting PublicMpid::public_keys
-/// let &(pub_sign, pub_asym) = public_mpid.get_public_keys();
+/// let &(pub_sign, pub_asym) = public_mpid.public_keys();
 ///
 /// // getting PublicMpid::mpid_signature
-/// let mpid_signature: &sodiumoxide::crypto::sign::Signature = public_mpid.get_mpid_signature();
+/// let mpid_signature: &sodiumoxide::crypto::sign::Signature = public_mpid.mpid_signature();
 ///
 /// // getting PublicMpid::owner
-/// let owner: &routing::NameType = public_mpid.get_owner();
+/// let owner: &routing::NameType = public_mpid.owner();
 ///
 /// // getting PublicMpid::signature
-/// let signature: &sodiumoxide::crypto::sign::Signature = public_mpid.get_signature();
+/// let signature: &sodiumoxide::crypto::sign::Signature = public_mpid.signature();
 ///
 /// ```
 
 #[derive(Clone)]
 pub struct PublicMpid {
-public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-mpid_signature: crypto::sign::Signature,
-owner: NameType,
-signature: crypto::sign::Signature
+    type_tag: u64,
+    public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+    mpid_signature: crypto::sign::Signature,
+    owner: NameType,
+    signature: crypto::sign::Signature
 }
 
 impl Sendable for PublicMpid {
@@ -71,7 +72,7 @@ impl Sendable for PublicMpid {
     }
 
     fn type_tag(&self)->u64 {
-        106
+        self.type_tag.clone()
     }
 
     fn serialised_contents(&self)->Vec<u8> {
@@ -94,17 +95,17 @@ impl Sendable for PublicMpid {
 
 impl PartialEq for PublicMpid {
     fn eq(&self, other: &PublicMpid) -> bool {
-        let pub1_equal = slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
-        let pub2_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
-        let sig1_equal = slice_equal(&self.mpid_signature.0, &other.mpid_signature.0);
-        let sig2_equal = slice_equal(&self.signature.0, &other.signature.0);
-        return pub1_equal && pub2_equal && sig1_equal && sig2_equal;
+        &self.type_tag == &other.type_tag &&
+        slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
+        slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0) &&
+        slice_equal(&self.mpid_signature.0, &other.mpid_signature.0) &&
+        slice_equal(&self.signature.0, &other.signature.0)
     }
 }
 
 impl fmt::Debug for PublicMpid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "PublicMpid {{ public_keys:({:?}, {:?}), mpid_signature:{:?}, owner:{:?}, signature:{:?}}}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
+        write!(f, "PublicMpid {{ type_tag:{}, public_keys:({:?}, {:?}), mpid_signature:{:?}, owner:{:?}, signature:{:?}}}", self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
             self.mpid_signature.0.to_vec(), self.owner, self.signature.0.to_vec())
     }
 }
@@ -124,35 +125,31 @@ impl PublicMpid {
                          mpid_signature: crypto::sign::Signature,
                          owner: NameType,
                          signature: crypto::sign::Signature) -> PublicMpid {
-        PublicMpid {
-        public_keys: public_keys,
-        mpid_signature: mpid_signature,
-        owner: owner,
-        signature: signature
-        }
+        PublicMpid { type_tag: 106u64, public_keys: public_keys, mpid_signature: mpid_signature,
+             owner: owner,  signature: signature }
     }
 
     /// Returns the Symetric and Assymetric Publick keys
     #[warn(dead_code)]
-    pub fn get_public_keys(& self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
+    pub fn public_keys(& self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
         &self.public_keys
     }
 
     /// Returns the Signature for the Mpid
     #[warn(dead_code)]
-    pub fn get_mpid_signature(& self) -> &crypto::sign::Signature {
+    pub fn mpid_signature(& self) -> &crypto::sign::Signature {
         &self.mpid_signature
     }
 
     /// Returns the owner
     #[warn(dead_code)]
-    pub fn get_owner(& self) -> &NameType {
+    pub fn owner(& self) -> &NameType {
         &self.owner
     }
 
     /// Returns the PublicMpid Signature
     #[warn(dead_code)]
-    pub fn get_signature(& self) -> &crypto::sign::Signature {
+    pub fn signature(& self) -> &crypto::sign::Signature {
         &self.signature
     }
 }
@@ -164,7 +161,7 @@ impl Encodable for PublicMpid {
         let crypto::sign::Signature(signature) = self.signature;
         CborTagEncode::new(5483_001, &(
                 pub_sign_vec.as_ref(),
-                        pub_asym_vec.as_ref(),
+                pub_asym_vec.as_ref(),
                 mpid_signature.as_ref(),
                 &self.owner,
                 signature.as_ref())).encode(e)
@@ -216,6 +213,7 @@ mod test {
             }
 
             PublicMpid {
+                type_tag: 106u64,
                 public_keys: (sign_pub_key, asym_pub_key),
                 mpid_signature: crypto::sign::Signature(mpid_signature_arr),
                 owner: routing::test_utils::Random::generate_random(),

@@ -38,13 +38,14 @@ use std::fmt;
 /// // Create PublicAnMaid
 /// let pub_an_maid = maidsafe_types::PublicAnMaid::new((pub_sign_key, pub_asym_key), sodiumoxide::crypto::sign::Signature([5u8; 64]));
 /// // Retrieving the values
-/// let ref publicKeys = pub_an_maid.get_public_keys();
-/// let ref signature = pub_an_maid.get_signature();
+/// let ref publicKeys = pub_an_maid.public_keys();
+/// let ref signature = pub_an_maid.signature();
 /// ```
 ///
 
 #[derive(Clone)]
 pub struct PublicAnMaid {
+        type_tag: u64,
         public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
         signature: crypto::sign::Signature
 }
@@ -52,10 +53,10 @@ pub struct PublicAnMaid {
 impl PartialEq for PublicAnMaid {
     fn eq(&self, other: &PublicAnMaid) -> bool {
         // Private keys are mathematically linked, so just check public keys
-        let public0_equal = slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
-        let public1_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
-        let signature = slice_equal(&self.signature.0, &other.signature.0);
-        return public0_equal && public1_equal && signature;
+        &self.type_tag == &other.type_tag &&
+        slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
+        slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0) &&
+        slice_equal(&self.signature.0, &other.signature.0)
     }
 }
 
@@ -63,8 +64,8 @@ impl fmt::Debug for PublicAnMaid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (crypto::sign::PublicKey(public_key), crypto::asymmetricbox::PublicKey(assym_public_key)) = self.public_keys;
         let crypto::sign::Signature(signature) = self.signature;
-        write!(f, "PublicAnMaid( public_keys: ({:?}, {:?}), signature: {:?}, name: {:?} )",
-             public_key, assym_public_key, signature.to_vec(), self.name())
+        write!(f, "PublicAnMaid( type_tag:{}, public_keys: ({:?}, {:?}), signature: {:?}, name: {:?} )",
+            self.type_tag, public_key, assym_public_key, signature.to_vec(), self.name())
     }
 }
 
@@ -74,7 +75,7 @@ impl Sendable for PublicAnMaid {
     }
 
     fn type_tag(&self)->u64 {
-        105
+        self.type_tag.clone()
     }
 
     fn serialised_contents(&self)->Vec<u8> {
@@ -97,15 +98,15 @@ impl Sendable for PublicAnMaid {
 impl PublicAnMaid {
         /// new() is invoked to create an instance of the PublicAnMaid
         pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-                                                 signature: crypto::sign::Signature) -> PublicAnMaid {
-            PublicAnMaid {public_keys: public_keys, signature: signature }
+                                 signature: crypto::sign::Signature) -> PublicAnMaid {
+            PublicAnMaid {type_tag: 105u64, public_keys: public_keys, signature: signature }
         }
         /// Returns the PublicKeys
-        pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
+        pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
             &self.public_keys
         }
         /// Returns the Signature
-        pub fn get_signature(&self) -> &crypto::sign::Signature {
+        pub fn signature(&self) -> &crypto::sign::Signature {
             &self.signature
         }
 }
@@ -131,12 +132,8 @@ impl Decodable for PublicAnMaid {
         if pub_sign_arr.is_none() || pub_asym_arr.is_none() || signature_arr.is_none() {
             return Err(d.error("PubAnMaid bad size"));
         }
-
-        let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
-                        crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
-        let signature = crypto::sign::Signature(signature_arr.unwrap());
-
-        Ok(PublicAnMaid::new(pub_keys, signature))
+        Ok(PublicAnMaid::new((crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
+                              crypto::sign::Signature(signature_arr.unwrap())))
     }
 }
 
@@ -158,6 +155,7 @@ mod test {
                 arr[i] = rand::random::<u8>();
             }
             PublicAnMaid {
+                type_tag: 105u64,
                 public_keys: (pub_sign_key, pub_asym_key),
                 signature: crypto::sign::Signature(arr)
             }

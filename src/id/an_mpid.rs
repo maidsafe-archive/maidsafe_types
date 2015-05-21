@@ -40,12 +40,13 @@ use cbor;
 ///                                           (sec_sign_key, sec_asym_key),
 ///                                           routing::NameType([3u8; 64]));
 /// // Retrieving the values
-/// let ref publicKeys = an_mpid.get_public_keys();
-/// let ref secret_keys = an_mpid.get_secret_keys();
+/// let ref publicKeys = an_mpid.public_keys();
+/// let ref secret_keys = an_mpid.secret_keys();
 /// ```
 ///
 #[derive(Clone)]
 pub struct AnMpid {
+    type_tag: u64,
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
     secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
     name: NameType,
@@ -57,7 +58,7 @@ impl Sendable for AnMpid {
     }
 
     fn type_tag(&self)->u64 {
-        103
+        self.type_tag.clone()
     }
 
     fn serialised_contents(&self)->Vec<u8> {
@@ -79,13 +80,15 @@ impl Sendable for AnMpid {
 
 impl fmt::Debug for AnMpid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "AnMpid {{ public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}), name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
+        write!(f, "AnMpid {{ type_tag:{}, public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}), name: {:?} }}",
+            self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
             self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec(), self.name)
     }
 }
 impl PartialEq for AnMpid {
     fn eq(&self, other: &AnMpid) -> bool {
         // secret keys are mathematically linked, just check public ones
+        &self.type_tag == &other.type_tag &&
         slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
         slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0) &&
         self.name == other.name
@@ -97,13 +100,13 @@ impl AnMpid {
     pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
                          secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
                          name_type: NameType) -> AnMpid {
-        AnMpid { public_keys: public_keys, secret_keys: secret_keys, name: name_type }
+        AnMpid { type_tag: 102u64, public_keys: public_keys, secret_keys: secret_keys, name: name_type }
     }    /// Returns the PublicKeys
-    pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
+    pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
         &self.public_keys
     }
     /// Returns the SecretKeys
-    pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
+    pub fn secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
         &self.secret_keys
     }
 }
@@ -157,6 +160,7 @@ mod test {
             let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
             let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
             AnMpid {
+                type_tag: 102u64,
                 public_keys: (sign_pub_key, asym_pub_key),
                 secret_keys: (sign_sec_key, asym_sec_key),
                 name: routing::test_utils::Random::generate_random()

@@ -44,21 +44,22 @@ use std::fmt;
 ///                     sodiumoxide::crypto::sign::Signature([5u8; 64]));
 ///
 /// // getting PublicMaid::public_keys
-/// let &(pub_sign, pub_asym) = public_maid.get_public_keys();
+/// let &(pub_sign, pub_asym) = public_maid.public_keys();
 ///
 /// // getting PublicMaid::mpid_signature
-/// let maid_signature: &sodiumoxide::crypto::sign::Signature = public_maid.get_maid_signature();
+/// let maid_signature: &sodiumoxide::crypto::sign::Signature = public_maid.maid_signature();
 ///
 /// // getting PublicMaid::owner
-/// let owner: &routing::NameType = public_maid.get_owner();
+/// let owner: &routing::NameType = public_maid.owner();
 ///
 /// // getting PublicMaid::signature
-/// let signature: &sodiumoxide::crypto::sign::Signature = public_maid.get_signature();
+/// let signature: &sodiumoxide::crypto::sign::Signature = public_maid.signature();
 ///
 /// ```
 
 #[derive(Clone)]
 pub struct PublicMaid {
+    type_tag: u64,
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
     maid_signature: crypto::sign::Signature,
     owner: NameType,
@@ -71,7 +72,7 @@ impl Sendable for PublicMaid {
     }
 
     fn type_tag(&self)->u64 {
-        106
+        self.type_tag.clone()
     }
 
     fn serialised_contents(&self)->Vec<u8> {
@@ -93,17 +94,17 @@ impl Sendable for PublicMaid {
 
 impl PartialEq for PublicMaid {
     fn eq(&self, other: &PublicMaid) -> bool {
-        let pub1_equal = slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
-        let pub2_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
-        let sig1_equal = slice_equal(&self.maid_signature.0, &other.maid_signature.0);
-        let sig2_equal = slice_equal(&self.signature.0, &other.signature.0);
-        return pub1_equal && pub2_equal && sig1_equal && sig2_equal;
+        &self.type_tag == &other.type_tag &&
+        slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
+        slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0) &&
+        slice_equal(&self.maid_signature.0, &other.maid_signature.0) &&
+        slice_equal(&self.signature.0, &other.signature.0)
     }
 }
 
 impl fmt::Debug for PublicMaid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "PublicMaid {{ public_keys:({:?}, {:?}), maid_signature:{:?}, owner:{:?}, signature:{:?}}}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
+        write!(f, "PublicMaid {{ type_tag:{}, public_keys:({:?}, {:?}), maid_signature:{:?}, owner:{:?}, signature:{:?}}}", self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
             self.maid_signature.0.to_vec(), self.owner, self.signature.0.to_vec())
     }
 }
@@ -114,23 +115,23 @@ impl PublicMaid {
                          maid_signature: crypto::sign::Signature,
                          owner: NameType,
                          signature: crypto::sign::Signature) -> PublicMaid {
-        PublicMaid {public_keys: public_keys, maid_signature: maid_signature, owner: owner,
-                    signature: signature}
+        PublicMaid {type_tag: 107u64, public_keys: public_keys, maid_signature: maid_signature,
+             owner: owner, signature: signature}
     }
     /// Returns the PublicKeys
-    pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
+    pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
         &self.public_keys
     }
     /// Returns the Maid Signature
-    pub fn get_maid_signature(&self) -> &crypto::sign::Signature {
+    pub fn maid_signature(&self) -> &crypto::sign::Signature {
         &self.maid_signature
     }
     /// Returns the Owner
-    pub fn get_owner(&self) -> &NameType {
+    pub fn owner(&self) -> &NameType {
         &self.owner
     }
     /// Returns the Signature of PublicMaid
-    pub fn get_signature(&self) -> &crypto::sign::Signature {
+    pub fn signature(&self) -> &crypto::sign::Signature {
         &self.signature
     }
 }
@@ -194,6 +195,7 @@ mod test {
             }
 
             PublicMaid {
+                type_tag: 107u64,
                 public_keys: (sign_pub_key, asym_pub_key),
                 maid_signature: crypto::sign::Signature(maid_signature_arr),
                 owner: routing::test_utils::Random::generate_random(),

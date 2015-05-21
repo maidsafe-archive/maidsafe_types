@@ -32,11 +32,12 @@ use std::fmt;
 /// let maid: Maid  = Maid::new(&AnMaid::new());
 ///
 /// // getting Maid::public_keys
-/// let &(pub_sign, pub_asym) = maid.get_public_keys();
+/// let &(pub_sign, pub_asym) = maid.public_keys();
 ///
 /// ```
 #[derive(Clone)]
 pub struct Maid {
+    type_tag: u64,
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
     secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
 }
@@ -48,12 +49,13 @@ impl Maid {
         let asym_keys = crypto::asymmetricbox::gen_keypair();
 
         Maid {
-            public_keys: (an_maid.get_public_key().clone(), asym_keys.0),
-            secret_keys: (an_maid.get_secret_key().clone(), asym_keys.1)
+            type_tag: 103u64,
+            public_keys: (an_maid.public_key().clone(), asym_keys.0),
+            secret_keys: (an_maid.secret_key().clone(), asym_keys.1)
         }
     }
     /// Returns the PublicKeys
-    pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
+    pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
         &self.public_keys
     }
     /// Signs the data with the SecretKey and returns the Signed data
@@ -79,15 +81,15 @@ impl Maid {
 impl cmp::PartialEq for Maid {
     fn eq(&self, other: &Maid) -> bool {
         // Private keys are mathematically linked, so just check public keys
-        let public0_equal =  slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
-        let public1_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
-        return public0_equal && public1_equal;
+        &self.type_tag == &other.type_tag &&
+        slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
+        slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0)
     }
 }
 
 impl fmt::Debug for Maid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Maid {{ public_keys: ({:?}, {:?}) }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec())
+        write!(f, "Maid {{ type_tag:{}, public_keys: ({:?}, {:?}) }}", self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec())
     }
 }
 
@@ -122,7 +124,7 @@ impl Decodable for Maid {
                         crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
         let sec_keys = (crypto::sign::SecretKey(sec_sign_arr.unwrap()),
                         crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap()));
-        Ok(Maid{ public_keys: pub_keys, secret_keys: sec_keys })
+        Ok(Maid{ type_tag: 103u64, public_keys: pub_keys, secret_keys: sec_keys })
     }
 }
 
@@ -153,8 +155,8 @@ mod test {
         let mut d = cbor::Decoder::from_bytes(e.as_bytes());
         let obj_after: Maid = d.decode().next().unwrap().unwrap();
 
-        let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.get_public_keys();
-        let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.get_public_keys();
+        let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.public_keys();
+        let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.public_keys();
         let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = &obj_before.secret_keys;
         let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = &obj_after.secret_keys;
 
@@ -180,24 +182,24 @@ mod test {
             let sign2 = maid2.sign(&random_bytes);
             assert!(sign1 != sign2);
 
-            assert!(crypto::sign::verify(&sign1, &maid1.get_public_keys().0).is_some());
-            assert!(crypto::sign::verify(&sign2, &maid1.get_public_keys().0).is_none());
+            assert!(crypto::sign::verify(&sign1, &maid1.public_keys().0).is_some());
+            assert!(crypto::sign::verify(&sign2, &maid1.public_keys().0).is_none());
 
-            assert!(crypto::sign::verify(&sign2, &maid2.get_public_keys().0).is_some());
-            assert!(crypto::sign::verify(&sign2, &maid1.get_public_keys().0).is_none());
+            assert!(crypto::sign::verify(&sign2, &maid2.public_keys().0).is_some());
+            assert!(crypto::sign::verify(&sign2, &maid1.public_keys().0).is_none());
         }
         {
             let maid3 = Maid::generate_random();
 
-            let encrypt1 = maid1.seal(&random_bytes, &maid3.get_public_keys().1);
-            let encrypt2 = maid2.seal(&random_bytes, &maid3.get_public_keys().1);
+            let encrypt1 = maid1.seal(&random_bytes, &maid3.public_keys().1);
+            let encrypt2 = maid2.seal(&random_bytes, &maid3.public_keys().1);
             assert!(encrypt1.0 != encrypt2.0);
 
-            assert!(maid3.open(&encrypt1.0, &encrypt1.1, &maid1.get_public_keys().1).is_ok());
-            assert!(maid3.open(&encrypt1.0, &encrypt1.1, &maid2.get_public_keys().1).is_err());
+            assert!(maid3.open(&encrypt1.0, &encrypt1.1, &maid1.public_keys().1).is_ok());
+            assert!(maid3.open(&encrypt1.0, &encrypt1.1, &maid2.public_keys().1).is_err());
 
-            assert!(maid3.open(&encrypt2.0, &encrypt2.1, &maid2.get_public_keys().1).is_ok());
-            assert!(maid3.open(&encrypt2.0, &encrypt2.1, &maid1.get_public_keys().1).is_err());
+            assert!(maid3.open(&encrypt2.0, &encrypt2.1, &maid2.public_keys().1).is_ok());
+            assert!(maid3.open(&encrypt2.0, &encrypt2.1, &maid1.public_keys().1).is_err());
         }
     }
 }
