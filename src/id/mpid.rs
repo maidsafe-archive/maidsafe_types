@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 use cbor;
 use cbor::CborTagEncode;
@@ -42,16 +42,14 @@ use std::fmt;
 ///                     routing::NameType([6u8; 64]));
 ///
 /// // getting Mpid::public_keys
-/// let &(pub_sign, pub_asym) = mpid.get_public_keys();
+/// let &(pub_sign, pub_asym) = mpid.public_keys();
 ///
 /// // getting Mpid::secret_keys
-/// let &(sec_sign, sec_asym) = mpid.get_public_keys();
-///
-/// // getting Mpid::name
-/// let name: &routing::NameType = mpid.get_name();
+/// let &(sec_sign, sec_asym) = mpid.public_keys();
 /// ```
 #[derive(Clone)]
 pub struct Mpid {
+    type_tag: u64,
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
     secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
     name: NameType
@@ -60,15 +58,16 @@ pub struct Mpid {
 impl PartialEq for Mpid {
     fn eq(&self, other: &Mpid) -> bool {
         // Private keys are mathematically linked, so just check public keys
-        let public0_equal = slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
-        let public1_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
-        return public0_equal && public1_equal && self.name == other.name;
+        &self.type_tag == &other.type_tag &&
+        slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
+        slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0) &&
+        self.name == other.name
     }
 }
 
 impl fmt::Debug for Mpid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Mpid {{ public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}), name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
+        write!(f, "Mpid {{ type_tag:{}, public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}), name: {:?} }}", self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
             self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec(), self.name)
     }
 }
@@ -76,31 +75,17 @@ impl fmt::Debug for Mpid {
 
 impl Sendable for Mpid {
     fn name(&self) -> NameType {
-        let sign_arr = &(&self.public_keys.0).0;
-        let asym_arr = &(&self.public_keys.1).0;
-
-        let mut arr_combined = [0u8; 64 * 2];
-
-        for i in 0..sign_arr.len() {
-            arr_combined[i] = sign_arr[i];
-        }
-        for i in 0..asym_arr.len() {
-            arr_combined[64 + i] = asym_arr[i];
-        }
-
-        let digest = crypto::hash::sha512::hash(&arr_combined);
-
-        NameType(digest.0)
+        name(&self.public_keys)
     }
 
     fn type_tag(&self)->u64 {
-        104
+        self.type_tag.clone()
     }
 
     fn serialised_contents(&self)->Vec<u8> {
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&self]).unwrap();
-        e.into_bytes()      
+        e.into_bytes()
     }
 
     fn refresh(&self)->bool {
@@ -115,23 +100,15 @@ impl Mpid {
     pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
                          secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
                          name_type: NameType) -> Mpid {
-        Mpid {
-        public_keys: public_keys,
-        secret_keys: secret_keys,
-        name: name_type
-        }
+        Mpid { type_tag: 104u64, public_keys: public_keys, secret_keys: secret_keys, name: name_type }
     }
     /// Returns the PublicKeys
-    pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
+    pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
         &self.public_keys
     }
     /// Returns the SecretKeys
-    pub fn get_secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
+    pub fn secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
         &self.secret_keys
-    }
-    /// Returns the name
-    pub fn get_name(&self) -> &NameType {
-        &self.name
     }
 }
 
@@ -162,11 +139,11 @@ impl Decodable for Mpid {
             return Err(d.error("Bad Mpid size"));
         }
 
-        let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
-                crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
-        let sec_keys = (crypto::sign::SecretKey(sec_sign_arr.unwrap()),
-                crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap()));
-        Ok(Mpid::new(pub_keys, sec_keys, name))
+
+
+        Ok(Mpid::new((crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
+                     (crypto::sign::SecretKey(sec_sign_arr.unwrap()), crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap())),
+                     name))
     }
 }
 
@@ -175,7 +152,7 @@ mod test {
     use super::*;
     use cbor;
     use sodiumoxide::crypto;
-    use routing;    
+    use routing;
     use Random;
 
     impl Random for Mpid {
@@ -183,6 +160,7 @@ mod test {
             let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
             let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
             Mpid {
+                type_tag: 104u64,
                 public_keys: (sign_pub_key, asym_pub_key),
                 secret_keys: (sign_sec_key, asym_sec_key),
                 name: routing::test_utils::Random::generate_random()
@@ -211,5 +189,5 @@ mod test {
         assert_eq!(mpid_first, mpid_second);
         assert!(mpid_first != mpid_third);
     }
-    
+
 }

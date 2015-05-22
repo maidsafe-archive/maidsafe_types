@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 use cbor;
 use cbor::CborTagEncode;
@@ -29,33 +29,34 @@ use std::fmt;
 /// #Examples
 /// ```
 /// extern crate sodiumoxide;
-/// extern crate maidsafe_types;
 /// extern crate routing;
+/// extern crate maidsafe_types;
+///
 /// // Generating public and secret keys using sodiumoxide
 /// let (pub_sign_key, _) = sodiumoxide::crypto::sign::gen_keypair();
 /// let (pub_asym_key, _) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
 /// // Create PublicAnMaid
-/// let pub_an_maid = maidsafe_types::PublicAnMaid::new((pub_sign_key, pub_asym_key), sodiumoxide::crypto::sign::Signature([5u8; 64]), routing::NameType([99u8; 64]));
+/// let pub_an_maid = maidsafe_types::PublicAnMaid::new((pub_sign_key, pub_asym_key), sodiumoxide::crypto::sign::Signature([5u8; 64]));
 /// // Retrieving the values
-/// let ref publicKeys = pub_an_maid.get_public_keys();
-/// let ref signature = pub_an_maid.get_signature();
-/// let ref name = pub_an_maid.get_name();
+/// let ref publicKeys = pub_an_maid.public_keys();
+/// let ref signature = pub_an_maid.signature();
 /// ```
 ///
+
 #[derive(Clone)]
 pub struct PublicAnMaid {
+        type_tag: u64,
         public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-        signature: crypto::sign::Signature,
-        name: NameType,
+        signature: crypto::sign::Signature
 }
 
 impl PartialEq for PublicAnMaid {
     fn eq(&self, other: &PublicAnMaid) -> bool {
         // Private keys are mathematically linked, so just check public keys
-        let public0_equal = slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
-        let public1_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
-        let signature = slice_equal(&self.signature.0, &other.signature.0);
-        return public0_equal && public1_equal && signature && self.name == other.name;
+        &self.type_tag == &other.type_tag &&
+        slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
+        slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0) &&
+        slice_equal(&self.signature.0, &other.signature.0)
     }
 }
 
@@ -63,44 +64,30 @@ impl fmt::Debug for PublicAnMaid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (crypto::sign::PublicKey(public_key), crypto::asymmetricbox::PublicKey(assym_public_key)) = self.public_keys;
         let crypto::sign::Signature(signature) = self.signature;
-        write!(f, "PublicAnMaid( public_keys: ({:?}, {:?}), signature: {:?}, name: {:?} )",
-             public_key, assym_public_key, signature.to_vec(), self.name)
+        write!(f, "PublicAnMaid( type_tag:{}, public_keys: ({:?}, {:?}), signature: {:?}, name: {:?} )",
+            self.type_tag, public_key, assym_public_key, signature.to_vec(), self.name())
     }
 }
 
 impl Sendable for PublicAnMaid {
     fn name(&self) -> NameType {
-        let sign_arr = &(&self.public_keys.0).0;
-        let asym_arr = &(&self.public_keys.1).0;
-
-        let mut arr_combined = [0u8; 64 * 2];
-
-        for i in 0..sign_arr.len() {
-            arr_combined[i] = sign_arr[i];
-        }
-        for i in 0..asym_arr.len() {
-            arr_combined[64 + i] = asym_arr[i];
-        }
-
-        let digest = crypto::hash::sha512::hash(&arr_combined);
-
-        NameType(digest.0)
+        name(&self.public_keys)
     }
 
     fn type_tag(&self)->u64 {
-        105
+        self.type_tag.clone()
     }
 
     fn serialised_contents(&self)->Vec<u8> {
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&self]).unwrap();
-        e.into_bytes()      
+        e.into_bytes()
     }
 
     fn owner(&self) -> Option<NameType> {
-        Some(self.name.clone())
+        Some(name(&self.public_keys))
     }
-    
+
     fn refresh(&self)->bool {
         false
     }
@@ -111,25 +98,16 @@ impl Sendable for PublicAnMaid {
 impl PublicAnMaid {
         /// new() is invoked to create an instance of the PublicAnMaid
         pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-                                                 signature: crypto::sign::Signature,
-                                                 name: NameType) -> PublicAnMaid {
-                PublicAnMaid {
-                public_keys: public_keys,
-                signature: signature,
-                name: name
-                }
+                                 signature: crypto::sign::Signature) -> PublicAnMaid {
+            PublicAnMaid {type_tag: 105u64, public_keys: public_keys, signature: signature }
         }
         /// Returns the PublicKeys
-        pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
-                &self.public_keys
+        pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
+            &self.public_keys
         }
         /// Returns the Signature
-        pub fn get_signature(&self) -> &crypto::sign::Signature {
-                &self.signature
-        }
-        /// Return the name
-        pub fn get_name(&self) -> &NameType {
-                &self.name
+        pub fn signature(&self) -> &crypto::sign::Signature {
+            &self.signature
         }
 }
 
@@ -138,15 +116,14 @@ impl Encodable for PublicAnMaid {
        CborTagEncode::new(5483_001,
                           &(self.public_keys.0 .0.as_ref(),
                             self.public_keys.1 .0.as_ref(),
-                            self.signature.0.as_ref(),
-                            &self.name)).encode(e)
+                            self.signature.0.as_ref())).encode(e)
     }
 }
 
 impl Decodable for PublicAnMaid {
     fn decode<D: Decoder>(d: &mut D)-> Result<PublicAnMaid, D::Error> {
         try!(d.read_u64());
-        let (pub_sign_vec, pub_asym_vec, signature_vec, name) : (Vec<u8>, Vec<u8>, Vec<u8>, NameType) = try!(Decodable::decode(d));
+        let (pub_sign_vec, pub_asym_vec, signature_vec) : (Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
 
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
@@ -155,12 +132,8 @@ impl Decodable for PublicAnMaid {
         if pub_sign_arr.is_none() || pub_asym_arr.is_none() || signature_arr.is_none() {
             return Err(d.error("PubAnMaid bad size"));
         }
-
-        let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
-                        crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
-        let signature = crypto::sign::Signature(signature_arr.unwrap());
-
-        Ok(PublicAnMaid::new(pub_keys, signature, name))
+        Ok(PublicAnMaid::new((crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
+                              crypto::sign::Signature(signature_arr.unwrap())))
     }
 }
 
@@ -169,7 +142,6 @@ mod test {
     use super::*;
     use cbor;
     use sodiumoxide::crypto;
-    use routing;
     use Random;
     use rand;
     use std::mem;
@@ -183,9 +155,9 @@ mod test {
                 arr[i] = rand::random::<u8>();
             }
             PublicAnMaid {
+                type_tag: 105u64,
                 public_keys: (pub_sign_key, pub_asym_key),
-                signature: crypto::sign::Signature(arr),
-                name: routing::test_utils::Random::generate_random()
+                signature: crypto::sign::Signature(arr)
             }
         }
     }
@@ -211,5 +183,5 @@ mod test {
         assert!(first_obj != second_obj);
         assert!(second_obj == cloned_obj);
     }
-    
+
 }

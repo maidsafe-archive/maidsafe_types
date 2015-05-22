@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -34,11 +34,12 @@ use std::fmt;
 /// // Create AnMaid
 /// let an_maid : maidsafe_types::AnMaid = maidsafe_types::AnMaid::new();
 /// // Retrieving the values
-/// let ref publicKeys = an_maid.get_public_key();
+/// let ref publicKeys = an_maid.public_key();
 /// ```
 ///
 #[derive(Clone)]
 pub struct AnMaid {
+    type_tag: u64,
     public_key: crypto::sign::PublicKey,
     secret_key: crypto::sign::SecretKey
 }
@@ -46,6 +47,7 @@ pub struct AnMaid {
 impl PartialEq for AnMaid {
     fn eq(&self, other: &AnMaid) -> bool {
         // Private key is mathematically linked, so just check public key
+        &self.type_tag == &other.type_tag &&
         slice_equal(&self.public_key.0, &other.public_key.0)
     }
 }
@@ -54,7 +56,7 @@ impl PartialEq for AnMaid {
 impl fmt::Debug for AnMaid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let crypto::sign::PublicKey(ref public_key) = self.public_key;
-        write!(f, "AnMaid( public_key: {:?} )", public_key)
+        write!(f, "AnMaid( type_tag:{}, public_key: {:?} )", self.type_tag, public_key)
     }
 }
 
@@ -65,17 +67,22 @@ impl AnMaid {
         let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
 
         AnMaid {
+            type_tag: 101u64,
             public_key: pub_sign_key,
             secret_key: sec_sign_key
         }
     }
 
+    /// Returns type tag
+    pub fn type_tag(&self) -> &u64 {
+        &self.type_tag
+    }
     /// Returns the PublicKey of the AnMaid
-    pub fn get_public_key(&self) -> &crypto::sign::PublicKey {
+    pub fn public_key(&self) -> &crypto::sign::PublicKey {
         &self.public_key
     }
     /// Returns the SecretKey of the AnMaid
-    pub fn get_secret_key(&self) -> &crypto::sign::SecretKey {
+    pub fn secret_key(&self) -> &crypto::sign::SecretKey {
         &self.secret_key
     }
 
@@ -104,7 +111,7 @@ impl Decodable for AnMaid {
 
         let pub_key = crypto::sign::PublicKey(pub_sign_arr.unwrap());
         let sec_key = crypto::sign::SecretKey(sec_sign_arr.unwrap());
-        Ok(AnMaid{ public_key: pub_key, secret_key: sec_key })
+        Ok(AnMaid{ type_tag: 101u64, public_key: pub_key, secret_key: sec_key })
     }
 }
 
@@ -161,11 +168,11 @@ mod test {
             let sign2 = maid2.sign(&random_bytes);
             assert!(sign1 != sign2);
 
-            assert!(crypto::sign::verify(&sign1, &maid1.get_public_key()).is_some());
-            assert!(crypto::sign::verify(&sign2, &maid1.get_public_key()).is_none());
+            assert!(crypto::sign::verify(&sign1, &maid1.public_key()).is_some());
+            assert!(crypto::sign::verify(&sign2, &maid1.public_key()).is_none());
 
-            assert!(crypto::sign::verify(&sign2, &maid2.get_public_key()).is_some());
-            assert!(crypto::sign::verify(&sign2, &maid1.get_public_key()).is_none());
+            assert!(crypto::sign::verify(&sign2, &maid2.public_key()).is_some());
+            assert!(crypto::sign::verify(&sign2, &maid1.public_key()).is_none());
         }
     }
 }

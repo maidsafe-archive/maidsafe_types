@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 use cbor;
 use cbor::CborTagEncode;
@@ -41,67 +41,50 @@ use std::fmt;
 /// let public_maid  = maidsafe_types::PublicMaid::new((pub_sign_key, pub_asym_key),
 ///                     sodiumoxide::crypto::sign::Signature([2u8; 64]),
 ///                     routing::NameType([8u8; 64]),
-///                     sodiumoxide::crypto::sign::Signature([5u8; 64]),
-///                     routing::NameType([6u8; 64]));
+///                     sodiumoxide::crypto::sign::Signature([5u8; 64]));
 ///
 /// // getting PublicMaid::public_keys
-/// let &(pub_sign, pub_asym) = public_maid.get_public_keys();
+/// let &(pub_sign, pub_asym) = public_maid.public_keys();
 ///
 /// // getting PublicMaid::mpid_signature
-/// let maid_signature: &sodiumoxide::crypto::sign::Signature = public_maid.get_maid_signature();
+/// let maid_signature: &sodiumoxide::crypto::sign::Signature = public_maid.maid_signature();
 ///
 /// // getting PublicMaid::owner
-/// let owner: &routing::NameType = public_maid.get_owner();
+/// let owner: &routing::NameType = public_maid.owner();
 ///
 /// // getting PublicMaid::signature
-/// let signature: &sodiumoxide::crypto::sign::Signature = public_maid.get_signature();
+/// let signature: &sodiumoxide::crypto::sign::Signature = public_maid.signature();
 ///
-/// // getting PublicMaid::name
-/// let name: &routing::NameType = public_maid.get_name();
 /// ```
 
 #[derive(Clone)]
 pub struct PublicMaid {
+    type_tag: u64,
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
     maid_signature: crypto::sign::Signature,
     owner: NameType,
-    signature: crypto::sign::Signature,
-    name: NameType
+    signature: crypto::sign::Signature
 }
 
 impl Sendable for PublicMaid {
     fn name(&self) -> NameType {
-        let sign_arr = &(&self.public_keys.0).0;
-        let asym_arr = &(&self.public_keys.1).0;
-
-        let mut arr_combined = [0u8; 64 * 2];
-
-        for i in 0..sign_arr.len() {
-            arr_combined[i] = sign_arr[i];
-        }
-        for i in 0..asym_arr.len() {
-            arr_combined[64 + i] = asym_arr[i];
-        }
-
-        let digest = crypto::hash::sha512::hash(&arr_combined);
-
-        NameType(digest.0)
+        name(&self.public_keys)
     }
 
     fn type_tag(&self)->u64 {
-        106
+        self.type_tag.clone()
     }
 
     fn serialised_contents(&self)->Vec<u8> {
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&self]).unwrap();
-        e.into_bytes()      
+        e.into_bytes()
     }
 
     fn owner(&self) -> Option<NameType> {
         Some(self.owner.clone())
     }
-    
+
     fn refresh(&self)->bool {
         false
     }
@@ -111,18 +94,18 @@ impl Sendable for PublicMaid {
 
 impl PartialEq for PublicMaid {
     fn eq(&self, other: &PublicMaid) -> bool {
-        let pub1_equal = slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0);
-        let pub2_equal = slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0);
-        let sig1_equal = slice_equal(&self.maid_signature.0, &other.maid_signature.0);
-        let sig2_equal = slice_equal(&self.signature.0, &other.signature.0);
-        return pub1_equal && pub2_equal && sig1_equal && sig2_equal && self.name == other.name;
+        &self.type_tag == &other.type_tag &&
+        slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
+        slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0) &&
+        slice_equal(&self.maid_signature.0, &other.maid_signature.0) &&
+        slice_equal(&self.signature.0, &other.signature.0)
     }
 }
 
 impl fmt::Debug for PublicMaid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "PublicMaid {{ public_keys:({:?}, {:?}), maid_signature:{:?}, owner:{:?}, signature:{:?}, name: {:?} }}", self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
-            self.maid_signature.0.to_vec(), self.owner, self.signature.0.to_vec(), self.name)
+        write!(f, "PublicMaid {{ type_tag:{}, public_keys:({:?}, {:?}), maid_signature:{:?}, owner:{:?}, signature:{:?}}}", self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
+            self.maid_signature.0.to_vec(), self.owner, self.signature.0.to_vec())
     }
 }
 
@@ -131,35 +114,25 @@ impl PublicMaid {
     pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
                          maid_signature: crypto::sign::Signature,
                          owner: NameType,
-                         signature: crypto::sign::Signature,
-                         name: NameType) -> PublicMaid {
-        PublicMaid {
-        public_keys: public_keys,
-        maid_signature: maid_signature,
-        owner: owner,
-        signature: signature,
-        name: name,
-        }
+                         signature: crypto::sign::Signature) -> PublicMaid {
+        PublicMaid {type_tag: 107u64, public_keys: public_keys, maid_signature: maid_signature,
+             owner: owner, signature: signature}
     }
     /// Returns the PublicKeys
-    pub fn get_public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
+    pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
         &self.public_keys
     }
     /// Returns the Maid Signature
-    pub fn get_maid_signature(&self) -> &crypto::sign::Signature {
+    pub fn maid_signature(&self) -> &crypto::sign::Signature {
         &self.maid_signature
     }
     /// Returns the Owner
-    pub fn get_owner(&self) -> &NameType {
+    pub fn owner(&self) -> &NameType {
         &self.owner
     }
     /// Returns the Signature of PublicMaid
-    pub fn get_signature(&self) -> &crypto::sign::Signature {
+    pub fn signature(&self) -> &crypto::sign::Signature {
         &self.signature
-    }
-    /// Returns the Name
-    pub fn get_name(&self) -> &NameType {
-        &self.name
     }
 }
 
@@ -173,15 +146,14 @@ impl Encodable for PublicMaid {
             pub_asym_vec.as_ref(),
             maid_signature.as_ref(),
             &self.owner,
-            signature.as_ref(),
-            &self.name)).encode(e)
+            signature.as_ref())).encode(e)
     }
 }
 
 impl Decodable for PublicMaid {
     fn decode<D: Decoder>(d: &mut D)-> Result<PublicMaid, D::Error> {
     try!(d.read_u64());
-    let (pub_sign_vec, pub_asym_vec, maid_signature_vec, owner, signature_vec, name) : (Vec<u8>, Vec<u8>, Vec<u8>, NameType, Vec<u8>, NameType) = try!(Decodable::decode(d));
+    let (pub_sign_vec, pub_asym_vec, maid_signature_vec, owner, signature_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, NameType, Vec<u8>) = try!(Decodable::decode(d));
 
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
@@ -197,7 +169,7 @@ impl Decodable for PublicMaid {
     let parsed_maid_signature = crypto::sign::Signature(maid_signature_arr.unwrap());
     let parsed_signature = crypto::sign::Signature(signature_arr.unwrap());
 
-    Ok(PublicMaid::new(pub_keys, parsed_maid_signature, owner, parsed_signature, name))
+    Ok(PublicMaid::new(pub_keys, parsed_maid_signature, owner, parsed_signature))
     }
 }
 
@@ -223,11 +195,11 @@ mod test {
             }
 
             PublicMaid {
+                type_tag: 107u64,
                 public_keys: (sign_pub_key, asym_pub_key),
                 maid_signature: crypto::sign::Signature(maid_signature_arr),
                 owner: routing::test_utils::Random::generate_random(),
-                signature: crypto::sign::Signature(signature_arr),
-                name: routing::test_utils::Random::generate_random()
+                signature: crypto::sign::Signature(signature_arr)
             }
         }
     }
@@ -253,5 +225,5 @@ mod test {
         assert_eq!(public_maid_first, public_maid_second);
         assert!(public_maid_first != public_maid_third);
     }
-    
+
 }

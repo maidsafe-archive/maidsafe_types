@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 use cbor;
 use cbor::CborTagEncode;
@@ -26,22 +26,24 @@ use std::fmt;
 /// ImmutableData
 #[derive(Clone)]
 pub struct ImmutableData {
+    type_tag: u64,
     value: Vec<u8>,
 }
 
 impl Sendable for ImmutableData {
     fn name(&self) -> NameType {
-        self.calculate_name()
+        let digest = crypto::hash::sha512::hash(&self.value);
+        NameType(digest.0)
     }
 
     fn type_tag(&self)->u64 {
-        101
+        self.type_tag.clone()
     }
 
     fn serialised_contents(&self)->Vec<u8> {
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&self]).unwrap();
-        e.into_bytes()      
+        e.into_bytes()
     }
 
     fn refresh(&self)->bool {
@@ -53,13 +55,14 @@ impl Sendable for ImmutableData {
 
 impl PartialEq for ImmutableData {
     fn eq(&self, other: &ImmutableData) -> bool {
+        &self.type_tag == &other.type_tag &&
         self.value == other.value
     }
 }
 
 impl fmt::Debug for ImmutableData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ImmutableData( name: {:?}, value: {:?} )", self.calculate_name(), self.value)
+        write!(f, "ImmutableData( type_tag:{}, name: {:?}, value: {:?} )", self.type_tag, self.name(), self.value)
     }
 }
 
@@ -67,18 +70,13 @@ impl ImmutableData {
     /// New instance of ImmutableData can be created using the new()
     pub fn new(value: Vec<u8>) -> ImmutableData {
         ImmutableData {
+            type_tag: 101u64,
             value: value,
         }
     }
 
-    // debug cannot call RoutingTrait due to current visibility
-    /// Calculates the name for the Data based on the SHA512 Hash of the Value
-    fn calculate_name(&self) -> NameType {
-        let digest = crypto::hash::sha512::hash(&self.value);
-        NameType(digest.0)
-    }
     /// Returns the vaue
-    pub fn get_value(&self) -> &Vec<u8> {
+    pub fn value(&self) -> &Vec<u8> {
         &self.value
     }
 }
@@ -102,7 +100,7 @@ mod test {
     use super::*;
     use cbor::{ Encoder, Decoder};
     use rustc_serialize::{Decodable, Encodable};
-    use Random;    
+    use Random;
     use rand;
     use routing::sendable::Sendable;
 
@@ -128,9 +126,9 @@ mod test {
                              e1e0ea81feffc76260554b9d46fb6ea3b169ff8bb02\
                              ef14a03a122da52f3063bcb1bfb22cffc614def522".to_string();
         let chunk = ImmutableData::new(data);
-        let actual_name = chunk.calculate_name().0.as_ref().to_hex();
+        let actual_name = chunk.name().0.as_ref().to_hex();
         assert_eq!(&expected_name, &actual_name);
-        assert_eq!(&chunk.calculate_name(), &chunk.name());
+        assert_eq!(&chunk.name(), &chunk.name());
     }
 
     #[test]
@@ -142,7 +140,7 @@ mod test {
         let mut d = Decoder::from_bytes(e.as_bytes());
         let obj_after: ImmutableData = d.decode().next().unwrap().unwrap();
 
-        assert_eq!(obj_before, obj_after);        
+        assert_eq!(obj_before, obj_after);
     }
 
     #[test]
