@@ -180,11 +180,9 @@ impl Decodable for PublicMaid {
              return Err(d.error("Bad PublicMaid size"));
     }
 
-    let parsed_maid_signature = crypto::sign::Signature(maid_signature_arr.unwrap());
-    let parsed_signature = crypto::sign::Signature(signature_arr.unwrap());
-
     Ok(PublicMaid::new((crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
-        crypto::sign::PublicKey(revocation_public_key_arr.unwrap()), parsed_maid_signature, owner, parsed_signature))
+        crypto::sign::PublicKey(revocation_public_key_arr.unwrap()), crypto::sign::Signature(maid_signature_arr.unwrap()), owner,
+        crypto::sign::Signature(signature_arr.unwrap())))
     }
 }
 

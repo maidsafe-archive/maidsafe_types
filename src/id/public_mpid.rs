@@ -48,6 +48,9 @@ use std::fmt;
 /// // getting PublicMpid::public_keys
 /// let &(pub_sign, pub_asym) = public_mpid.public_keys();
 ///
+/// // getting PublicMpid::revocation public key
+/// let revocation_public_key: &sodiumoxide::crypto::sign::PublicKey = public_mpid.revocation_public_key();
+///
 /// // getting PublicMpid::mpid_signature
 /// let mpid_signature: &sodiumoxide::crypto::sign::Signature = public_mpid.mpid_signature();
 ///
