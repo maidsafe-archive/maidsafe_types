@@ -101,6 +101,7 @@ impl PartialEq for PublicMpid {
         &self.type_tag == &other.type_tag &&
         slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
         slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0) &&
+        slice_equal(&self.revocation_public_key.0, &other.revocation_public_key.0) &&
         slice_equal(&self.mpid_signature.0, &other.mpid_signature.0) &&
         slice_equal(&self.signature.0, &other.signature.0)
     }
@@ -108,7 +109,8 @@ impl PartialEq for PublicMpid {
 
 impl fmt::Debug for PublicMpid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "PublicMpid {{ type_tag:{}, public_keys:({:?}, {:?}), mpid_signature:{:?}, owner:{:?}, signature:{:?}}}", self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
+        write!(f, "PublicMpid {{ type_tag:{}, public_keys:({:?}, {:?}), revocation_public_key:{:?}, mpid_signature:{:?}, owner:{:?}, signature:{:?}}}",
+            self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(), self.revocation_public_key.0.to_vec(),
             self.mpid_signature.0.to_vec(), self.owner, self.signature.0.to_vec())
     }
 }
