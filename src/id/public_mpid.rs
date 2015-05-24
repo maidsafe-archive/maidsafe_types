@@ -185,16 +185,16 @@ impl Decodable for PublicMpid {
     try!(d.read_u64());
 
     let (pub_sign_vec, pub_asym_vec, revocation_public_key_vec, mpid_signature_vec, owner, signature_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, NameType, Vec<u8>) = try!(Decodable::decode(d));
-        let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
-        let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
-        let revocation_public_key_arr = convert_to_array!(revocation_public_key_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
-        let mpid_signature_arr = convert_to_array!(mpid_signature_vec, crypto::sign::SIGNATUREBYTES);
-        let signature_arr = convert_to_array!(signature_vec, crypto::sign::SIGNATUREBYTES);
+    let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
+    let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
+    let revocation_public_key_arr = convert_to_array!(revocation_public_key_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
+    let mpid_signature_arr = convert_to_array!(mpid_signature_vec, crypto::sign::SIGNATUREBYTES);
+    let signature_arr = convert_to_array!(signature_vec, crypto::sign::SIGNATUREBYTES);
 
-        if pub_sign_arr.is_none() || pub_asym_arr.is_none() || mpid_signature_arr.is_none() ||
-            revocation_public_key_arr.is_none() || signature_arr.is_none() {
-                return Err(d.error("Bad PublicMaid size"));
-        }
+    if pub_sign_arr.is_none() || pub_asym_arr.is_none() || mpid_signature_arr.is_none() ||
+        revocation_public_key_arr.is_none() || signature_arr.is_none() {
+            return Err(d.error("Bad PublicMaid size"));
+    }
 
     Ok(PublicMpid::new((crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
         crypto::sign::PublicKey(revocation_public_key_arr.unwrap()), crypto::sign::Signature(mpid_signature_arr.unwrap()), owner,
