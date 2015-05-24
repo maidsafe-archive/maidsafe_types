@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 /// AnMaid
 pub mod an_maid;
@@ -27,8 +27,6 @@ pub mod mpid;
 pub mod public_maid;
 /// PublicMpid
 pub mod public_mpid;
-/// PublicAnMaid
-pub mod public_an_maid;
 
 pub use self::an_maid::*;
 pub use self::an_mpid::*;
@@ -36,7 +34,6 @@ pub use self::maid::*;
 pub use self::mpid::*;
 pub use self::public_maid::*;
 pub use self::public_mpid::*;
-pub use self::public_an_maid::*;
 #[test]
 fn dummy()  {
 }

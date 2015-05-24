@@ -36,9 +36,11 @@ use std::fmt;
 /// // Generating sign and asymmetricbox keypairs,
 /// let (pub_sign_key, _) = sodiumoxide::crypto::sign::gen_keypair(); // returns (PublicKey, SecretKey)
 /// let (pub_asym_key, _) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
+/// let (revocation_public_key, _) = sodiumoxide::crypto::sign::gen_keypair();
 ///
 /// // Creating new PublicMpid
 /// let public_mpid  = maidsafe_types::PublicMpid::new((pub_sign_key, pub_asym_key),
+///                     revocation_public_key,
 ///                     sodiumoxide::crypto::sign::Signature([2u8; 64]),
 ///                     routing::NameType([8u8; 64]),
 ///                     sodiumoxide::crypto::sign::Signature([5u8; 64]));
@@ -61,6 +63,7 @@ use std::fmt;
 pub struct PublicMpid {
     type_tag: u64,
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+    revocation_public_key: crypto::sign::PublicKey,
     mpid_signature: crypto::sign::Signature,
     owner: NameType,
     signature: crypto::sign::Signature
@@ -122,11 +125,12 @@ impl PublicMpid {
     ///                     sodiumoxide::crypto::sign::Signature([5u8; 64]));
     ///
     pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-                         mpid_signature: crypto::sign::Signature,
-                         owner: NameType,
-                         signature: crypto::sign::Signature) -> PublicMpid {
-        PublicMpid { type_tag: 106u64, public_keys: public_keys, mpid_signature: mpid_signature,
-             owner: owner,  signature: signature }
+                        revocation_public_key: crypto::sign::PublicKey,
+                        mpid_signature: crypto::sign::Signature,
+                        owner: NameType,
+                        signature: crypto::sign::Signature) -> PublicMpid {
+        PublicMpid { type_tag: 106u64, public_keys: public_keys, revocation_public_key: revocation_public_key,
+             mpid_signature: mpid_signature, owner: owner,  signature: signature }
     }
 
     /// Returns the Symetric and Assymetric Publick keys
@@ -134,19 +138,20 @@ impl PublicMpid {
     pub fn public_keys(& self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
         &self.public_keys
     }
-
+    /// Returns revocation public key
+    pub fn revocation_public_key(&self) -> &crypto::sign::PublicKey {
+        &self.revocation_public_key
+    }
     /// Returns the Signature for the Mpid
     #[warn(dead_code)]
     pub fn mpid_signature(& self) -> &crypto::sign::Signature {
         &self.mpid_signature
     }
-
     /// Returns the owner
     #[warn(dead_code)]
     pub fn owner(& self) -> &NameType {
         &self.owner
     }
-
     /// Returns the PublicMpid Signature
     #[warn(dead_code)]
     pub fn signature(& self) -> &crypto::sign::Signature {
@@ -157,11 +162,13 @@ impl PublicMpid {
 impl Encodable for PublicMpid {
     fn encode<E: Encoder>(& self, e: &mut E)->Result<(), E::Error> {
         let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
+        let crypto::sign::PublicKey(ref revocation_public_key_vec) = self.revocation_public_key;
         let crypto::sign::Signature(mpid_signature) = self.mpid_signature;
         let crypto::sign::Signature(signature) = self.signature;
         CborTagEncode::new(5483_001, &(
                 pub_sign_vec.as_ref(),
                 pub_asym_vec.as_ref(),
+                revocation_public_key_vec.as_ref(),
                 mpid_signature.as_ref(),
                 &self.owner,
                 signature.as_ref())).encode(e)
@@ -172,22 +179,21 @@ impl Decodable for PublicMpid {
     fn decode<D: Decoder>(d: &mut D)-> Result<PublicMpid, D::Error> {
     try!(d.read_u64());
 
-    let (pub_sign_vec, pub_asym_vec, mpid_signature_vec, owner, signature_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, NameType, Vec<u8>) = try!(Decodable::decode(d));
+    let (pub_sign_vec, pub_asym_vec, revocation_public_key_vec, mpid_signature_vec, owner, signature_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, NameType, Vec<u8>) = try!(Decodable::decode(d));
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
+        let revocation_public_key_arr = convert_to_array!(revocation_public_key_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
         let mpid_signature_arr = convert_to_array!(mpid_signature_vec, crypto::sign::SIGNATUREBYTES);
         let signature_arr = convert_to_array!(signature_vec, crypto::sign::SIGNATUREBYTES);
 
-        if pub_sign_arr.is_none() || pub_asym_arr.is_none() || mpid_signature_arr.is_none() || signature_arr.is_none() {
-            return Err(d.error("Bad PublicMaid size"));
+        if pub_sign_arr.is_none() || pub_asym_arr.is_none() || mpid_signature_arr.is_none() ||
+            revocation_public_key_arr.is_none() || signature_arr.is_none() {
+                return Err(d.error("Bad PublicMaid size"));
         }
 
-    let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
-            crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
-    let parsed_mpid_signature = crypto::sign::Signature(mpid_signature_arr.unwrap());
-    let parsed_signature = crypto::sign::Signature(signature_arr.unwrap());
-
-    Ok(PublicMpid::new(pub_keys, parsed_mpid_signature, owner, parsed_signature))
+    Ok(PublicMpid::new((crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
+        crypto::sign::PublicKey(revocation_public_key_arr.unwrap()), crypto::sign::Signature(mpid_signature_arr.unwrap()), owner,
+        crypto::sign::Signature(signature_arr.unwrap())))
     }
 }
 
@@ -205,6 +211,7 @@ mod test {
         fn generate_random() -> PublicMpid {
             let (sign_pub_key, _) = crypto::sign::gen_keypair();
             let (asym_pub_key, _) = crypto::asymmetricbox::gen_keypair();
+            let (revocation_public_key, _) = crypto::sign::gen_keypair();
             let mut mpid_signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
             let mut signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
             for i in 0..64 {
@@ -215,6 +222,7 @@ mod test {
             PublicMpid {
                 type_tag: 106u64,
                 public_keys: (sign_pub_key, asym_pub_key),
+                revocation_public_key: revocation_public_key,
                 mpid_signature: crypto::sign::Signature(mpid_signature_arr),
                 owner: routing::test_utils::Random::generate_random(),
                 signature: crypto::sign::Signature(signature_arr)

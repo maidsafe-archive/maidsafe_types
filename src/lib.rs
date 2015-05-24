@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 #![crate_name = "maidsafe_types"]
 #![crate_type = "lib"]
@@ -44,7 +44,7 @@ pub mod id;
 /// Holds the structs related to data such as ImmutableData and StructuredData
 pub mod data;
 
-pub use id::{Maid, Mpid, AnMaid, PublicAnMaid, AnMpid, PublicMaid, PublicMpid};
+pub use id::{Maid, Mpid, AnMaid, AnMpid, PublicMaid, PublicMpid};
 pub use data::{ImmutableData, StructuredData};
 
 use cbor::CborTagEncode;
@@ -56,7 +56,7 @@ pub trait Random {
     /// Generates a random instance and returns the created random instance
     fn generate_random() -> Self;
 }
-/// Crypto Error types 
+/// Crypto Error types
 pub enum CryptoError {
     /// Unknown Error Type
     Unknown
