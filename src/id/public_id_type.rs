@@ -185,8 +185,16 @@ impl Decodable for PublicIdType {
              return Err(d.error("Bad PublicIdType size"));
     }
 
-    let string = String::from_utf8(tag_type_vec).unwrap();
-    let type_tag = string.parse::<u64>().unwrap();
+    ;
+    let type_tag: u64 = match String::from_utf8(tag_type_vec) {
+        Ok(string) =>  {
+            match string.parse::<u64>() {
+                Ok(type_tag) => type_tag,
+                Err(_) => return Err(d.error("Bad Tag Type"))
+            }
+        },
+        Err(_) => return Err(d.error("Bad Tag Type"))
+    };
 
     Ok(PublicIdType{ type_tag: type_tag,
         public_keys: (crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
