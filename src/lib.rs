@@ -13,7 +13,7 @@
 // KIND, either express or implied.
 //
 // Please review the Licences for the specific language governing permissions and limitations
-// relating to use of the SAFE Network Software. 
+// relating to use of the SAFE Network Software.
 
 #![crate_name = "maidsafe_types"]
 #![crate_type = "lib"]
@@ -44,11 +44,35 @@ pub mod id;
 /// Holds the structs related to data such as ImmutableData and StructuredData
 pub mod data;
 
-pub use id::{Maid, Mpid, AnMaid, PublicAnMaid, AnMpid, PublicMaid, PublicMpid};
+pub use id::{Maid, Mpid, AnMaid, AnMpid, PublicIdType};
 pub use data::{ImmutableData, StructuredData};
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+
+/// To retutn type tag
+pub trait TypeTag {
+    /// returns tag type
+    fn tag_type(&self) -> u64;
+}
+
+/// TagType for PublicMaid
+pub struct PublicMaidTypeTag;
+
+/// TagType for PublicMpid
+pub struct PublicMpidTypeTag;
+
+impl TypeTag for PublicMaidTypeTag {
+    fn tag_type(&self) -> u64 {
+        return 107;
+    }
+}
+
+impl TypeTag for PublicMpidTypeTag {
+    fn tag_type(&self) -> u64 {
+        return 106;
+    }
+}
 
 /// Random trait is used to generate random instances.
 /// Used in the test mod
@@ -56,7 +80,7 @@ pub trait Random {
     /// Generates a random instance and returns the created random instance
     fn generate_random() -> Self;
 }
-/// Crypto Error types 
+/// Crypto Error types
 pub enum CryptoError {
     /// Unknown Error Type
     Unknown
