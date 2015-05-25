@@ -24,16 +24,13 @@ pub mod maid;
 /// Mpid
 pub mod mpid;
 /// PublicMaid
-pub mod public_maid;
-/// PublicMpid
-pub mod public_mpid;
+pub mod public_id_type;
 
 pub use self::an_maid::*;
 pub use self::an_mpid::*;
 pub use self::maid::*;
 pub use self::mpid::*;
-pub use self::public_maid::*;
-pub use self::public_mpid::*;
+pub use self::public_id_type::*;
 #[test]
 fn dummy()  {
 }

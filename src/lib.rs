@@ -44,11 +44,35 @@ pub mod id;
 /// Holds the structs related to data such as ImmutableData and StructuredData
 pub mod data;
 
-pub use id::{Maid, Mpid, AnMaid, AnMpid, PublicMaid, PublicMpid};
+pub use id::{Maid, Mpid, AnMaid, AnMpid, PublicIdType};
 pub use data::{ImmutableData, StructuredData};
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+
+/// To retutn type tag
+pub trait TypeTag {
+    /// returns tag type
+    fn tag_type(&self) -> u64;
+}
+
+/// TagType for PublicMaid
+pub struct PublicMaidTypeTag;
+
+/// TagType for PublicMpid
+pub struct PublicMpidTypeTag;
+
+impl TypeTag for PublicMaidTypeTag {
+    fn tag_type(&self) -> u64 {
+        return 107;
+    }
+}
+
+impl TypeTag for PublicMpidTypeTag {
+    fn tag_type(&self) -> u64 {
+        return 106;
+    }
+}
 
 /// Random trait is used to generate random instances.
 /// Used in the test mod
