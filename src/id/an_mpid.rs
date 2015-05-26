@@ -23,6 +23,7 @@ use routing::NameType;
 use routing::sendable::Sendable;
 use std::fmt;
 use cbor;
+use RevocationIdTypeTag;
 
 /// AnMpid
 ///
@@ -37,8 +38,7 @@ use cbor;
 /// let (pub_asym_key, sec_asym_key) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
 /// // Create AnMpid
 /// let an_mpid = maidsafe_types::AnMpid::new((pub_sign_key, pub_asym_key),
-///                                           (sec_sign_key, sec_asym_key),
-///                                           routing::NameType([3u8; 64]));
+///                                           (sec_sign_key, sec_asym_key));
 /// // Retrieving the values
 /// let ref publicKeys = an_mpid.public_keys();
 /// let ref secret_keys = an_mpid.secret_keys();
@@ -48,13 +48,12 @@ use cbor;
 pub struct AnMpid {
     type_tag: u64,
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-    secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-    name: NameType,
+    secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
 }
 
 impl Sendable for AnMpid {
     fn name(&self) -> NameType {
-        name(&self.public_keys)
+        name(&self.public_keys, self.type_tag.clone(), None)
     }
 
     fn type_tag(&self)->u64 {
@@ -78,11 +77,22 @@ impl Sendable for AnMpid {
     fn merge(&self, _: Vec<Box<Sendable>>) -> Option<Box<Sendable>> { None }
 }
 
+impl RevocationIdTypeTag for AnMpid {
+    /// Returns the PublicKey of the AnMaid
+    fn public_key(&self) -> &crypto::sign::PublicKey {
+        &self.public_keys.0
+    }
+    /// Signs the data with the SecretKey of the AnMpid and recturns the Signed Data
+    fn sign(&self, data : &[u8]) -> Vec<u8> {
+        return crypto::sign::sign(&data, &self.secret_keys.0)
+    }
+}
+
 impl fmt::Debug for AnMpid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "AnMpid {{ type_tag:{}, public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}), name: {:?} }}",
+        write!(f, "AnMpid {{ type_tag:{}, public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}) }}",
             self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
-            self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec(), self.name)
+            self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec())
     }
 }
 impl PartialEq for AnMpid {
@@ -90,17 +100,15 @@ impl PartialEq for AnMpid {
         // secret keys are mathematically linked, just check public ones
         &self.type_tag == &other.type_tag &&
         slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
-        slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0) &&
-        self.name == other.name
+        slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0)
     }
 }
 
 impl AnMpid {
     /// Invoked to create an instance of AnMpid
     pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-                         secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-                         name_type: NameType) -> AnMpid {
-        AnMpid { type_tag: 102u64, public_keys: public_keys, secret_keys: secret_keys, name: name_type }
+                         secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)) -> AnMpid {
+        AnMpid { type_tag: 102u64, public_keys: public_keys, secret_keys: secret_keys }
     }    /// Returns the PublicKeys
     pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
         &self.public_keys
@@ -115,20 +123,20 @@ impl Encodable for AnMpid {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
     let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
     let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
-
+    let type_vec = self.type_tag.to_string().into_bytes();
     CborTagEncode::new(5483_001, &(
+        type_vec,
         pub_sign_vec.as_ref(),
         pub_asym_vec.as_ref(),
         sec_sign_vec.as_ref(),
-        sec_asym_vec.as_ref(),
-        &self.name)).encode(e)
+        sec_asym_vec.as_ref())).encode(e)
     }
 }
 
 impl Decodable for AnMpid {
     fn decode<D: Decoder>(d: &mut D)-> Result<AnMpid, D::Error> {
-    try!(d.read_u64());
-    let (pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec, name) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, NameType) = try!(Decodable::decode(d));
+        try!(d.read_u64());
+        let (tag_type_vec, pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
 
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
@@ -139,11 +147,19 @@ impl Decodable for AnMpid {
             return Err(d.error("Bad AnMpid size"));
         }
 
-    let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
-                    crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
-    let sec_keys = (crypto::sign::SecretKey(sec_sign_arr.unwrap()),
-            crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap()));
-    Ok(AnMpid::new(pub_keys, sec_keys, name))
+        let type_tag: u64 = match String::from_utf8(tag_type_vec) {
+            Ok(string) =>  {
+                match string.parse::<u64>() {
+                    Ok(type_tag) => type_tag,
+                    Err(_) => return Err(d.error("Bad Tag Type"))
+                }
+            },
+            Err(_) => return Err(d.error("Bad Tag Type"))
+        };
+
+        Ok(AnMpid { type_tag: type_tag,
+                    public_keys: (crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
+                    secret_keys: (crypto::sign::SecretKey(sec_sign_arr.unwrap()), crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap())) })
     }
 }
 
@@ -153,7 +169,6 @@ mod test {
     use cbor::{ Encoder, Decoder };
     use Random;
     use sodiumoxide::crypto;
-    use routing;
 
     impl Random for AnMpid {
         fn generate_random() -> AnMpid {
@@ -162,8 +177,7 @@ mod test {
             AnMpid {
                 type_tag: 102u64,
                 public_keys: (sign_pub_key, asym_pub_key),
-                secret_keys: (sign_sec_key, asym_sec_key),
-                name: routing::test_utils::Random::generate_random()
+                secret_keys: (sign_sec_key, asym_sec_key)
             }
         }
     }

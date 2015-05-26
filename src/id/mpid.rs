@@ -23,6 +23,7 @@ use helper::*;
 use routing::NameType;
 use routing::sendable::Sendable;
 use std::fmt;
+use IdTypeTag;
 
 /// Mpid
 ///
@@ -38,8 +39,7 @@ use std::fmt;
 ///
 /// // Creating new Mpid
 /// let mpid  = maidsafe_types::id::mpid::Mpid::new((pub_sign_key, pub_asym_key),
-///                     (sec_sign_key, sec_asym_key),
-///                     routing::NameType([6u8; 64]));
+///                     (sec_sign_key, sec_asym_key));
 ///
 /// // getting Mpid::public_keys
 /// let &(pub_sign, pub_asym) = mpid.public_keys();
@@ -52,7 +52,6 @@ pub struct Mpid {
     type_tag: u64,
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
     secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-    name: NameType
 }
 
 impl PartialEq for Mpid {
@@ -60,22 +59,22 @@ impl PartialEq for Mpid {
         // Private keys are mathematically linked, so just check public keys
         &self.type_tag == &other.type_tag &&
         slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
-        slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0) &&
-        self.name == other.name
+        slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0)
     }
 }
 
 impl fmt::Debug for Mpid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Mpid {{ type_tag:{}, public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}), name: {:?} }}", self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
-            self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec(), self.name)
+        write!(f, "Mpid {{ type_tag:{}, public_keys:({:?}, {:?}), secret_keys:({:?}, {:?}) }}",
+            self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(),
+            self.secret_keys.0 .0.to_vec(), self.secret_keys.1 .0.to_vec())
     }
 }
 
 
 impl Sendable for Mpid {
     fn name(&self) -> NameType {
-        name(&self.public_keys)
+        name(&self.public_keys, self.type_tag.clone(), None)
     }
 
     fn type_tag(&self)->u64 {
@@ -95,12 +94,20 @@ impl Sendable for Mpid {
     fn merge(&self, _: Vec<Box<Sendable>>) -> Option<Box<Sendable>> { None }
 }
 
+impl IdTypeTag for Mpid {
+    /// returns tag type
+    fn public_id_type_tag(&self) -> u64 { 107 }
+    /// Returns the PublicKeys
+    fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
+        &self.public_keys
+    }
+}
+
 impl Mpid {
     /// A new instance of Mpid can be created by invoking the new()
     pub fn new(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-                         secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey),
-                         name_type: NameType) -> Mpid {
-        Mpid { type_tag: 104u64, public_keys: public_keys, secret_keys: secret_keys, name: name_type }
+                         secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)) -> Mpid {
+        Mpid { type_tag: 104u64, public_keys: public_keys, secret_keys: secret_keys }
     }
     /// Returns the PublicKeys
     pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
@@ -116,20 +123,21 @@ impl Encodable for Mpid {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
     let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
     let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
+    let type_vec = self.type_tag.to_string().into_bytes();
 
     CborTagEncode::new(5483_001, &(
+        type_vec,
         pub_sign_vec.as_ref(),
         pub_asym_vec.as_ref(),
         sec_sign_vec.as_ref(),
-        sec_asym_vec.as_ref(),
-        &self.name)).encode(e)
+        sec_asym_vec.as_ref())).encode(e)
     }
 }
 
 impl Decodable for Mpid {
     fn decode<D: Decoder>(d: &mut D)-> Result<Mpid, D::Error> {
         try!(d.read_u64());
-        let(pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec, name) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, NameType) = try!(Decodable::decode(d));
+        let(tag_type_vec, pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
         let sec_sign_arr = convert_to_array!(sec_sign_vec, crypto::sign::SECRETKEYBYTES);
@@ -139,11 +147,20 @@ impl Decodable for Mpid {
             return Err(d.error("Bad Mpid size"));
         }
 
+        let type_tag: u64 = match String::from_utf8(tag_type_vec) {
+            Ok(string) =>  {
+                match string.parse::<u64>() {
+                    Ok(type_tag) => type_tag,
+                    Err(_) => return Err(d.error("Bad Tag Type"))
+                }
+            },
+            Err(_) => return Err(d.error("Bad Tag Type"))
+        };
 
-
-        Ok(Mpid::new((crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
-                     (crypto::sign::SecretKey(sec_sign_arr.unwrap()), crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap())),
-                     name))
+        Ok(Mpid {
+            type_tag: type_tag,
+            public_keys: (crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
+            secret_keys: (crypto::sign::SecretKey(sec_sign_arr.unwrap()), crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap()))})
     }
 }
 
@@ -152,7 +169,6 @@ mod test {
     use super::*;
     use cbor;
     use sodiumoxide::crypto;
-    use routing;
     use Random;
 
     impl Random for Mpid {
@@ -162,8 +178,7 @@ mod test {
             Mpid {
                 type_tag: 104u64,
                 public_keys: (sign_pub_key, asym_pub_key),
-                secret_keys: (sign_sec_key, asym_sec_key),
-                name: routing::test_utils::Random::generate_random()
+                secret_keys: (sign_sec_key, asym_sec_key)
             }
         }
     }

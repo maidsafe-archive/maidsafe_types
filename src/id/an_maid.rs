@@ -20,6 +20,7 @@ use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
 use std::fmt;
+use RevocationIdTypeTag;
 
 /// The following key types use the internal cbor tag to identify them and this
 /// should be carried through to any json representation if stored on disk
@@ -33,8 +34,6 @@ use std::fmt;
 /// // Generating public and secret keys using sodiumoxide
 /// // Create AnMaid
 /// let an_maid : maidsafe_types::AnMaid = maidsafe_types::AnMaid::new();
-/// // Retrieving the values
-/// let ref publicKeys = an_maid.public_key();
 /// ```
 ///
 #[derive(Clone)]
@@ -60,6 +59,17 @@ impl fmt::Debug for AnMaid {
     }
 }
 
+impl RevocationIdTypeTag for AnMaid {
+    /// Returns the PublicKey of the AnMaid
+    fn public_key(&self) -> &crypto::sign::PublicKey {
+        &self.public_key
+    }
+    /// Signs the data with the SecretKey of the AnMaid and recturns the Signed Data
+    fn sign(&self, data : &[u8]) -> Vec<u8> {
+        return crypto::sign::sign(&data, &self.secret_key)
+    }
+}
+
 impl AnMaid {
     /// An instance of AnMaid can be created by invoking the new()
     /// Default contructed AnMaid instance is returned
@@ -77,18 +87,9 @@ impl AnMaid {
     pub fn type_tag(&self) -> &u64 {
         &self.type_tag
     }
-    /// Returns the PublicKey of the AnMaid
-    pub fn public_key(&self) -> &crypto::sign::PublicKey {
-        &self.public_key
-    }
     /// Returns the SecretKey of the AnMaid
     pub fn secret_key(&self) -> &crypto::sign::SecretKey {
         &self.secret_key
-    }
-
-    /// Signs the data with the SecretKey of the AnMaid and recturns the Signed Data
-    pub fn sign(&self, data : &[u8]) -> Vec<u8> {
-        return crypto::sign::sign(&data, &self.secret_key)
     }
 }
 
@@ -123,6 +124,7 @@ mod test {
     use Random;
     use sodiumoxide::crypto;
     use super::AnMaid;
+    use RevocationIdTypeTag;
 
     impl Random for AnMaid {
         fn generate_random() -> AnMaid {

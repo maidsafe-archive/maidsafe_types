@@ -49,29 +49,22 @@ pub use data::{ImmutableData, StructuredData};
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+use sodiumoxide::crypto;
 
-/// To retutn type tag
-pub trait TypeTag {
+/// Interface to IdTypes
+pub trait IdTypeTag {
     /// returns tag type
-    fn tag_type(&self) -> u64;
+    fn public_id_type_tag(&self) -> u64;
+    /// Returns the PublicKeys
+    fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey);
 }
 
-/// TagType for PublicMaid
-pub struct PublicMaidTypeTag;
-
-/// TagType for PublicMpid
-pub struct PublicMpidTypeTag;
-
-impl TypeTag for PublicMaidTypeTag {
-    fn tag_type(&self) -> u64 {
-        return 107;
-    }
-}
-
-impl TypeTag for PublicMpidTypeTag {
-    fn tag_type(&self) -> u64 {
-        return 106;
-    }
+/// Interface for Revocation Id Types
+pub trait RevocationIdTypeTag {
+    /// Returns the PublicKey of the AnMaid
+    fn public_key(&self) -> &crypto::sign::PublicKey;
+    /// Signs the data with the SecretKey of the AnMaid and recturns the Signed Data
+    fn sign(&self, data : &[u8]) -> Vec<u8>;
 }
 
 /// Random trait is used to generate random instances.

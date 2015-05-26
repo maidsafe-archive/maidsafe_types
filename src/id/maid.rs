@@ -22,6 +22,8 @@ use helper::*;
 use super::an_maid::*;
 use std::cmp;
 use std::fmt;
+use IdTypeTag;
+use RevocationIdTypeTag;
 
 /// Maid
 ///
@@ -31,15 +33,21 @@ use std::fmt;
 /// // Creating new Maid
 /// let maid: Maid  = Maid::new(&AnMaid::new());
 ///
-/// // getting Maid::public_keys
-/// let &(pub_sign, pub_asym) = maid.public_keys();
-///
 /// ```
 #[derive(Clone)]
 pub struct Maid {
     type_tag: u64,
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
     secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
+}
+
+impl IdTypeTag for Maid {
+    /// returns tag type
+    fn public_id_type_tag(&self) -> u64 { 106 }
+    /// Returns the PublicKeys
+    fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
+        &self.public_keys
+    }
 }
 
 impl Maid {
@@ -53,10 +61,6 @@ impl Maid {
             public_keys: (an_maid.public_key().clone(), asym_keys.0),
             secret_keys: (an_maid.secret_key().clone(), asym_keys.1)
         }
-    }
-    /// Returns the PublicKeys
-    pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
-        &self.public_keys
     }
     /// Signs the data with the SecretKey and returns the Signed data
     pub fn sign(&self, data : &[u8]) -> Vec<u8> {
@@ -137,6 +141,8 @@ mod test {
     use Random;
     use rand;
     use rand::Rng;
+    use IdTypeTag;
+    use RevocationIdTypeTag;
 
     impl Random for Maid {
         fn generate_random() -> Maid {
