@@ -46,7 +46,7 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 
 ## [0.1.4]
 - [ ] Remove anonymous public types
-  - [ ] [MAID-1053](https://maidsafe.atlassian.net/browse/MAID-1053) Anonymous public types to be included as part of the body of the public type
+  - [x] [MAID-1053](https://maidsafe.atlassian.net/browse/MAID-1053) Anonymous public types to be included as part of the body of the public type
   - [ ] [MAID-1058](https://maidsafe.atlassian.net/browse/MAID-1058) Change tests to reflect the above task
 - [ ] Modifications to Id types
   - [ ] [MAID-1029](https://maidsafe.atlassian.net/browse/MAID-1029) Remove name from types to enhance type invariance
@@ -57,7 +57,6 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 - [ ] [MAID-1116] (https://maidsafe.atlassian.net/browse/MAID-1116) Create 2 new ImmutableData types
   
 ## [0.1.5]
-- [ ] [MAID-1056](https://maidsafe.atlassian.net/browse/MAID-1056) Write tests to confirm invariants of all types
 - [ ] SafeCoin type
   - [ ] [MAID-1036](https://maidsafe.atlassian.net/browse/MAID-1036) add SafeCoin entry type which should have i) owners, ii) previous owners and iii) signatures created by            previous owners to verify the transaction approved by them, and iv) Type tag
   - [ ] [MAID-1044](https://maidsafe.atlassian.net/browse/MAID-1044) Implement and test Sendable, Encodable, Decodable, PartialEq and fmt::Debug traits for SafeCoin Type
@@ -65,4 +64,6 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 - [ ] Visual presentation
   - [ ] [MAID-1047](https://maidsafe.atlassian.net/browse/MAID-1047) Provide Shona with modifications required in Types representations
   - [ ] [MAID-1073](https://maidsafe.atlassian.net/browse/MAID-1073) Come up with intiuitive representation of types
+
+- [ ] [MAID-1056](https://maidsafe.atlassian.net/browse/MAID-1056) Write tests to confirm invariants of all types
 
