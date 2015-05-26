@@ -27,7 +27,7 @@ pub struct StructuredData {
     type_tag: u64,
     name: NameType,
     owner: NameType,
-    value: Vec<Vec<NameType>>,
+    value: Vec<NameType>,
 }
 
 impl Sendable for StructuredData {
@@ -58,17 +58,17 @@ impl Sendable for StructuredData {
 
 impl StructuredData {
     /// An instance of the StructuredData can be created by invoking the new()
-    pub fn new(name: NameType, owner: NameType, value: Vec<Vec<NameType>>) -> StructuredData {
+    pub fn new(name: NameType, owner: NameType, value: Vec<NameType>) -> StructuredData {
         StructuredData {type_tag: 100u64, name: name, owner: owner, value: value}
     }
 
     /// Returns the value
-    pub fn value(&self) -> Vec<Vec<NameType>> {
+    pub fn value(&self) -> Vec<NameType> {
         self.value.clone()
     }
 
     /// Sets the value
-    pub fn set_value(&mut self, data: Vec<Vec<NameType>>) {
+    pub fn set_value(&mut self, data: Vec<NameType>) {
         self.value = data;
     }
 }
@@ -105,21 +105,16 @@ mod test {
 
     impl Random for StructuredData {
         fn generate_random() -> StructuredData {
-            let outer_limit = rand::random::<u8>() as usize;
-            let mut outer = Vec::<Vec<NameType>>::with_capacity(outer_limit);
-            for _ in 0..rand::random::<u8>() {
-                let inner_limit = rand::random::<u8>() as usize;
-                let mut inner = Vec::<NameType>::with_capacity(inner_limit);
-                for _ in 0..inner_limit {
-                    inner.push(routing::test_utils::Random::generate_random());
-                }
-                outer.push(inner);
+            let size = rand::random::<usize>() % 100 + 1;
+            let mut value = Vec::<NameType>::with_capacity(size);
+            for _ in 0..size {
+                value.push(routing::test_utils::Random::generate_random());
             }
             StructuredData {
                 type_tag: 100u64,
                 name: routing::test_utils::Random::generate_random(),
                 owner: routing::test_utils::Random::generate_random(),
-                value: outer,
+                value: value,
             }
         }
     }
