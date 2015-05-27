@@ -16,20 +16,14 @@
 // relating to use of the SAFE Network Software.
 
 /// AnMaid
-pub mod an_maid;
-/// AnMpid
-pub mod an_mpid;
+pub mod revocation_id_type;
 /// Maid
-pub mod maid;
-/// Mpid
-pub mod mpid;
+pub mod id_type;
 /// PublicMaid
 pub mod public_id_type;
 
-pub use self::an_maid::*;
-pub use self::an_mpid::*;
-pub use self::maid::*;
-pub use self::mpid::*;
+pub use self::revocation_id_type::*;
+pub use self::id_type::*;
 pub use self::public_id_type::*;
 #[test]
 fn dummy()  {
