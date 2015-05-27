@@ -23,7 +23,6 @@ use helper::*;
 use routing::NameType;
 use routing::sendable::Sendable;
 use std::fmt;
-use IdTypeTags;
 use super::revocation_id_type::*;
 use super::id_type::*;
 

@@ -53,8 +53,12 @@ use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 
 /// Interface to IdTypes
 pub trait IdTypeTags {
-    /// returns tag type for revocation, id and public id types
-    fn type_tags(&self) -> (u64, u64, u64);
+    /// returns tag type for revocation id type
+    fn revocation_id_type_tag(&self) -> u64;
+    /// returns tag type for id type
+    fn id_type_tag(&self) -> u64;
+    /// returns tag type for public id type
+    fn public_id_type_tag(&self) -> u64;
 }
 
 /// TypeTags for Maid type variants
@@ -64,15 +68,21 @@ pub struct MaidTypeTags;
 pub struct MpidTypeTags;
 
 impl IdTypeTags for MaidTypeTags {
-    fn type_tags(&self) -> (u64, u64, u64) {
-        (101, 201, 301)
-    }
+    /// returns tag type for AnMaid type
+    fn revocation_id_type_tag(&self) -> u64 { 101 }
+    /// returns tag type for Maid type
+    fn id_type_tag(&self) -> u64 { 201 }
+    /// returns tag type for PublicMaid type
+    fn public_id_type_tag(&self) -> u64 { 301 }
 }
 
 impl IdTypeTags for MpidTypeTags {
-    fn type_tags(&self) -> (u64, u64, u64) {
-        (102, 202, 302)
-    }
+    /// returns tag type for AnMaid type
+    fn revocation_id_type_tag(&self) -> u64 { 102 }
+    /// returns tag type for Maid type
+    fn id_type_tag(&self) -> u64 { 202 }
+    /// returns tag type for PublicMaid type
+    fn public_id_type_tag(&self) -> u64 { 302 }
 }
 
 /// Random trait is used to generate random instances.

@@ -22,7 +22,6 @@ use helper::*;
 use super::revocation_id_type::*;
 use std::cmp;
 use std::fmt;
-use IdTypeTags;
 
 /// IdType
 ///

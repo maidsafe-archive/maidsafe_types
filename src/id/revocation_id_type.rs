@@ -67,7 +67,7 @@ impl RevocationIdType {
         let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
         let type_tags: TypeTags = unsafe { mem::uninitialized() };
         RevocationIdType {
-            type_tags: type_tags.type_tags(),
+            type_tags: (type_tags.revocation_id_type_tag(), type_tags.id_type_tag(), type_tags.public_id_type_tag()),
             public_key: pub_sign_key,
             secret_key: sec_sign_key
         }
