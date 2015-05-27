@@ -41,36 +41,61 @@ extern crate routing;
 pub mod helper;
 /// Holds the structs for Id related Types such as Maid, AnMaid, Mpid, etc
 pub mod id;
-/// Holds the structs related to data such as ImmutableData and StructuredData
+/// Holds the structs related to data such as ImmutableData/Backup/Sacrificial and StructuredData
 pub mod data;
 
 pub use id::{Maid, Mpid, AnMaid, AnMpid, PublicIdType};
-pub use data::{ImmutableData, StructuredData};
+pub use data::{ImmutableData, ImmutableDataBackup, ImmutableDataSacrificial, StructuredData};
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 
-/// To retutn type tag
+/// TypeTag trait
 pub trait TypeTag {
-    /// returns tag type
-    fn tag_type(&self) -> u64;
+    /// returns type tag
+    fn type_tag(&self) -> u64;
 }
 
-/// TagType for PublicMaid
+/// TypeTag for PublicMaid
 pub struct PublicMaidTypeTag;
 
-/// TagType for PublicMpid
+/// TypeTag for PublicMpid
 pub struct PublicMpidTypeTag;
 
 impl TypeTag for PublicMaidTypeTag {
-    fn tag_type(&self) -> u64 {
+    fn type_tag(&self) -> u64 {
         return 107;
     }
 }
 
 impl TypeTag for PublicMpidTypeTag {
-    fn tag_type(&self) -> u64 {
+    fn type_tag(&self) -> u64 {
         return 106;
+    }
+}
+
+/// TypeTag for ImmutableData
+pub struct ImmutableDataTypeTag;
+/// TypeTag for ImmutableDataBackup
+pub struct ImmutableDataBackupTypeTag;
+/// TypeTag for ImmutableDataSacrificial
+pub struct ImmutableDataSacrificialTypeTag;
+
+impl TypeTag for ImmutableDataTypeTag {
+    fn type_tag(&self) -> u64 {
+        return 101;
+    }
+}
+
+impl TypeTag for ImmutableDataBackupTypeTag {
+    fn type_tag(&self) -> u64 {
+        return 102;
+    }
+}
+
+impl TypeTag for ImmutableDataSacrificialTypeTag {
+    fn type_tag(&self) -> u64 {
+        return 103;
     }
 }
 
@@ -89,7 +114,7 @@ pub enum CryptoError {
 #[derive(PartialEq, Eq, Clone, Debug)]
 /// Types of payload that will be exchange among vaults
 ///     MaidManager : PublicMaid, PublicAnMaid
-///     All : Datatype -- ImmutableData, StructuredData
+///     All : Datatype -- ImmutableData, ImmutableDataBackup, ImmutableDataSacrificial, StructuredData
 pub enum PayloadTypeTag {
     /// PublicMaid type
     PublicMaid,
@@ -97,6 +122,10 @@ pub enum PayloadTypeTag {
     PublicAnMaid,
     /// ImmutableData type
     ImmutableData,
+    /// ImmutableDataBackup
+    ImmutableDataBackup,
+    /// ImmutableDataSacrificial
+    ImmutableDataSacrificial,
     /// StructuredData type
     StructuredData,
     /// Unknown type
@@ -110,6 +139,8 @@ impl Encodable for PayloadTypeTag {
           PayloadTypeTag::PublicMaid => type_tag = "PublicMaid",
           PayloadTypeTag::PublicAnMaid => type_tag = "PublicAnMaid",
           PayloadTypeTag::ImmutableData => type_tag = "ImmutableData",
+          PayloadTypeTag::ImmutableDataBackup => type_tag = "ImmutableDataBackup",
+          PayloadTypeTag::ImmutableDataSacrificial => type_tag = "ImmutableDataSacrificial",
           PayloadTypeTag::StructuredData => type_tag = "StructuredData",
           PayloadTypeTag::Unknown => type_tag = "Unknown",
         };
@@ -126,6 +157,8 @@ impl Decodable for PayloadTypeTag {
           "PublicMaid" => Ok(PayloadTypeTag::PublicMaid),
           "PublicAnMaid" => Ok(PayloadTypeTag::PublicAnMaid),
           "ImmutableData" => Ok(PayloadTypeTag::ImmutableData),
+          "ImmutableDataBackup" => Ok(PayloadTypeTag::ImmutableDataBackup),
+          "ImmutableDataSacrificial" => Ok(PayloadTypeTag::ImmutableDataSacrificial),
           "StructuredData" => Ok(PayloadTypeTag::StructuredData),
           _ => Ok(PayloadTypeTag::Unknown)
         }

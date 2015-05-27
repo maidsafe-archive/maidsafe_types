@@ -127,7 +127,7 @@ impl PublicIdType {
                         owner: NameType,
                         signature: crypto::sign::Signature) -> PublicIdType {
         let type_tag: T = unsafe { mem::uninitialized() };
-        PublicIdType {type_tag: type_tag.tag_type(), public_keys: public_keys, revocation_public_key: revocation_public_key,
+        PublicIdType {type_tag: type_tag.type_tag(), public_keys: public_keys, revocation_public_key: revocation_public_key,
              maid_signature: maid_signature, owner: owner, signature: signature }
     }
     /// Returns the PublicKeys
