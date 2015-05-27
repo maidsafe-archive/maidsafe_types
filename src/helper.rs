@@ -45,7 +45,7 @@ macro_rules! convert_to_array {
             let mut arr : [_; $size] = unsafe { mem::uninitialized() };
             for element in $container.into_iter().enumerate() {
                 let old_val = mem::replace(&mut arr[element.0], element.1);
-                unsafe { mem::forget(old_val) };
+                mem::forget(old_val);
             }
             Some(arr)
         }
