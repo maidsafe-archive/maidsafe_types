@@ -32,13 +32,11 @@ use super::id_type::*;
 /// #Examples
 ///
 /// ```
-/// extern crate sodiumoxide;
-/// extern crate maidsafe_types;
-/// extern crate routing;
+/// use maidsafe_types::{IdType, RevocationType, MaidTypeTags, PublicIdType};
 ///
-///  let an_maid = maidsafe_types::AnMaid::new();
-///  let maid = maidsafe_types::Maid::new(&an_maid);
-///  let public_maid  = maidsafe_types::PublicIdType::new(&maid, &an_maid);
+///  let revocation_maid = RevocationType::new::<maidsafe_types::MaidTypeTags>();
+///  let maid = IdType::new(&revocation_maid);
+///  let public_maid  = PublicIdType::new(&maid, &revocation_maid);
 /// ```
 
 #[derive(Clone)]
@@ -91,7 +89,7 @@ impl fmt::Debug for PublicIdType {
 
 impl PublicIdType {
     /// An instanstance of the PublicIdType can be created using the new()
-    pub fn new(id_type: &IdType, revocation_id: &Revocation) -> PublicIdType {
+    pub fn new(id_type: &IdType, revocation_id: &RevocationType) -> PublicIdType {
         let type_tag = revocation_id.type_tags().2;
         let public_keys = id_type.public_keys().clone();
         let revocation_public_key = revocation_id.public_key();
@@ -175,25 +173,25 @@ mod test {
     use super::*;
     use cbor;
     use Random;
-    use super::super::{AnMaid, Maid, AnMpid, Mpid};
-    use sodiumoxide::crypto;
+    use super::super::{ IdType, RevocationType };
+    use MaidTypeTags;
 
     impl Random for PublicIdType {
         fn generate_random() -> PublicIdType {
-            let an_maid = AnMaid::new();
-            let maid = Maid::new(&an_maid);
-            PublicIdType::new(&maid, &an_maid)
+            let revocation_maid = RevocationType::new::<MaidTypeTags>();
+            let maid = IdType::new(&revocation_maid);
+            PublicIdType::new(&maid, &revocation_maid)
         }
     }
 
-#[test]
-    fn create_public_mpid() {
-        let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
-        let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
-        let mpid = Mpid::new((sign_pub_key.clone(), asym_pub_key.clone()),(sign_sec_key.clone(), asym_sec_key.clone()));
-        let an_mpid = AnMpid::new((sign_pub_key, asym_pub_key),(sign_sec_key, asym_sec_key));
-        PublicIdType::new(&mpid, &an_mpid);
-    }
+// #[test]
+    // fn create_public_mpid() {
+    //     let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
+    //     let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
+    //     let mpid = Mpid::new((sign_pub_key.clone(), asym_pub_key.clone()),(sign_sec_key.clone(), asym_sec_key.clone()));
+    //     let an_mpid = AnMpid::new((sign_pub_key, asym_pub_key),(sign_sec_key, asym_sec_key));
+    //     PublicIdType::new(&mpid, &an_mpid);
+    // } Vital
 
 
 #[test]

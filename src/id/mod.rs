@@ -17,19 +17,13 @@
 
 /// AnMaid
 pub mod revocation_type;
-/// AnMpid
-pub mod an_mpid;
 /// Maid
 pub mod id_type;
-/// Mpid
-pub mod mpid;
 /// PublicMaid
 pub mod public_id_type;
 
 pub use self::revocation_type::*;
-pub use self::an_mpid::*;
 pub use self::id_type::*;
-pub use self::mpid::*;
 pub use self::public_id_type::*;
 #[test]
 fn dummy()  {

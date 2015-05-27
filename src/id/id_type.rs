@@ -28,9 +28,9 @@ use IdTypeTags;
 ///
 /// #Examples
 /// ```
-/// use maidsafe_types::{IdType, AnMaid};
+/// use maidsafe_types::{IdType, RevocationType, MaidTypeTags};
 /// // Creating new IdType
-/// let maid: IdType  = IdType::new(&AnMaid::new());
+/// let maid: IdType  = IdType::new(&RevocationType::new::<MaidTypeTags>());
 ///
 /// ```
 #[derive(Clone)]
@@ -42,7 +42,7 @@ pub struct IdType {
 
 impl IdType {
     /// Invoked to create an instance of IdType
-    pub fn new(revocation_id: &Revocation) -> IdType {
+    pub fn new(revocation_id: &RevocationType) -> IdType {
         let asym_keys = crypto::asymmetricbox::gen_keypair();
         let signing_keys = crypto::sign::gen_keypair();
 
@@ -55,7 +55,7 @@ impl IdType {
     /// Returns the PublicKeys
     pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
         &self.public_keys
-    }    
+    }
     /// Signs the data with the SecretKey and returns the Signed data
     pub fn sign(&self, data : &[u8]) -> Vec<u8> {
         return crypto::sign::sign(&data, &self.secret_keys.0)
@@ -130,24 +130,23 @@ impl Decodable for IdType {
 mod test {
     use super::*;
     use cbor;
-    use super::super::AnMaid;
+    use super::super::RevocationType;
     use sodiumoxide::crypto;
     use Random;
     use rand;
     use rand::Rng;
-    use IdTypeTag;
-    use RevocationIdTypeTag;
+    use MaidTypeTags;
 
     impl Random for IdType {
-        fn generate_random() -> Maid {
-            IdType::new(&AnMaid::new())
+        fn generate_random() -> IdType {
+            IdType::new(&RevocationType::new::<MaidTypeTags>())
         }
     }
 
 #[test]
     fn serialisation_maid() {
         use helper::*;
-        let obj_before = Maid::generate_random();
+        let obj_before = IdType::generate_random();
 
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&obj_before]).unwrap();

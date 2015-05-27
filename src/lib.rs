@@ -45,17 +45,34 @@ pub mod id;
 pub mod data;
 
 // pub use id::{Maid, Mpid, AnMaid, AnMpid, PublicIdType};
-pub use id::{Revocation, IdType};
+pub use id::{RevocationType, IdType, PublicIdType};
 pub use data::{ImmutableData, StructuredData};
 
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
-use sodiumoxide::crypto;
 
 /// Interface to IdTypes
 pub trait IdTypeTags {
     /// returns tag type for revocation, id and public id types
     fn type_tags(&self) -> (u64, u64, u64);
+}
+
+/// TypeTags for Maid type variants
+pub struct MaidTypeTags;
+
+/// TypeTags for Maid type variants
+pub struct MpidTypeTags;
+
+impl IdTypeTags for MaidTypeTags {
+    fn type_tags(&self) -> (u64, u64, u64) {
+        (101, 201, 301)
+    }
+}
+
+impl IdTypeTags for MpidTypeTags {
+    fn type_tags(&self) -> (u64, u64, u64) {
+        (102, 202, 302)
+    }
 }
 
 /// Random trait is used to generate random instances.
