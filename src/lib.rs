@@ -44,7 +44,7 @@ pub mod id;
 /// Holds the structs related to data such as ImmutableData/Backup/Sacrificial and StructuredData
 pub mod data;
 
-pub use id::{Maid, Mpid, AnMaid, AnMpid, PublicIdType};
+pub use id::{RevocationIdType, IdType, PublicIdType};
 pub use data::{ImmutableData, ImmutableDataBackup, ImmutableDataSacrificial, StructuredData};
 
 use cbor::CborTagEncode;
@@ -56,22 +56,38 @@ pub trait TypeTag {
     fn type_tag(&self) -> u64;
 }
 
-/// TypeTag for PublicMaid
-pub struct PublicMaidTypeTag;
-
-/// TypeTag for PublicMpid
-pub struct PublicMpidTypeTag;
-
-impl TypeTag for PublicMaidTypeTag {
-    fn type_tag(&self) -> u64 {
-        return 107;
-    }
+/// Interface to IdTypes
+pub trait IdTypeTags {
+    /// returns tag type for revocation id type
+    fn revocation_id_type_tag(&self) -> u64;
+    /// returns tag type for id type
+    fn id_type_tag(&self) -> u64;
+    /// returns tag type for public id type
+    fn public_id_type_tag(&self) -> u64;
 }
 
-impl TypeTag for PublicMpidTypeTag {
-    fn type_tag(&self) -> u64 {
-        return 106;
-    }
+/// TypeTags for Maid type variants
+pub struct MaidTypeTags;
+
+/// TypeTags for Maid type variants
+pub struct MpidTypeTags;
+
+impl IdTypeTags for MaidTypeTags {
+    /// returns tag type for AnMaid type
+    fn revocation_id_type_tag(&self) -> u64 { 101 }
+    /// returns tag type for Maid type
+    fn id_type_tag(&self) -> u64 { 201 }
+    /// returns tag type for PublicMaid type
+    fn public_id_type_tag(&self) -> u64 { 301 }
+}
+
+impl IdTypeTags for MpidTypeTags {
+    /// returns tag type for AnMpid type
+    fn revocation_id_type_tag(&self) -> u64 { 102 }
+    /// returns tag type for Mpid type
+    fn id_type_tag(&self) -> u64 { 202 }
+    /// returns tag type for PublicMpid type
+    fn public_id_type_tag(&self) -> u64 { 302 }
 }
 
 /// TypeTag for ImmutableData
