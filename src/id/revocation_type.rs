@@ -20,99 +20,98 @@ use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
 use std::fmt;
-use RevocationIdTypeTag;
+use IdTypeTags;
+use std::mem;
 
 /// The following key types use the internal cbor tag to identify them and this
 /// should be carried through to any json representation if stored on disk
 ///
-/// AnMaid
+/// Revocation
 ///
 /// #Examples
 /// ```
 /// extern crate sodiumoxide;
 /// extern crate maidsafe_types;
 /// // Generating public and secret keys using sodiumoxide
-/// // Create AnMaid
-/// let an_maid : maidsafe_types::AnMaid = maidsafe_types::AnMaid::new();
+/// // Create Revocation
+/// let an_maid : maidsafe_types::Revocation = maidsafe_types::Revocation::new();
 /// ```
 ///
 #[derive(Clone)]
-pub struct AnMaid {
-    type_tag: u64,
+pub struct Revocation {
+    type_tags: (u64, u64, u64),
     public_key: crypto::sign::PublicKey,
     secret_key: crypto::sign::SecretKey
 }
 
-impl PartialEq for AnMaid {
-    fn eq(&self, other: &AnMaid) -> bool {
+impl PartialEq for Revocation {
+    fn eq(&self, other: &Revocation) -> bool {
         // Private key is mathematically linked, so just check public key
-        &self.type_tag == &other.type_tag &&
+        &self.type_tags == &other.type_tags &&
         slice_equal(&self.public_key.0, &other.public_key.0)
     }
 }
 
 
-impl fmt::Debug for AnMaid {
+impl fmt::Debug for Revocation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let crypto::sign::PublicKey(ref public_key) = self.public_key;
-        write!(f, "AnMaid( type_tag:{}, public_key: {:?} )", self.type_tag, public_key)
+        write!(f, "Revocation( type_tags:{:?}, public_key: {:?} )", self.type_tags, public_key)
     }
 }
 
-impl RevocationIdTypeTag for AnMaid {
-    /// Returns the PublicKey of the AnMaid
-    fn public_key(&self) -> &crypto::sign::PublicKey {
-        &self.public_key
-    }
-    /// Signs the data with the SecretKey of the AnMaid and recturns the Signed Data
-    fn sign(&self, data : &[u8]) -> Vec<u8> {
-        return crypto::sign::sign(&data, &self.secret_key)
-    }
-}
-
-impl AnMaid {
-    /// An instance of AnMaid can be created by invoking the new()
-    /// Default contructed AnMaid instance is returned
-    pub fn new() -> AnMaid {
+impl Revocation {
+    /// An instance of Revocation can be created by invoking the new()
+    /// Default contructed Revocation instance is returned
+    pub fn new<TypeTags>() -> Revocation where TypeTags: IdTypeTags {
         let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
-
-        AnMaid {
-            type_tag: 101u64,
+        let type_tags: TypeTags = unsafe { mem::uninitialized() };
+        Revocation {
+            type_tags: type_tags.type_tags(),
             public_key: pub_sign_key,
             secret_key: sec_sign_key
         }
     }
 
     /// Returns type tag
-    pub fn type_tag(&self) -> &u64 {
-        &self.type_tag
+    pub fn type_tags(&self) -> &(u64, u64, u64) {
+        &self.type_tags
     }
-    /// Returns the SecretKey of the AnMaid
+    /// Returns the SecretKey of the Revocation
     pub fn secret_key(&self) -> &crypto::sign::SecretKey {
         &self.secret_key
     }
-}
-
-impl Encodable for AnMaid {
-    fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-        CborTagEncode::new(5483_001, &(self.public_key.0.as_ref(), self.secret_key.0.as_ref())).encode(e)
+    /// Returns the PublicKey of the AnMaid
+    pub fn public_key(&self) -> &crypto::sign::PublicKey {
+        &self.public_key
+    }
+    /// Signs the data with the SecretKey of the AnMaid and recturns the Signed Data
+    pub fn sign(&self, data : &[u8]) -> Vec<u8> {
+        return crypto::sign::sign(&data, &self.secret_key)
     }
 }
 
-impl Decodable for AnMaid {
-    fn decode<D: Decoder>(d: &mut D)-> Result<AnMaid, D::Error> {
+impl Encodable for Revocation {
+    fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
+        CborTagEncode::new(5483_001,
+             &(self.type_tags, self.public_key.0.as_ref(), self.secret_key.0.as_ref())).encode(e)
+    }
+}
+
+impl Decodable for Revocation {
+    fn decode<D: Decoder>(d: &mut D)-> Result<Revocation, D::Error> {
         try!(d.read_u64());
-        let(pub_sign_vec, sec_sign_vec) : (Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
+        let(type_tags, pub_sign_vec, sec_sign_vec) : ((u64, u64, u64), Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let sec_sign_arr = convert_to_array!(sec_sign_vec, crypto::sign::SECRETKEYBYTES);
 
         if pub_sign_arr.is_none() || sec_sign_arr.is_none() {
-            return Err(d.error("Bad AnMaid size"));
+            return Err(d.error("Bad Revocation size"));
         }
 
         let pub_key = crypto::sign::PublicKey(pub_sign_arr.unwrap());
         let sec_key = crypto::sign::SecretKey(sec_sign_arr.unwrap());
-        Ok(AnMaid{ type_tag: 101u64, public_key: pub_key, secret_key: sec_key })
+        Ok(Revocation{ type_tags: type_tags, public_key: pub_key, secret_key: sec_key })
     }
 }
 
@@ -123,31 +122,31 @@ mod test {
     use rand::Rng;
     use Random;
     use sodiumoxide::crypto;
-    use super::AnMaid;
-    use RevocationIdTypeTag;
+    use super::Revocation;
+    use RevocationTag;
 
-    impl Random for AnMaid {
-        fn generate_random() -> AnMaid {
-            AnMaid::new()
+    impl Random for Revocation {
+        fn generate_random() -> Revocation {
+            Revocation::new()
         }
     }
 
     #[test]
     fn serialisation_an_maid() {
-        let obj_before = AnMaid::generate_random();
+        let obj_before = Revocation::generate_random();
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&obj_before]).unwrap();
 
         let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-        let obj_after: AnMaid = d.decode().next().unwrap().unwrap();
+        let obj_after: Revocation = d.decode().next().unwrap().unwrap();
 
         assert_eq!(obj_before, obj_after);
     }
 
     #[test]
     fn equality_assertion_an_maid() {
-        let first_obj = AnMaid::generate_random();
-        let second_obj = AnMaid::generate_random();
+        let first_obj = Revocation::generate_random();
+        let second_obj = Revocation::generate_random();
         let cloned_obj = second_obj.clone();
 
         assert!(first_obj != second_obj);
@@ -156,8 +155,8 @@ mod test {
 
     #[test]
     fn generation() {
-        let maid1 = AnMaid::generate_random();
-        let maid2 = AnMaid::generate_random();
+        let maid1 = Revocation::generate_random();
+        let maid2 = Revocation::generate_random();
         let maid2_clone = maid2.clone();
 
         assert_eq!(maid2, maid2_clone);

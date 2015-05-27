@@ -19,49 +19,43 @@ use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
-use super::an_maid::*;
+use super::revocation_type::*;
 use std::cmp;
 use std::fmt;
-use IdTypeTag;
-use RevocationIdTypeTag;
+use IdTypeTags;
 
-/// Maid
+/// IdType
 ///
 /// #Examples
 /// ```
-/// use maidsafe_types::{Maid, AnMaid};
-/// // Creating new Maid
-/// let maid: Maid  = Maid::new(&AnMaid::new());
+/// use maidsafe_types::{IdType, AnMaid};
+/// // Creating new IdType
+/// let maid: IdType  = IdType::new(&AnMaid::new());
 ///
 /// ```
 #[derive(Clone)]
-pub struct Maid {
+pub struct IdType {
     type_tag: u64,
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
     secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
 }
 
-impl IdTypeTag for Maid {
-    /// returns tag type
-    fn public_id_type_tag(&self) -> u64 { 106 }
-    /// Returns the PublicKeys
-    fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
-        &self.public_keys
-    }
-}
-
-impl Maid {
-    /// Invoked to create an instance of Maid
-    /// Symmetric public and secret keys of AnMaid and used to construct the Maid
-    pub fn new(an_maid: &AnMaid) -> Maid {
+impl IdType {
+    /// Invoked to create an instance of IdType
+    pub fn new(revocation_id: &Revocation) -> IdType {
         let asym_keys = crypto::asymmetricbox::gen_keypair();
+        let signing_keys = crypto::sign::gen_keypair();
 
-        Maid {
-            type_tag: 103u64,
-            public_keys: (an_maid.public_key().clone(), asym_keys.0),
-            secret_keys: (an_maid.secret_key().clone(), asym_keys.1)
+        IdType {
+            type_tag: revocation_id.type_tags().1,
+            public_keys: (signing_keys.0, asym_keys.0),
+            secret_keys: (signing_keys.1, asym_keys.1)
         }
     }
+    /// Returns the PublicKeys
+    pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
+        &self.public_keys
+    }    
     /// Signs the data with the SecretKey and returns the Signed data
     pub fn sign(&self, data : &[u8]) -> Vec<u8> {
         return crypto::sign::sign(&data, &self.secret_keys.0)
@@ -82,8 +76,8 @@ impl Maid {
     }
 }
 
-impl cmp::PartialEq for Maid {
-    fn eq(&self, other: &Maid) -> bool {
+impl cmp::PartialEq for IdType {
+    fn eq(&self, other: &IdType) -> bool {
         // Private keys are mathematically linked, so just check public keys
         &self.type_tag == &other.type_tag &&
         slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
@@ -91,13 +85,13 @@ impl cmp::PartialEq for Maid {
     }
 }
 
-impl fmt::Debug for Maid {
+impl fmt::Debug for IdType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Maid {{ type_tag:{}, public_keys: ({:?}, {:?}) }}", self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec())
+        write!(f, "IdType {{ type_tag:{}, public_keys: ({:?}, {:?}) }}", self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec())
     }
 }
 
-impl Encodable for Maid {
+impl Encodable for IdType {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
         let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
         let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
@@ -110,8 +104,8 @@ impl Encodable for Maid {
     }
 }
 
-impl Decodable for Maid {
-    fn decode<D: Decoder>(d: &mut D)-> Result<Maid, D::Error> {
+impl Decodable for IdType {
+    fn decode<D: Decoder>(d: &mut D)-> Result<IdType, D::Error> {
         try!(d.read_u64());
         let (pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
 
@@ -121,14 +115,14 @@ impl Decodable for Maid {
         let sec_asym_arr = convert_to_array!(sec_asym_vec, crypto::asymmetricbox::SECRETKEYBYTES);
 
         if pub_sign_arr.is_none() || pub_asym_arr.is_none() || sec_sign_arr.is_none() || sec_asym_arr.is_none() {
-            return Err(d.error("Bad Maid size"));
+            return Err(d.error("Bad IdType size"));
         }
 
         let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
                         crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
         let sec_keys = (crypto::sign::SecretKey(sec_sign_arr.unwrap()),
                         crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap()));
-        Ok(Maid{ type_tag: 103u64, public_keys: pub_keys, secret_keys: sec_keys })
+        Ok(IdType{ type_tag: 103u64, public_keys: pub_keys, secret_keys: sec_keys })
     }
 }
 
@@ -144,9 +138,9 @@ mod test {
     use IdTypeTag;
     use RevocationIdTypeTag;
 
-    impl Random for Maid {
+    impl Random for IdType {
         fn generate_random() -> Maid {
-            Maid::new(&AnMaid::new())
+            IdType::new(&AnMaid::new())
         }
     }
 
@@ -159,7 +153,7 @@ mod test {
         e.encode(&[&obj_before]).unwrap();
 
         let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-        let obj_after: Maid = d.decode().next().unwrap().unwrap();
+        let obj_after: IdType = d.decode().next().unwrap().unwrap();
 
         let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.public_keys();
         let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.public_keys();
@@ -174,8 +168,8 @@ mod test {
 
 #[test]
     fn generation() {
-        let maid1 = Maid::generate_random();
-        let maid2 = Maid::generate_random();
+        let maid1 = IdType::generate_random();
+        let maid2 = IdType::generate_random();
         let maid2_clone = maid2.clone();
 
         assert_eq!(maid2, maid2_clone);
@@ -195,7 +189,7 @@ mod test {
             assert!(crypto::sign::verify(&sign2, &maid1.public_keys().0).is_none());
         }
         {
-            let maid3 = Maid::generate_random();
+            let maid3 = IdType::generate_random();
 
             let encrypt1 = maid1.seal(&random_bytes, &maid3.public_keys().1);
             let encrypt2 = maid2.seal(&random_bytes, &maid3.public_keys().1);

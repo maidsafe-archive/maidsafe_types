@@ -23,8 +23,9 @@ use helper::*;
 use routing::NameType;
 use routing::sendable::Sendable;
 use std::fmt;
-use IdTypeTag;
-use RevocationIdTypeTag;
+use IdTypeTags;
+use super::revocation_type::*;
+use super::id_type::*;
 
 /// PublicIdType
 ///
@@ -90,9 +91,9 @@ impl fmt::Debug for PublicIdType {
 
 impl PublicIdType {
     /// An instanstance of the PublicIdType can be created using the new()
-    pub fn new<T: IdTypeTag, R: RevocationIdTypeTag>(id_type_tag: &T, revocation_id: &R) -> PublicIdType {
-        let type_tag = id_type_tag.public_id_type_tag();
-        let public_keys = id_type_tag.public_keys().clone();
+    pub fn new(id_type: &IdType, revocation_id: &Revocation) -> PublicIdType {
+        let type_tag = revocation_id.type_tags().2;
+        let public_keys = id_type.public_keys().clone();
         let revocation_public_key = revocation_id.public_key();
         let combined_iter = (public_keys.0).0.into_iter().chain((public_keys.1).0.into_iter().chain(revocation_public_key.0.into_iter()));
         let mut combined: Vec<u8> = Vec::new();
