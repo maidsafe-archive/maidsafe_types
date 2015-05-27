@@ -175,6 +175,7 @@ mod test {
     use Random;
     use super::super::{ IdType, RevocationType };
     use MaidTypeTags;
+    use MpidTypeTags;
 
     impl Random for PublicIdType {
         fn generate_random() -> PublicIdType {
@@ -184,15 +185,12 @@ mod test {
         }
     }
 
-// #[test]
-    // fn create_public_mpid() {
-    //     let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
-    //     let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
-    //     let mpid = Mpid::new((sign_pub_key.clone(), asym_pub_key.clone()),(sign_sec_key.clone(), asym_sec_key.clone()));
-    //     let an_mpid = AnMpid::new((sign_pub_key, asym_pub_key),(sign_sec_key, asym_sec_key));
-    //     PublicIdType::new(&mpid, &an_mpid);
-    // } Vital
-
+#[test]
+    fn create_public_mpid() {
+        let revocation_mpid = RevocationType::new::<MpidTypeTags>();
+        let mpid = IdType::new(&revocation_mpid);
+        PublicIdType::new(&mpid, &revocation_mpid);
+    }
 
 #[test]
     fn serialisation_public_maid() {
