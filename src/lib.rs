@@ -44,7 +44,6 @@ pub mod id;
 /// Holds the structs related to data such as ImmutableData and StructuredData
 pub mod data;
 
-// pub use id::{Maid, Mpid, AnMaid, AnMpid, PublicIdType};
 pub use id::{RevocationIdType, IdType, PublicIdType};
 pub use data::{ImmutableData, StructuredData};
 
@@ -77,11 +76,11 @@ impl IdTypeTags for MaidTypeTags {
 }
 
 impl IdTypeTags for MpidTypeTags {
-    /// returns tag type for AnMaid type
+    /// returns tag type for AnMpid type
     fn revocation_id_type_tag(&self) -> u64 { 102 }
-    /// returns tag type for Maid type
+    /// returns tag type for Mpid type
     fn id_type_tag(&self) -> u64 { 202 }
-    /// returns tag type for PublicMaid type
+    /// returns tag type for PublicMpid type
     fn public_id_type_tag(&self) -> u64 { 302 }
 }
 
