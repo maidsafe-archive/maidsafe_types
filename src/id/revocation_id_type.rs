@@ -26,26 +26,26 @@ use std::mem;
 /// The following key types use the internal cbor tag to identify them and this
 /// should be carried through to any json representation if stored on disk
 ///
-/// RevocationType
+/// RevocationIdType
 ///
 /// #Examples
 /// ```
 /// extern crate sodiumoxide;
 /// extern crate maidsafe_types;
 /// // Generating public and secret keys using sodiumoxide
-/// // Create RevocationType
-/// let an_maid : maidsafe_types::RevocationType = maidsafe_types::RevocationType::new::<maidsafe_types::MaidTypeTags>();
+/// // Create RevocationIdType
+/// let an_maid : maidsafe_types::RevocationIdType = maidsafe_types::RevocationIdType::new::<maidsafe_types::MaidTypeTags>();
 /// ```
 ///
 #[derive(Clone)]
-pub struct RevocationType {
+pub struct RevocationIdType {
     type_tags: (u64, u64, u64),
     public_key: crypto::sign::PublicKey,
     secret_key: crypto::sign::SecretKey
 }
 
-impl PartialEq for RevocationType {
-    fn eq(&self, other: &RevocationType) -> bool {
+impl PartialEq for RevocationIdType {
+    fn eq(&self, other: &RevocationIdType) -> bool {
         // Private key is mathematically linked, so just check public key
         &self.type_tags == &other.type_tags &&
         slice_equal(&self.public_key.0, &other.public_key.0)
@@ -53,20 +53,20 @@ impl PartialEq for RevocationType {
 }
 
 
-impl fmt::Debug for RevocationType {
+impl fmt::Debug for RevocationIdType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let crypto::sign::PublicKey(ref public_key) = self.public_key;
-        write!(f, "RevocationType( type_tags:{:?}, public_key: {:?} )", self.type_tags, public_key)
+        write!(f, "RevocationIdType( type_tags:{:?}, public_key: {:?} )", self.type_tags, public_key)
     }
 }
 
-impl RevocationType {
-    /// An instance of RevocationType can be created by invoking the new()
-    /// Default contructed RevocationType instance is returned
-    pub fn new<TypeTags>() -> RevocationType where TypeTags: IdTypeTags {
+impl RevocationIdType {
+    /// An instance of RevocationIdType can be created by invoking the new()
+    /// Default contructed RevocationIdType instance is returned
+    pub fn new<TypeTags>() -> RevocationIdType where TypeTags: IdTypeTags {
         let (pub_sign_key, sec_sign_key) = crypto::sign::gen_keypair();
         let type_tags: TypeTags = unsafe { mem::uninitialized() };
-        RevocationType {
+        RevocationIdType {
             type_tags: type_tags.type_tags(),
             public_key: pub_sign_key,
             secret_key: sec_sign_key
@@ -77,7 +77,7 @@ impl RevocationType {
     pub fn type_tags(&self) -> &(u64, u64, u64) {
         &self.type_tags
     }
-    /// Returns the SecretKey of the RevocationType
+    /// Returns the SecretKey of the RevocationIdType
     pub fn secret_key(&self) -> &crypto::sign::SecretKey {
         &self.secret_key
     }
@@ -103,7 +103,7 @@ fn convert_to_u64(num_vec: Vec<u8>) -> u64 {
      }
 }
 
-impl Encodable for RevocationType {
+impl Encodable for RevocationIdType {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
         let revocation_type_tag_vec = self.type_tags.0.to_string().into_bytes();
         let id_type_tag_vec = self.type_tags.1.to_string().into_bytes();
@@ -116,20 +116,20 @@ impl Encodable for RevocationType {
     }
 }
 
-impl Decodable for RevocationType {
-    fn decode<D: Decoder>(d: &mut D)-> Result<RevocationType, D::Error> {
+impl Decodable for RevocationIdType {
+    fn decode<D: Decoder>(d: &mut D)-> Result<RevocationIdType, D::Error> {
         try!(d.read_u64());
         let(revocation_type_tag_vec, id_type_tag_vec, public_id_type_tag_vec , pub_sign_vec, sec_sign_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let sec_sign_arr = convert_to_array!(sec_sign_vec, crypto::sign::SECRETKEYBYTES);
 
         if pub_sign_arr.is_none() || sec_sign_arr.is_none() {
-            return Err(d.error("Bad RevocationType size"));
+            return Err(d.error("Bad RevocationIdType size"));
         }
 
         let pub_key = crypto::sign::PublicKey(pub_sign_arr.unwrap());
         let sec_key = crypto::sign::SecretKey(sec_sign_arr.unwrap());
-        Ok(RevocationType{ type_tags: (convert_to_u64(revocation_type_tag_vec),
+        Ok(RevocationIdType{ type_tags: (convert_to_u64(revocation_type_tag_vec),
              convert_to_u64(id_type_tag_vec), convert_to_u64(public_id_type_tag_vec)),
              public_key: pub_key, secret_key: sec_key })
     }
@@ -142,37 +142,37 @@ mod test {
     use rand::Rng;
     use Random;
     use sodiumoxide::crypto;
-    use super::RevocationType;
+    use super::RevocationIdType;
     use MaidTypeTags;
     use MpidTypeTags;
 
-    impl Random for RevocationType {
-        fn generate_random() -> RevocationType {
-            RevocationType::new::<MaidTypeTags>()
+    impl Random for RevocationIdType {
+        fn generate_random() -> RevocationIdType {
+            RevocationIdType::new::<MaidTypeTags>()
         }
     }
 
 #[test]
     fn create_an_mpid() {
-        let _ = RevocationType::new::<MpidTypeTags>();
+        let _ = RevocationIdType::new::<MpidTypeTags>();
     }
 
 #[test]
     fn serialisation_an_maid() {
-        let obj_before = RevocationType::generate_random();
+        let obj_before = RevocationIdType::generate_random();
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&obj_before]).unwrap();
 
         let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-        let obj_after: RevocationType = d.decode().next().unwrap().unwrap();
+        let obj_after: RevocationIdType = d.decode().next().unwrap().unwrap();
 
         assert_eq!(obj_before, obj_after);
     }
 
 #[test]
     fn equality_assertion_an_maid() {
-        let first_obj = RevocationType::generate_random();
-        let second_obj = RevocationType::generate_random();
+        let first_obj = RevocationIdType::generate_random();
+        let second_obj = RevocationIdType::generate_random();
         let cloned_obj = second_obj.clone();
 
         assert!(first_obj != second_obj);
@@ -181,8 +181,8 @@ mod test {
 
 #[test]
     fn generation() {
-        let maid1 = RevocationType::generate_random();
-        let maid2 = RevocationType::generate_random();
+        let maid1 = RevocationIdType::generate_random();
+        let maid2 = RevocationIdType::generate_random();
         let maid2_clone = maid2.clone();
 
         assert_eq!(maid2, maid2_clone);

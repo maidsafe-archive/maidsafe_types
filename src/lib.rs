@@ -45,7 +45,7 @@ pub mod id;
 pub mod data;
 
 // pub use id::{Maid, Mpid, AnMaid, AnMpid, PublicIdType};
-pub use id::{RevocationType, IdType, PublicIdType};
+pub use id::{RevocationIdType, IdType, PublicIdType};
 pub use data::{ImmutableData, StructuredData};
 
 use cbor::CborTagEncode;

@@ -19,7 +19,7 @@ use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
-use super::revocation_type::*;
+use super::revocation_id_type::*;
 use std::cmp;
 use std::fmt;
 use IdTypeTags;
@@ -28,9 +28,9 @@ use IdTypeTags;
 ///
 /// #Examples
 /// ```
-/// use maidsafe_types::{IdType, RevocationType, MaidTypeTags};
+/// use maidsafe_types::{IdType, RevocationIdType, MaidTypeTags};
 /// // Creating new IdType
-/// let maid: IdType  = IdType::new(&RevocationType::new::<MaidTypeTags>());
+/// let maid: IdType  = IdType::new(&RevocationIdType::new::<MaidTypeTags>());
 ///
 /// ```
 #[derive(Clone)]
@@ -42,7 +42,7 @@ pub struct IdType {
 
 impl IdType {
     /// Invoked to create an instance of IdType
-    pub fn new(revocation_id: &RevocationType) -> IdType {
+    pub fn new(revocation_id: &RevocationIdType) -> IdType {
         let asym_keys = crypto::asymmetricbox::gen_keypair();
         let signing_keys = crypto::sign::gen_keypair();
 
@@ -130,7 +130,7 @@ impl Decodable for IdType {
 mod test {
     use super::*;
     use cbor;
-    use super::super::RevocationType;
+    use super::super::RevocationIdType;
     use sodiumoxide::crypto;
     use Random;
     use rand;
@@ -139,7 +139,7 @@ mod test {
 
     impl Random for IdType {
         fn generate_random() -> IdType {
-            IdType::new(&RevocationType::new::<MaidTypeTags>())
+            IdType::new(&RevocationIdType::new::<MaidTypeTags>())
         }
     }
 

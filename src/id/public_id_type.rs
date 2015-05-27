@@ -24,7 +24,7 @@ use routing::NameType;
 use routing::sendable::Sendable;
 use std::fmt;
 use IdTypeTags;
-use super::revocation_type::*;
+use super::revocation_id_type::*;
 use super::id_type::*;
 
 /// PublicIdType
@@ -32,9 +32,9 @@ use super::id_type::*;
 /// #Examples
 ///
 /// ```
-/// use maidsafe_types::{IdType, RevocationType, MaidTypeTags, PublicIdType};
+/// use maidsafe_types::{IdType, RevocationIdType, MaidTypeTags, PublicIdType};
 ///
-///  let revocation_maid = RevocationType::new::<maidsafe_types::MaidTypeTags>();
+///  let revocation_maid = RevocationIdType::new::<maidsafe_types::MaidTypeTags>();
 ///  let maid = IdType::new(&revocation_maid);
 ///  let public_maid  = PublicIdType::new(&maid, &revocation_maid);
 /// ```
@@ -89,7 +89,7 @@ impl fmt::Debug for PublicIdType {
 
 impl PublicIdType {
     /// An instanstance of the PublicIdType can be created using the new()
-    pub fn new(id_type: &IdType, revocation_id: &RevocationType) -> PublicIdType {
+    pub fn new(id_type: &IdType, revocation_id: &RevocationIdType) -> PublicIdType {
         let type_tag = revocation_id.type_tags().2;
         let public_keys = id_type.public_keys().clone();
         let revocation_public_key = revocation_id.public_key();
@@ -173,13 +173,13 @@ mod test {
     use super::*;
     use cbor;
     use Random;
-    use super::super::{ IdType, RevocationType };
+    use super::super::{ IdType, RevocationIdType };
     use MaidTypeTags;
     use MpidTypeTags;
 
     impl Random for PublicIdType {
         fn generate_random() -> PublicIdType {
-            let revocation_maid = RevocationType::new::<MaidTypeTags>();
+            let revocation_maid = RevocationIdType::new::<MaidTypeTags>();
             let maid = IdType::new(&revocation_maid);
             PublicIdType::new(&maid, &revocation_maid)
         }
@@ -187,7 +187,7 @@ mod test {
 
 #[test]
     fn create_public_mpid() {
-        let revocation_mpid = RevocationType::new::<MpidTypeTags>();
+        let revocation_mpid = RevocationIdType::new::<MpidTypeTags>();
         let mpid = IdType::new(&revocation_mpid);
         PublicIdType::new(&mpid, &revocation_mpid);
     }
