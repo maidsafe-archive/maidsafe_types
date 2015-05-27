@@ -94,8 +94,10 @@ impl Encodable for IdType {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
         let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
         let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
+        let type_vec = self.type_tag.to_string().into_bytes();
 
         CborTagEncode::new(5483_001, &(
+            type_vec,
             pub_sign_vec.as_ref(),
             pub_asym_vec.as_ref(),
             sec_sign_vec.as_ref(),
@@ -106,8 +108,7 @@ impl Encodable for IdType {
 impl Decodable for IdType {
     fn decode<D: Decoder>(d: &mut D)-> Result<IdType, D::Error> {
         try!(d.read_u64());
-        let (pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
-
+        let (tag_type_vec, pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
         let sec_sign_arr = convert_to_array!(sec_sign_vec, crypto::sign::SECRETKEYBYTES);
@@ -117,11 +118,19 @@ impl Decodable for IdType {
             return Err(d.error("Bad IdType size"));
         }
 
-        let pub_keys = (crypto::sign::PublicKey(pub_sign_arr.unwrap()),
-                        crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap()));
-        let sec_keys = (crypto::sign::SecretKey(sec_sign_arr.unwrap()),
-                        crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap()));
-        Ok(IdType{ type_tag: 103u64, public_keys: pub_keys, secret_keys: sec_keys })
+        let type_tag: u64 = match String::from_utf8(tag_type_vec) {
+            Ok(string) =>  {
+                match string.parse::<u64>() {
+                    Ok(type_tag) => type_tag,
+                    Err(_) => return Err(d.error("Bad Tag Type"))
+                }
+            },
+            Err(_) => return Err(d.error("Bad Tag Type"))
+        };
+
+        Ok(IdType{ type_tag: type_tag,
+            public_keys:(crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
+            secret_keys: (crypto::sign::SecretKey(sec_sign_arr.unwrap()), crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap())) })
     }
 }
 
