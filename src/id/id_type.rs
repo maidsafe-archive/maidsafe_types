@@ -22,6 +22,7 @@ use helper::*;
 use super::revocation_id_type::*;
 use std::cmp;
 use std::fmt;
+use routing::NameType;
 
 /// IdType
 ///
@@ -51,9 +52,25 @@ impl IdType {
             secret_keys: (signing_keys.1, asym_keys.1)
         }
     }
+    /// Returns name
+    pub fn name(&self) -> NameType {
+        let combined_iter = (&self.public_keys.0).0.into_iter().chain((&self.public_keys.1).0.into_iter());
+        let mut combined: Vec<u8> = Vec::new();
+        for iter in combined_iter {
+            combined.push(*iter);
+        }
+        for i in self.type_tag.to_string().into_bytes().into_iter() {
+            combined.push(i);
+        }
+        NameType(crypto::hash::sha512::hash(&combined).0)
+    }
     /// Returns the PublicKeys
     pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
         &self.public_keys
+    }
+    /// Returns the PublicKeys
+    pub fn secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
+        &self.secret_keys
     }
     /// Signs the data with the SecretKey and returns the Signed data
     pub fn sign(&self, data : &[u8]) -> Vec<u8> {

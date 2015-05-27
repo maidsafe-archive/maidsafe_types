@@ -22,6 +22,7 @@ use helper::*;
 use std::fmt;
 use IdTypeTags;
 use std::mem;
+use routing::NameType;
 
 /// The following key types use the internal cbor tag to identify them and this
 /// should be carried through to any json representation if stored on disk
@@ -71,6 +72,19 @@ impl RevocationIdType {
             public_key: pub_sign_key,
             secret_key: sec_sign_key
         }
+    }
+
+    /// Returns name
+    pub fn name(&self) -> NameType {
+        let combined_iter = self.public_key.0.into_iter();
+        let mut combined: Vec<u8> = Vec::new();
+        for iter in combined_iter {
+            combined.push(*iter);
+        }
+        for i in self.type_tags.0.to_string().into_bytes().into_iter() {
+            combined.push(i);
+        }
+        NameType(crypto::hash::sha512::hash(&combined).0)
     }
 
     /// Returns type tags

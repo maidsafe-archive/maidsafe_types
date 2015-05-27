@@ -48,7 +48,7 @@ pub struct PublicIdType {
 
 impl Sendable for PublicIdType {
     fn name(&self) -> NameType {
-        name(&self.public_keys, self.type_tag.clone(), Some(self.signature.clone()))
+        name(&self.public_keys, self.type_tag.clone(), &self.signature)
     }
 
     fn type_tag(&self)->u64 {
