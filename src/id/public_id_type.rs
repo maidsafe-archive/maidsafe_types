@@ -23,8 +23,9 @@ use helper::*;
 use routing::NameType;
 use routing::sendable::Sendable;
 use std::fmt;
-use std::mem;
-use TypeTag;
+use IdTypeTags;
+use super::revocation_type::*;
+use super::id_type::*;
 
 /// PublicIdType
 ///
@@ -35,33 +36,9 @@ use TypeTag;
 /// extern crate maidsafe_types;
 /// extern crate routing;
 ///
-/// // Generating sign and asymmetricbox keypairs,
-/// let (pub_sign_key, _) = sodiumoxide::crypto::sign::gen_keypair(); // returns (PublicKey, SecretKey)
-/// let (pub_asym_key, _) = sodiumoxide::crypto::asymmetricbox::gen_keypair();
-/// let (revocation_public_key, _) = sodiumoxide::crypto::sign::gen_keypair();
-///
-/// // Creating new PublicIdType
-/// let public_maid  = maidsafe_types::PublicIdType::new::<maidsafe_types::PublicMaidTypeTag>((pub_sign_key, pub_asym_key),
-///                     revocation_public_key,
-///                     sodiumoxide::crypto::sign::Signature([2u8; 64]),
-///                     routing::NameType([8u8; 64]),
-///                     sodiumoxide::crypto::sign::Signature([5u8; 64]));
-///
-/// // getting PublicIdType::public_keys
-/// let &(pub_sign, pub_asym) = public_maid.public_keys();
-///
-/// // getting PublicIdType::revocation public key
-/// let revocation_public_key: &sodiumoxide::crypto::sign::PublicKey = public_maid.revocation_public_key();
-///
-/// // getting PublicIdType::mpid_signature
-/// let maid_signature: &sodiumoxide::crypto::sign::Signature = public_maid.maid_signature();
-///
-/// // getting PublicIdType::owner
-/// let owner: &routing::NameType = public_maid.owner();
-///
-/// // getting PublicIdType::signature
-/// let signature: &sodiumoxide::crypto::sign::Signature = public_maid.signature();
-///
+///  let an_maid = maidsafe_types::AnMaid::new();
+///  let maid = maidsafe_types::Maid::new(&an_maid);
+///  let public_maid  = maidsafe_types::PublicIdType::new(&maid, &an_maid);
 /// ```
 
 #[derive(Clone)]
@@ -69,14 +46,12 @@ pub struct PublicIdType {
     type_tag: u64,
     public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
     revocation_public_key: crypto::sign::PublicKey,
-    maid_signature: crypto::sign::Signature,
-    owner: NameType,
     signature: crypto::sign::Signature
 }
 
 impl Sendable for PublicIdType {
     fn name(&self) -> NameType {
-        name(&self.public_keys)
+        name(&self.public_keys, self.type_tag.clone(), Some(self.signature.clone()))
     }
 
     fn type_tag(&self)->u64 {
@@ -87,10 +62,6 @@ impl Sendable for PublicIdType {
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[&self]).unwrap();
         e.into_bytes()
-    }
-
-    fn owner(&self) -> Option<NameType> {
-        Some(self.owner.clone())
     }
 
     fn refresh(&self)->bool {
@@ -106,29 +77,38 @@ impl PartialEq for PublicIdType {
         slice_equal(&self.public_keys.0 .0, &other.public_keys.0 .0) &&
         slice_equal(&self.public_keys.1 .0, &other.public_keys.1 .0) &&
         slice_equal(&self.revocation_public_key.0, &other.revocation_public_key.0) &&
-        slice_equal(&self.maid_signature.0, &other.maid_signature.0) &&
         slice_equal(&self.signature.0, &other.signature.0)
     }
 }
 
 impl fmt::Debug for PublicIdType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "PublicIdType {{ type_tag:{}, public_keys:({:?}, {:?}), revocation_public_key:{:?}, maid_signature:{:?}, owner:{:?}, signature:{:?}}}",
+        write!(f, "PublicIdType {{ type_tag:{}, public_keys:({:?}, {:?}), revocation_public_key:{:?}, signature:{:?}}}",
             self.type_tag, self.public_keys.0 .0.to_vec(), self.public_keys.1 .0.to_vec(), self.revocation_public_key.0.to_vec(),
-            self.maid_signature.0.to_vec(), self.owner, self.signature.0.to_vec())
+            self.signature.0.to_vec())
     }
 }
 
 impl PublicIdType {
     /// An instanstance of the PublicIdType can be created using the new()
-    pub fn new<T: TypeTag>(public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-                        revocation_public_key: crypto::sign::PublicKey,
-                        maid_signature: crypto::sign::Signature,
-                        owner: NameType,
-                        signature: crypto::sign::Signature) -> PublicIdType {
-        let type_tag: T = unsafe { mem::uninitialized() };
-        PublicIdType {type_tag: type_tag.tag_type(), public_keys: public_keys, revocation_public_key: revocation_public_key,
-             maid_signature: maid_signature, owner: owner, signature: signature }
+    pub fn new(id_type: &IdType, revocation_id: &Revocation) -> PublicIdType {
+        let type_tag = revocation_id.type_tags().2;
+        let public_keys = id_type.public_keys().clone();
+        let revocation_public_key = revocation_id.public_key();
+        let combined_iter = (public_keys.0).0.into_iter().chain((public_keys.1).0.into_iter().chain(revocation_public_key.0.into_iter()));
+        let mut combined: Vec<u8> = Vec::new();
+        for iter in combined_iter {
+            combined.push(*iter);
+        }
+        for i in type_tag.to_string().into_bytes().into_iter() {
+            combined.push(i);
+        }
+        let message_length = combined.len();
+        let signature = revocation_id.sign(&combined).into_iter().skip(message_length).collect::<Vec<_>>();
+        let signature_arr = convert_to_array!(signature, crypto::sign::SIGNATUREBYTES);
+        PublicIdType { type_tag: type_tag, public_keys: public_keys,
+             revocation_public_key: revocation_id.public_key().clone(),
+             signature: crypto::sign::Signature(signature_arr.unwrap()) }
     }
     /// Returns the PublicKeys
     pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
@@ -137,14 +117,6 @@ impl PublicIdType {
     /// Returns revocation public key
     pub fn revocation_public_key(&self) -> &crypto::sign::PublicKey {
         &self.revocation_public_key
-    }
-    /// Returns the Maid Signature
-    pub fn maid_signature(&self) -> &crypto::sign::Signature {
-        &self.maid_signature
-    }
-    /// Returns the Owner
-    pub fn owner(&self) -> &NameType {
-        &self.owner
     }
     /// Returns the Signature of PublicIdType
     pub fn signature(&self) -> &crypto::sign::Signature {
@@ -156,7 +128,6 @@ impl Encodable for PublicIdType {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
         let (crypto::sign::PublicKey(ref pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
         let crypto::sign::PublicKey(ref revocation_public_key_vec) = self.revocation_public_key;
-        let crypto::sign::Signature(ref maid_signature) = self.maid_signature;
         let crypto::sign::Signature(ref signature) = self.signature;
         let type_vec = self.type_tag.to_string().into_bytes();
         CborTagEncode::new(5483_001, &(
@@ -164,8 +135,6 @@ impl Encodable for PublicIdType {
             pub_sign_vec.as_ref(),
             pub_asym_vec.as_ref(),
             revocation_public_key_vec.as_ref(),
-            maid_signature.as_ref(),
-            &self.owner,
             signature.as_ref())).encode(e)
     }
 }
@@ -173,19 +142,17 @@ impl Encodable for PublicIdType {
 impl Decodable for PublicIdType {
     fn decode<D: Decoder>(d: &mut D)-> Result<PublicIdType, D::Error> {
     try!(d.read_u64());
-    let (tag_type_vec, pub_sign_vec, pub_asym_vec, revocation_public_key_vec, maid_signature_vec, owner, signature_vec): (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, NameType, Vec<u8>) = try!(Decodable::decode(d));
+    let (tag_type_vec, pub_sign_vec, pub_asym_vec, revocation_public_key_vec, signature_vec): (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
     let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
     let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
     let revocation_public_key_arr = convert_to_array!(revocation_public_key_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
-    let maid_signature_arr = convert_to_array!(maid_signature_vec, crypto::sign::SIGNATUREBYTES);
     let signature_arr = convert_to_array!(signature_vec, crypto::sign::SIGNATUREBYTES);
 
     if pub_sign_arr.is_none() || pub_asym_arr.is_none() || revocation_public_key_arr.is_none()
-        || maid_signature_arr.is_none() || signature_arr.is_none() {
+        || signature_arr.is_none() {
              return Err(d.error("Bad PublicIdType size"));
     }
 
-    ;
     let type_tag: u64 = match String::from_utf8(tag_type_vec) {
         Ok(string) =>  {
             match string.parse::<u64>() {
@@ -199,8 +166,6 @@ impl Decodable for PublicIdType {
     Ok(PublicIdType{ type_tag: type_tag,
         public_keys: (crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
         revocation_public_key: crypto::sign::PublicKey(revocation_public_key_arr.unwrap()),
-        maid_signature: crypto::sign::Signature(maid_signature_arr.unwrap()),
-        owner: owner,
         signature: crypto::sign::Signature(signature_arr.unwrap())})
     }
 }
@@ -209,33 +174,27 @@ impl Decodable for PublicIdType {
 mod test {
     use super::*;
     use cbor;
-    use sodiumoxide::crypto;
-    use routing;
     use Random;
-    use rand;
-    use std::mem;
-    use PublicMaidTypeTag;
+    use super::super::{AnMaid, Maid, AnMpid, Mpid};
+    use sodiumoxide::crypto;
 
     impl Random for PublicIdType {
         fn generate_random() -> PublicIdType {
-            let (sign_pub_key, _) = crypto::sign::gen_keypair();
-            let (asym_pub_key, _) = crypto::asymmetricbox::gen_keypair();
-            let (revocation_public_key, _) = crypto::sign::gen_keypair();
-            let mut maid_signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
-            let mut signature_arr: [u8; 64] = unsafe { mem::uninitialized() };
-            for i in 0..64 {
-                maid_signature_arr[i] = rand::random::<u8>();
-                signature_arr[i] = rand::random::<u8>();
-            }
-
-            PublicIdType::new::<PublicMaidTypeTag>(
-                (sign_pub_key, asym_pub_key),
-                revocation_public_key,
-                crypto::sign::Signature(maid_signature_arr),
-                routing::test_utils::Random::generate_random(),
-                crypto::sign::Signature(signature_arr))
+            let an_maid = AnMaid::new();
+            let maid = Maid::new(&an_maid);
+            PublicIdType::new(&maid, &an_maid)
         }
     }
+
+#[test]
+    fn create_public_mpid() {
+        let (sign_pub_key, sign_sec_key) = crypto::sign::gen_keypair();
+        let (asym_pub_key, asym_sec_key) = crypto::asymmetricbox::gen_keypair();
+        let mpid = Mpid::new((sign_pub_key.clone(), asym_pub_key.clone()),(sign_sec_key.clone(), asym_sec_key.clone()));
+        let an_mpid = AnMpid::new((sign_pub_key, asym_pub_key),(sign_sec_key, asym_sec_key));
+        PublicIdType::new(&mpid, &an_mpid);
+    }
+
 
 #[test]
     fn serialisation_public_maid() {

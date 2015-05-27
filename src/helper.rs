@@ -55,13 +55,25 @@ macro_rules! convert_to_array {
 ///
 /// Calculate and returns NameType using Public signing & encryption kets
 ///
-pub fn name(public_keys: &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey)) -> NameType {
+pub fn name(public_keys: &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), type_tag: u64,
+    signature: Option<crypto::sign::Signature>) -> NameType {
     let combined_iter = (public_keys.0).0.into_iter().chain((public_keys.1).0.into_iter());
     let mut combined: Vec<u8> = Vec::new();
     for iter in combined_iter {
         combined.push(*iter);
     }
-    NameType(crypto::hash::sha512::hash(&combined).0)
+    for i in type_tag.to_string().into_bytes().into_iter() {
+        combined.push(i);
+    }
+    match signature {
+        Some(signature) => {
+            for i in 1..crypto::sign::SIGNATUREBYTES {
+                combined.push(signature.0[i - 1]);
+            }
+            NameType(crypto::hash::sha512::hash(&combined).0)
+        },
+        None => NameType(crypto::hash::sha512::hash(&combined).0)
+    }
 }
 
 #[cfg(test)]
