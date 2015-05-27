@@ -50,8 +50,8 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
   - [ ] [MAID-1058](https://maidsafe.atlassian.net/browse/MAID-1058) Change tests to reflect the above task
 - [ ] Modifications to Id types
   - [] [MAID-1029](https://maidsafe.atlassian.net/browse/MAID-1029) Remove name from types to enhance type invariance
-  - [] [MAID-1035](https://maidsafe.atlassian.net/browse/MAID-1035) Add a member of signature type to Id types. The signature in pure keys is sign_using_own_private_key(public keys + type tag). And in dependent keys, is sign_using_owner_private_key(public keys + owner public key + type tag)
-  - [] [MAID-1041](https://maidsafe.atlassian.net/browse/MAID-1041) Remove maid_signature and mpid_signature from PublicMaid and PublicAnMaid
+  - [ ] [MAID-1035](https://maidsafe.atlassian.net/browse/MAID-1035) Add a member of signature type to Id types. The signature in pure keys is sign_using_own_private_key(public keys + type tag). And in dependent keys, is sign_using_owner_private_key(public keys + owner public key + type tag)
+  - [ ] [MAID-1041](https://maidsafe.atlassian.net/browse/MAID-1041) Remove maid_signature and mpid_signature from PublicMaid and PublicAnMaid
 
 - [X] [MAID-1115] (https://maidsafe.atlassian.net/browse/MAID-1115) Update StructuredData
 - [ ] [MAID-1116] (https://maidsafe.atlassian.net/browse/MAID-1116) Create 2 new ImmutableData types
