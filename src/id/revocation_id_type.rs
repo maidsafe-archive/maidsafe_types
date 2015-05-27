@@ -39,7 +39,7 @@ use std::mem;
 ///
 #[derive(Clone)]
 pub struct RevocationIdType {
-    type_tags: (u64, u64, u64),
+    type_tags: (u64, u64, u64),  // type tags for revocation, id and public ids
     public_key: crypto::sign::PublicKey,
     secret_key: crypto::sign::SecretKey
 }
@@ -91,15 +91,15 @@ impl RevocationIdType {
     }
 }
 
-fn convert_to_u64(num_vec: Vec<u8>) -> u64 {
+fn convert_to_u64(num_vec: Vec<u8>) -> Option<u64> {
     match String::from_utf8(num_vec) {
          Ok(string) =>  {
              match string.parse::<u64>() {
-                 Ok(type_tag) => type_tag,
-                 Err(_) => 0u64
+                 Ok(type_tag) => Some(type_tag),
+                 Err(_) => None
              }
          },
-         Err(_) => 0u64
+         Err(_) => None
      }
 }
 
@@ -122,16 +122,19 @@ impl Decodable for RevocationIdType {
         let(revocation_type_tag_vec, id_type_tag_vec, public_id_type_tag_vec , pub_sign_vec, sec_sign_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let sec_sign_arr = convert_to_array!(sec_sign_vec, crypto::sign::SECRETKEYBYTES);
+        let (revocation_type_tag, id_type_tag, public_id_type_tag) = (
+            convert_to_u64(revocation_type_tag_vec),
+            convert_to_u64(id_type_tag_vec),
+            convert_to_u64(public_id_type_tag_vec));
 
-        if pub_sign_arr.is_none() || sec_sign_arr.is_none() {
+        if pub_sign_arr.is_none() || sec_sign_arr.is_none() || revocation_type_tag.is_none() ||
+            id_type_tag.is_none() ||  public_id_type_tag.is_none() {
             return Err(d.error("Bad RevocationIdType size"));
         }
 
-        let pub_key = crypto::sign::PublicKey(pub_sign_arr.unwrap());
-        let sec_key = crypto::sign::SecretKey(sec_sign_arr.unwrap());
-        Ok(RevocationIdType{ type_tags: (convert_to_u64(revocation_type_tag_vec),
-             convert_to_u64(id_type_tag_vec), convert_to_u64(public_id_type_tag_vec)),
-             public_key: pub_key, secret_key: sec_key })
+        Ok(RevocationIdType{ type_tags: (revocation_type_tag.unwrap(), id_type_tag.unwrap(), public_id_type_tag.unwrap()),
+             public_key: crypto::sign::PublicKey(pub_sign_arr.unwrap()),
+             secret_key: crypto::sign::SecretKey(sec_sign_arr.unwrap()) })
     }
 }
 
