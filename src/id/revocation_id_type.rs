@@ -73,9 +73,13 @@ impl RevocationIdType {
         }
     }
 
-    /// Returns type tag
+    /// Returns type tags
     pub fn type_tags(&self) -> &(u64, u64, u64) {
         &self.type_tags
+    }
+    /// Returns type tag
+    pub fn type_tag(&self) -> &u64 {
+        &self.type_tags.0
     }
     /// Returns the SecretKey of the RevocationIdType
     pub fn secret_key(&self) -> &crypto::sign::SecretKey {
