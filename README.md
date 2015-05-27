@@ -54,7 +54,7 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
   - [x] [MAID-1041](https://maidsafe.atlassian.net/browse/MAID-1041) Remove maid_signature and mpid_signature from PublicMaid and PublicAnMaid
 
 - [X] [MAID-1115] (https://maidsafe.atlassian.net/browse/MAID-1115) Update StructuredData
-- [ ] [MAID-1116] (https://maidsafe.atlassian.net/browse/MAID-1116) Create 2 new ImmutableData types
+- [x] [MAID-1116] (https://maidsafe.atlassian.net/browse/MAID-1116) Create 2 new ImmutableData types
   
 ## [0.1.5]
 - [ ] SafeCoin type
