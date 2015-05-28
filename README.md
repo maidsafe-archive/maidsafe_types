@@ -1,8 +1,6 @@
 # maidsafe_types
 
-**Primary Maintainer:**     Mahmoud Moadeli (mmoadeli@maidsafe.net)
-
-**Secondary Maintainer:**   Brian Smith (brian.smith@maidsafe.net)
+**Primary Maintainer:**     Brian Smith (brian.smith@maidsafe.net)
 
 |Crate|Linux|Windows|OSX|Coverage|
 |:------:|:-------:|:-------:|:-------:|:-------:|
