@@ -20,11 +20,22 @@ use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use routing::NameType;
 use routing::sendable::Sendable;
+use TypeTag;
+
+/// TypeTag for StructuredData
+#[derive(Clone, PartialEq, Debug)]
+pub struct StructuredDataTypeTag;
+
+impl TypeTag for StructuredDataTypeTag {
+    fn type_tag(&self) -> u64 {
+        return 100;
+    }
+}
 
 /// StructuredData
 #[derive(Clone, PartialEq, Debug)]
 pub struct StructuredData {
-    type_tag: u64,
+    type_tag: StructuredDataTypeTag,
     name: NameType,
     owner: NameType,
     value: Vec<NameType>,
@@ -35,8 +46,8 @@ impl Sendable for StructuredData {
         self.name.clone()
     }
 
-    fn type_tag(&self)->u64 {
-        self.type_tag.clone()
+    fn type_tag(&self) -> u64 {
+        self.type_tag.type_tag().clone()
     }
 
     fn serialised_contents(&self)->Vec<u8> {
@@ -59,7 +70,7 @@ impl Sendable for StructuredData {
 impl StructuredData {
     /// An instance of the StructuredData can be created by invoking the new()
     pub fn new(name: NameType, owner: NameType, value: Vec<NameType>) -> StructuredData {
-        StructuredData {type_tag: 100u64, name: name, owner: owner, value: value}
+        StructuredData {type_tag: StructuredDataTypeTag, name: name, owner: owner, value: value}
     }
 
     /// Returns the value
@@ -84,7 +95,7 @@ impl Decodable for StructuredData {
         try!(d.read_u64());
         let (name, owner, value) = try!(Decodable::decode(d));
         let structured = StructuredData {
-            type_tag: 100u64,
+            type_tag: StructuredDataTypeTag,
             name: name,
             owner: owner,
             value: value
@@ -111,7 +122,7 @@ mod test {
                 value.push(routing::test_utils::Random::generate_random());
             }
             StructuredData {
-                type_tag: 100u64,
+                type_tag: StructuredDataTypeTag,
                 name: routing::test_utils::Random::generate_random(),
                 owner: routing::test_utils::Random::generate_random(),
                 value: value,
@@ -124,6 +135,7 @@ mod test {
         let structured_data = StructuredData::generate_random();
         let data = StructuredData::new(structured_data.name(), structured_data.owner().unwrap(), structured_data.value());
         assert_eq!(data, structured_data);
+        assert_eq!(structured_data.type_tag(), 100u64);
     }
 
 #[test]
