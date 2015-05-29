@@ -43,6 +43,8 @@ pub mod helper;
 pub mod id;
 /// Holds the structs related to data such as ImmutableData/Backup/Sacrificial and StructuredData
 pub mod data;
+/// SafeCoin related details
+pub mod coin;
 
 pub use id::{RevocationIdType, IdType, PublicIdType};
 pub use data::{ImmutableData, ImmutableDataBackup, ImmutableDataSacrificial, StructuredData};
@@ -88,31 +90,6 @@ impl IdTypeTags for MpidTypeTags {
     fn id_type_tag(&self) -> u64 { 202 }
     /// returns tag type for PublicMpid type
     fn public_id_type_tag(&self) -> u64 { 302 }
-}
-
-/// TypeTag for ImmutableData
-pub struct ImmutableDataTypeTag;
-/// TypeTag for ImmutableDataBackup
-pub struct ImmutableDataBackupTypeTag;
-/// TypeTag for ImmutableDataSacrificial
-pub struct ImmutableDataSacrificialTypeTag;
-
-impl TypeTag for ImmutableDataTypeTag {
-    fn type_tag(&self) -> u64 {
-        return 101;
-    }
-}
-
-impl TypeTag for ImmutableDataBackupTypeTag {
-    fn type_tag(&self) -> u64 {
-        return 102;
-    }
-}
-
-impl TypeTag for ImmutableDataSacrificialTypeTag {
-    fn type_tag(&self) -> u64 {
-        return 103;
-    }
 }
 
 /// Random trait is used to generate random instances.
