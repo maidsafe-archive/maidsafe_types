@@ -55,9 +55,7 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 - [x] [MAID-1116] (https://maidsafe.atlassian.net/browse/MAID-1116) Create 2 new ImmutableData types
   
 ## [0.1.5]
-- [ ] SafeCoin type
-  - [ ] [MAID-1036](https://maidsafe.atlassian.net/browse/MAID-1036) add SafeCoin entry type which should have i) owners, ii) previous owners and iii) signatures created by            previous owners to verify the transaction approved by them, and iv) Type tag
-  - [ ] [MAID-1044](https://maidsafe.atlassian.net/browse/MAID-1044) Implement and test Sendable, Encodable, Decodable, PartialEq and fmt::Debug traits for SafeCoin Type
+- [ ] [MAID-1036](https://maidsafe.atlassian.net/browse/MAID-1036) Add SafeCoin type with corresponding tests
   
 - [ ] Visual presentation
   - [ ] [MAID-1047](https://maidsafe.atlassian.net/browse/MAID-1047) Provide Shona with modifications required in Types representations
