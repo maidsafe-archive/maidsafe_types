@@ -283,6 +283,8 @@ mod test {
     use Random;
     use rand;
     use routing::sendable::Sendable;
+    use routing::types::array_as_vector;
+    use sodiumoxide::crypto;
 
     #[allow(unused_variables)]
     impl Random for ImmutableData {
@@ -381,5 +383,14 @@ mod test {
 
         assert!(immutable_data_sacrificial_first != immutable_data_sacrificial_second);
         assert!(immutable_data_sacrificial_second_clone == immutable_data_sacrificial_second);
+    }
+
+    #[test]
+    fn invariant_check() {
+        let immutable_data = ImmutableData::generate_random();
+        let immutable_data_name = array_as_vector(&immutable_data.name().get_id());
+        let hash_value = array_as_vector(&crypto::hash::sha512::hash(&immutable_data.value()).0);
+
+        assert_eq!(immutable_data_name, hash_value);
     }
 }
