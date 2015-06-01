@@ -55,12 +55,8 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 - [x] [MAID-1116] (https://maidsafe.atlassian.net/browse/MAID-1116) Create 2 new ImmutableData types
 
 ## [0.1.5]
-- [ ] [MAID-1036](https://maidsafe.atlassian.net/browse/MAID-1036) Add SafeCoin type with entries i) type tag ii) name iii) owners iv) previous owners, and v) signatures. Implement and test Sendable, Encodable, Decodable, PartialEq and fmt::Debug traits for SafeCoin type. Merges [MAID-1044](https://maidsafe.atlassian.net/browse/MAID-1044) to a single unit of work.
+- [x] [MAID-1036](https://maidsafe.atlassian.net/browse/MAID-1036) Add SafeCoin type with entries i) type tag ii) name iii) owners iv) previous owners, and v) signatures. Implement and test Sendable, Encodable, Decodable, PartialEq and fmt::Debug traits for SafeCoin type. Merges [MAID-1044](https://maidsafe.atlassian.net/browse/MAID-1044) to a single unit of work.
 
 - [x] [MAID-1119](https://maidsafe.atlassian.net/browse/MAID-1036) Implement TypeTag for StructuredData type.
-  
-- [ ] Visual presentation
-  - [ ] [MAID-1047](https://maidsafe.atlassian.net/browse/MAID-1047) Provide Shona with modifications required in Types representations
-  - [ ] [MAID-1073](https://maidsafe.atlassian.net/browse/MAID-1073) Come up with intiuitive representation of types
 
 - [ ] [MAID-1056](https://maidsafe.atlassian.net/browse/MAID-1056) Write tests to confirm invariants of all types
