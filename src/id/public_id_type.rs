@@ -175,6 +175,8 @@ mod test {
     use super::super::{ IdType, RevocationIdType };
     use MaidTypeTags;
     use MpidTypeTags;
+    use sodiumoxide::crypto;
+    use routing::types::array_as_vector;
 
     impl Random for PublicIdType {
         fn generate_random() -> PublicIdType {
@@ -184,14 +186,14 @@ mod test {
         }
     }
 
-#[test]
+    #[test]
     fn create_public_mpid() {
         let revocation_mpid = RevocationIdType::new::<MpidTypeTags>();
         let mpid = IdType::new(&revocation_mpid);
         PublicIdType::new(&mpid, &revocation_mpid);
     }
 
-#[test]
+    #[test]
     fn serialisation_public_maid() {
         let obj_before = PublicIdType::generate_random();
 
@@ -204,12 +206,40 @@ mod test {
         assert_eq!(obj_before, obj_after);
     }
 
-#[test]
+    #[test]
     fn equality_assertion_public_maid() {
         let public_maid_first = PublicIdType::generate_random();
         let public_maid_second = public_maid_first.clone();
         let public_maid_third = PublicIdType::generate_random();
         assert_eq!(public_maid_first, public_maid_second);
         assert!(public_maid_first != public_maid_third);
+    }
+
+    #[test]
+    fn invariant_check() {
+        let revocation_maid = RevocationIdType::new::<MaidTypeTags>();
+        let maid = IdType::new(&revocation_maid);
+        let public_maid = PublicIdType::new(&maid, &revocation_maid);
+        let type_tag = public_maid.type_tag;
+        let public_id_keys = public_maid.public_keys;
+        let public_revocation_key = public_maid.revocation_public_key;
+        let combined_keys = (public_id_keys.0).0.into_iter().chain((public_id_keys.1).0
+                                                .into_iter().chain(public_revocation_key.0
+                                                .into_iter()));
+        let mut combined = Vec::new();
+
+        for iter in combined_keys {
+            combined.push(*iter);
+        }
+        for i in type_tag.to_string().into_bytes().into_iter() {
+            combined.push(i);
+        }
+
+        let message_length = combined.len();
+        let signature = revocation_maid.sign(&combined).into_iter().skip(message_length).collect::<Vec<_>>();
+        let signature_array = convert_to_array!(signature, crypto::sign::SIGNATUREBYTES);
+        let signature = crypto::sign::Signature(signature_array.unwrap());
+
+        assert_eq!(array_as_vector(&signature.0), array_as_vector(&public_maid.signature().0));
     }
 }
