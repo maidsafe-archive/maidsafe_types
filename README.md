@@ -59,4 +59,4 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 
 - [x] [MAID-1119](https://maidsafe.atlassian.net/browse/MAID-1036) Implement TypeTag for StructuredData type.
 
-- [ ] [MAID-1056](https://maidsafe.atlassian.net/browse/MAID-1056) Write tests to confirm invariants of all types
+- [x] [MAID-1056](https://maidsafe.atlassian.net/browse/MAID-1056) Write tests to confirm invariants of all types
