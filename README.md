@@ -59,8 +59,4 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 
 - [x] [MAID-1119](https://maidsafe.atlassian.net/browse/MAID-1036) Implement TypeTag for StructuredData type.
 
-- [x] Visual presentation
-  - [x] [MAID-1047](https://maidsafe.atlassian.net/browse/MAID-1047) Provide Shona with modifications required in Types representations
-  - [x] [MAID-1073](https://maidsafe.atlassian.net/browse/MAID-1073) Come up with intiuitive representation of types
-
 - [x] [MAID-1056](https://maidsafe.atlassian.net/browse/MAID-1056) Write tests to confirm invariants of all types
