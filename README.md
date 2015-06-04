@@ -63,3 +63,6 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 
 ## [0.1.51]
 - [x] Update version in line with routing.
+
+## [0.1.52]
+- [ ] Add MSID type for shared data.
