@@ -121,6 +121,8 @@ pub enum PayloadTypeTag {
     ImmutableDataSacrificial,
     /// StructuredData type
     StructuredData,
+    /// MaidManager Account type
+    MaidManagerAccountTransfer,
     /// Unknown type
     Unknown
 }
@@ -135,6 +137,7 @@ impl Encodable for PayloadTypeTag {
           PayloadTypeTag::ImmutableDataBackup => type_tag = "ImmutableDataBackup",
           PayloadTypeTag::ImmutableDataSacrificial => type_tag = "ImmutableDataSacrificial",
           PayloadTypeTag::StructuredData => type_tag = "StructuredData",
+          PayloadTypeTag::MaidManagerAccountTransfer => type_tag = "MaidManagerAccount",
           PayloadTypeTag::Unknown => type_tag = "Unknown",
         };
         CborTagEncode::new(5483_100, &(&type_tag)).encode(e)
@@ -153,6 +156,7 @@ impl Decodable for PayloadTypeTag {
           "ImmutableDataBackup" => Ok(PayloadTypeTag::ImmutableDataBackup),
           "ImmutableDataSacrificial" => Ok(PayloadTypeTag::ImmutableDataSacrificial),
           "StructuredData" => Ok(PayloadTypeTag::StructuredData),
+          "MaidManagerAccount" => Ok(PayloadTypeTag::MaidManagerAccountTransfer),
           _ => Ok(PayloadTypeTag::Unknown)
         }
     }
