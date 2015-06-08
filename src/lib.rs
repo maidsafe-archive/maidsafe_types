@@ -123,6 +123,14 @@ pub enum PayloadTypeTag {
     StructuredData,
     /// MaidManager Account type
     MaidManagerAccountTransfer,
+    /// DataManager Account type
+    DataManagerAccountTransfer,
+    /// PmidManager Account type
+    PmidManagerAccountTransfer,
+    /// VersionHandler Account type
+    VersionHandlerAccountTransfer,
+    /// DataManager persona level account type
+    DataManagerPersonaTransfer,
     /// Unknown type
     Unknown
 }
@@ -138,6 +146,10 @@ impl Encodable for PayloadTypeTag {
           PayloadTypeTag::ImmutableDataSacrificial => type_tag = "ImmutableDataSacrificial",
           PayloadTypeTag::StructuredData => type_tag = "StructuredData",
           PayloadTypeTag::MaidManagerAccountTransfer => type_tag = "MaidManagerAccount",
+          PayloadTypeTag::DataManagerAccountTransfer => type_tag = "DataManagerAccount",
+          PayloadTypeTag::PmidManagerAccountTransfer => type_tag = "PmidManagerAccount",
+          PayloadTypeTag::VersionHandlerAccountTransfer => type_tag = "VersionHandlerAccount",
+          PayloadTypeTag::DataManagerPersonaTransfer => type_tag = "MaidManagerPersona",
           PayloadTypeTag::Unknown => type_tag = "Unknown",
         };
         CborTagEncode::new(5483_100, &(&type_tag)).encode(e)
@@ -157,6 +169,10 @@ impl Decodable for PayloadTypeTag {
           "ImmutableDataSacrificial" => Ok(PayloadTypeTag::ImmutableDataSacrificial),
           "StructuredData" => Ok(PayloadTypeTag::StructuredData),
           "MaidManagerAccount" => Ok(PayloadTypeTag::MaidManagerAccountTransfer),
+          "DataManagerAccount" => Ok(PayloadTypeTag::DataManagerAccountTransfer),
+          "PmidManagerAccount" => Ok(PayloadTypeTag::PmidManagerAccountTransfer),
+          "VersionHandlerManagerAccount" => Ok(PayloadTypeTag::VersionHandlerAccountTransfer),
+          "DataManagerPersona" => Ok(PayloadTypeTag::DataManagerPersonaTransfer),
           _ => Ok(PayloadTypeTag::Unknown)
         }
     }
