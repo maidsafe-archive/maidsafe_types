@@ -129,8 +129,8 @@ pub enum PayloadTypeTag {
     PmidManagerAccountTransfer,
     /// VersionHandler Account type
     VersionHandlerAccountTransfer,
-    /// DataManager persona level account type
-    DataManagerPersonaTransfer,
+    /// DataManager persona level Status type
+    DataManagerStatusTransfer,
     /// Unknown type
     Unknown
 }
@@ -149,7 +149,7 @@ impl Encodable for PayloadTypeTag {
           PayloadTypeTag::DataManagerAccountTransfer => type_tag = "DataManagerAccount",
           PayloadTypeTag::PmidManagerAccountTransfer => type_tag = "PmidManagerAccount",
           PayloadTypeTag::VersionHandlerAccountTransfer => type_tag = "VersionHandlerAccount",
-          PayloadTypeTag::DataManagerPersonaTransfer => type_tag = "DataManagerPersona",
+          PayloadTypeTag::DataManagerStatusTransfer => type_tag = "DataManagerStatus",
           PayloadTypeTag::Unknown => type_tag = "Unknown",
         };
         CborTagEncode::new(5483_100, &(&type_tag)).encode(e)
@@ -172,7 +172,7 @@ impl Decodable for PayloadTypeTag {
           "DataManagerAccount" => Ok(PayloadTypeTag::DataManagerAccountTransfer),
           "PmidManagerAccount" => Ok(PayloadTypeTag::PmidManagerAccountTransfer),
           "VersionHandlerAccount" => Ok(PayloadTypeTag::VersionHandlerAccountTransfer),
-          "DataManagerPersona" => Ok(PayloadTypeTag::DataManagerPersonaTransfer),
+          "DataManagerStatus" => Ok(PayloadTypeTag::DataManagerStatusTransfer),
           _ => Ok(PayloadTypeTag::Unknown)
         }
     }
