@@ -121,6 +121,16 @@ pub enum PayloadTypeTag {
     ImmutableDataSacrificial,
     /// StructuredData type
     StructuredData,
+    /// MaidManager Account type
+    MaidManagerAccountTransfer,
+    /// DataManager Account type
+    DataManagerAccountTransfer,
+    /// PmidManager Account type
+    PmidManagerAccountTransfer,
+    /// VersionHandler Account type
+    VersionHandlerAccountTransfer,
+    /// DataManager persona level Stats type
+    DataManagerStatsTransfer,
     /// Unknown type
     Unknown
 }
@@ -135,6 +145,11 @@ impl Encodable for PayloadTypeTag {
           PayloadTypeTag::ImmutableDataBackup => type_tag = "ImmutableDataBackup",
           PayloadTypeTag::ImmutableDataSacrificial => type_tag = "ImmutableDataSacrificial",
           PayloadTypeTag::StructuredData => type_tag = "StructuredData",
+          PayloadTypeTag::MaidManagerAccountTransfer => type_tag = "MaidManagerAccount",
+          PayloadTypeTag::DataManagerAccountTransfer => type_tag = "DataManagerAccount",
+          PayloadTypeTag::PmidManagerAccountTransfer => type_tag = "PmidManagerAccount",
+          PayloadTypeTag::VersionHandlerAccountTransfer => type_tag = "VersionHandlerAccount",
+          PayloadTypeTag::DataManagerStatsTransfer => type_tag = "DataManagerStats",
           PayloadTypeTag::Unknown => type_tag = "Unknown",
         };
         CborTagEncode::new(5483_100, &(&type_tag)).encode(e)
@@ -153,6 +168,11 @@ impl Decodable for PayloadTypeTag {
           "ImmutableDataBackup" => Ok(PayloadTypeTag::ImmutableDataBackup),
           "ImmutableDataSacrificial" => Ok(PayloadTypeTag::ImmutableDataSacrificial),
           "StructuredData" => Ok(PayloadTypeTag::StructuredData),
+          "MaidManagerAccount" => Ok(PayloadTypeTag::MaidManagerAccountTransfer),
+          "DataManagerAccount" => Ok(PayloadTypeTag::DataManagerAccountTransfer),
+          "PmidManagerAccount" => Ok(PayloadTypeTag::PmidManagerAccountTransfer),
+          "VersionHandlerAccount" => Ok(PayloadTypeTag::VersionHandlerAccountTransfer),
+          "DataManagerStats" => Ok(PayloadTypeTag::DataManagerStatsTransfer),
           _ => Ok(PayloadTypeTag::Unknown)
         }
     }
