@@ -65,4 +65,7 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 - [x] Update version in line with routing.
 
 ## [0.1.52]
+- [x] Add account type tags for PayLoad.
+
+## [0.1.53]
 - [ ] Add MSID type for shared data.
