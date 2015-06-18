@@ -158,9 +158,10 @@ impl Decodable for RevocationIdType {
 
 #[cfg(test)]
 mod test {
+    extern crate rand;
+
+    use self::rand::Rng;
     use cbor;
-    use rand;
-    use rand::Rng;
     use Random;
     use sodiumoxide::crypto;
     use super::RevocationIdType;

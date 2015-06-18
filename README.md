@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/maidsafe/maidsafe_types.png?label=ready&title=Ready)](https://waffle.io/maidsafe/maidsafe_types)
 # maidsafe_types
 
 **Primary Maintainer:**     Brian Smith (brian.smith@maidsafe.net)

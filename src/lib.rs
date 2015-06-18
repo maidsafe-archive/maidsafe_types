@@ -17,10 +17,21 @@
 
 #![crate_name = "maidsafe_types"]
 #![crate_type = "lib"]
-#![deny(missing_docs)]
 #![doc(html_logo_url = "http://maidsafe.net/img/Resources/branding/maidsafe_logo.fab2.png",
        html_favicon_url = "http://maidsafe.net/img/favicon.ico",
-              html_root_url = "http://dirvine.github.io/dirvine/maidsafe_types/")]
+       html_root_url = "http://maidsafe.github.io/maidsafe/maidsafe_types/")]
+
+#![forbid(bad_style, warnings)]
+
+#![deny(deprecated, improper_ctypes, missing_docs, non_shorthand_field_patterns,
+        overflowing_literals, plugin_as_library, private_no_mangle_fns, private_no_mangle_statics,
+        raw_pointer_derive, stable_features, unconditional_recursion, unknown_lints, // unsafe_code,
+        unsigned_negation, unused, unused_allocation, unused_attributes, unused_comparisons,
+        unused_features, unused_parens, while_true)]
+
+#![warn(trivial_casts, trivial_numeric_casts, unused_extern_crates, unused_import_braces,
+        unused_qualifications, variant_size_differences)]
+
 //! #Safe Network Data Types
 //!
 //! This library implements the fundimental data types used on the SAFE Network
@@ -28,12 +39,11 @@
 //! for serialising data and is an attempt to upgrade messagepack and ASN.1
 //! On disk serialisation is [JSON](https://www.ietf.org/rfc/rfc4627.txt)
 //!
-//! [Project github page](https://github.com/dirvine/maidsafe_types)
-#![deny(missing_docs)]
+//! [Project github page](https://github.com/maidsafe/maidsafe_types)
+
 extern crate rustc_serialize;
 extern crate sodiumoxide;
 extern crate cbor;
-extern crate rand;
 extern crate routing;
 
 /// Helper provides helper functions for array to vector conversions and vice versa
