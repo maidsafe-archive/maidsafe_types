@@ -20,7 +20,6 @@ use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use sodiumoxide::crypto;
 use helper::*;
 use super::revocation_id_type::*;
-use std::cmp;
 use std::fmt;
 use routing::NameType;
 
@@ -92,7 +91,7 @@ impl IdType {
     }
 }
 
-impl cmp::PartialEq for IdType {
+impl PartialEq for IdType {
     fn eq(&self, other: &IdType) -> bool {
         // Private keys are mathematically linked, so just check public keys
         &self.type_tag == &other.type_tag &&
@@ -153,13 +152,14 @@ impl Decodable for IdType {
 
 #[cfg(test)]
 mod test {
+    extern crate rand;
+
     use super::*;
+    use self::rand::Rng;
     use cbor;
     use super::super::RevocationIdType;
     use sodiumoxide::crypto;
     use Random;
-    use rand;
-    use rand::Rng;
     use MaidTypeTags;
 
     impl Random for IdType {

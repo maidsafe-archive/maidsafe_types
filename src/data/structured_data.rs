@@ -105,6 +105,8 @@ impl Decodable for StructuredData {
 }
 #[cfg(test)]
 mod test {
+    extern crate rand;
+
     use super::*;
     use cbor::{ Encoder, Decoder };
     use rustc_serialize::{Decodable, Encodable};
@@ -112,7 +114,6 @@ mod test {
     use routing::NameType;
     use routing::sendable::Sendable;
     use Random;
-    use rand;
 
     impl Random for StructuredData {
         fn generate_random() -> StructuredData {

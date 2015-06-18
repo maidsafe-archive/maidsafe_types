@@ -277,11 +277,13 @@ impl Decodable for ImmutableDataSacrificial {
 
 #[cfg(test)]
 mod test {
+    extern crate rand;
+
     use super::*;
+    use self::rand::Rng;
     use cbor::{ Encoder, Decoder};
     use rustc_serialize::{Decodable, Encodable};
     use Random;
-    use rand;
     use routing::sendable::Sendable;
     use routing::types::array_as_vector;
     use sodiumoxide::crypto;
@@ -289,7 +291,6 @@ mod test {
     #[allow(unused_variables)]
     impl Random for ImmutableData {
         fn generate_random() -> ImmutableData {
-            use rand::Rng;
             let size = 64;
             let mut data = Vec::with_capacity(size);
             let mut rng = rand::thread_rng();
