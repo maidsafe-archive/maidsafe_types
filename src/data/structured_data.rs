@@ -15,6 +15,8 @@
 // Please review the Licences for the specific language governing permissions and limitations
 // relating to use of the SAFE Network Software.
 
+use std::cmp;
+
 use cbor;
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -64,7 +66,30 @@ impl Sendable for StructuredData {
         false
     }
 
-    fn merge(&self, _: Vec<Box<Sendable>>) -> Option<Box<Sendable>> { None }
+    fn merge(&self, sdvs: Vec<Box<Sendable>>) -> Option<Box<Sendable>> {
+        let mut merged_value = self.value.clone();
+        for itr in sdvs {
+            let mut d_sdv = cbor::Decoder::from_bytes(&itr.serialised_contents()[..]);
+            let sdv: StructuredData = d_sdv.decode().next().unwrap().unwrap();
+            if sdv.name() == self.name() {
+                let mut merging = Vec::new();
+                let incoming_value = sdv.value();
+                for i in 0..cmp::min(merged_value.len(), incoming_value.len()) {
+                    if merged_value[i] == incoming_value[i] {
+                        merging.push(merged_value[i].clone());
+                    } else {
+                        break;
+                    }
+                }
+                merged_value = merging;
+            }
+        }
+        if merged_value.len() == 0 {
+            None
+        } else {
+            Some(Box::new(StructuredData::new(self.name.clone(), self.owner.clone(), merged_value)))
+        }
+    }
 }
 
 impl StructuredData {
