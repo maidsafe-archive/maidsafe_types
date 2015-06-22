@@ -9,7 +9,7 @@
 |[![](http://meritbadge.herokuapp.com/maidsafe_types)](https://crates.io/crates/maidsafe_types)|[![Build Status](https://travis-ci.org/maidsafe/maidsafe_types.svg?branch=master)](https://travis-ci.org/maidsafe/maidsafe_types)|[![Build Status](http://ci.maidsafe.net:8080/buildStatus/icon?job=maidsafe_types_win64_status_badge)](http://ci.maidsafe.net:8080/job/maidsafe_types_win64_status_badge/)|[![Build Status](http://ci.maidsafe.net:8080/buildStatus/icon?job=maidsafe_types_osx_status_badge)](http://ci.maidsafe.net:8080/job/maidsafe_types_osx_status_badge/)|[![Coverage Status](https://coveralls.io/repos/maidsafe/maidsafe_types/badge.svg)](https://coveralls.io/r/maidsafe/maidsafe_types)|[![Stories in Ready](https://badge.waffle.io/maidsafe/maidsafe_types.png?label=ready&title=Ready)](https://waffle.io/maidsafe/maidsafe_types)
 
 
-| [ API Documentation](http://maidsafe.github.io/maidsafe_types/) | [SAFENetwork System Documention](http://systemdocs.maidsafe.net/) | [MaidSafe website](http://www.maidsafe.net) | [Safe Community site](https://forum.safenetwork.io) |
+| [ API Documentation - Master branch ](http://maidsafe.github.io/maidsafe_types/) | [SAFENetwork System Documention](http://systemdocs.maidsafe.net/) | [MaidSafe website](http://www.maidsafe.net) | [Safe Community site](https://forum.safenetwork.io) |
 
 #Overview
 
@@ -18,7 +18,7 @@ The maidsafe_type library defines all types of data stored on maidsafe network. 
 ## Data
 
 ### Immutable Data
-On MaidSafe network, most data are represented as Immutable Data. The integrity of the contents of an Immutable Data can be verified by checking the hash of content to be the address on the network where data is stored. 
+On MaidSafe network, most data are represented as Immutable Data. The integrity of the contents of an Immutable Data can be verified by checking the hash of content to be the address on the network where data is stored.
 
 ### Structured Data
 If data needs to be mutated it is represented as structured data. The structured data can hold a limited history of data updates.
@@ -34,8 +34,8 @@ Secret revocation Id types are never stored on network. These Id types are used 
 Similar to revocation Id types, secret Id types are not stored on network. The secret Id types have private and public part of signing and encryption keys associated to an identity.
 
 ### Public Id Type
-Public Id types represent the public part of the secret Id types and their integrity can be verified by revocation id signed information. Moreover, the address a public id type is located on network is the hash of its contents, which can also be verified. 
-A public Id type can be revoked by revocation id type, if required. To revoke the public id, the revocation id type sends a signed update request to the public id type. The update is performed to make the hash of the contents not be equal to its address and/or change signature to be not equal to a valid signature. Any further access to the revoked public id type then results in inregrity / validity check. 
+Public Id types represent the public part of the secret Id types and their integrity can be verified by revocation id signed information. Moreover, the address a public id type is located on network is the hash of its contents, which can also be verified.
+A public Id type can be revoked by revocation id type, if required. To revoke the public id, the revocation id type sends a signed update request to the public id type. The update is performed to make the hash of the contents not be equal to its address and/or change signature to be not equal to a valid signature. Any further access to the revoked public id type then results in inregrity / validity check.
 
 ###Pre-requisite:
 libsodium is a native dependency for [sodiumxoide](https://github.com/dnaq/sodiumoxide). Thus, install sodium by following the instructions [here](http://doc.libsodium.org/installation/README.html).
