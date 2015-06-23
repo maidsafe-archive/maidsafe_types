@@ -123,7 +123,6 @@ mod test {
     use routing::NameType;
     use routing::types::{vector_as_u8_64_array, generate_random_vec_u8};
     use routing::types::Signature;
-    use sodiumoxide::crypto::sign;
     use routing::sendable::Sendable;
     use Random;
 
@@ -135,7 +134,7 @@ mod test {
             let mut previous_owners = Vec::<NameType>::new();
             previous_owners.push(NameType::new(vector_as_u8_64_array(generate_random_vec_u8(64))));
             let mut signatures = Vec::<Signature>::new();
-            signatures.push(Signature::new(sign::Signature(vector_as_u8_64_array(generate_random_vec_u8(64)))));
+            signatures.push(Signature { signature:  generate_random_vec_u8(64)});
 
             SafeCoin {
                 type_tag: SafeCoinTypeTag,
@@ -154,4 +153,3 @@ mod test {
         assert_eq!(safecoin.type_tag(), 256u64);
     }
 }
-

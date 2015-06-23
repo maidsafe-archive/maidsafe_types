@@ -41,7 +41,7 @@ use super::id_type::*;
 #[derive(Clone)]
 pub struct PublicIdType {
     type_tag: u64,
-    public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
+    public_keys: (crypto::sign::PublicKey, crypto::box_::PublicKey),
     revocation_public_key: crypto::sign::PublicKey,
     signature: crypto::sign::Signature
 }
@@ -108,7 +108,7 @@ impl PublicIdType {
              signature: crypto::sign::Signature(signature_arr.unwrap()) }
     }
     /// Returns the PublicKeys
-    pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey) {
+    pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::box_::PublicKey) {
         &self.public_keys
     }
     /// Returns revocation public key
@@ -123,7 +123,7 @@ impl PublicIdType {
 
 impl Encodable for PublicIdType {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-        let (crypto::sign::PublicKey(ref pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
+        let (crypto::sign::PublicKey(ref pub_sign_vec), crypto::box_::PublicKey(pub_asym_vec)) = self.public_keys;
         let crypto::sign::PublicKey(ref revocation_public_key_vec) = self.revocation_public_key;
         let crypto::sign::Signature(ref signature) = self.signature;
         let type_vec = self.type_tag.to_string().into_bytes();
@@ -141,8 +141,8 @@ impl Decodable for PublicIdType {
     try!(d.read_u64());
     let (tag_type_vec, pub_sign_vec, pub_asym_vec, revocation_public_key_vec, signature_vec): (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
     let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
-    let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
-    let revocation_public_key_arr = convert_to_array!(revocation_public_key_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
+    let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::box_::PUBLICKEYBYTES);
+    let revocation_public_key_arr = convert_to_array!(revocation_public_key_vec, crypto::box_::PUBLICKEYBYTES);
     let signature_arr = convert_to_array!(signature_vec, crypto::sign::SIGNATUREBYTES);
 
     if pub_sign_arr.is_none() || pub_asym_arr.is_none() || revocation_public_key_arr.is_none()
@@ -161,7 +161,7 @@ impl Decodable for PublicIdType {
     };
 
     Ok(PublicIdType{ type_tag: type_tag,
-        public_keys: (crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
+        public_keys: (crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::box_::PublicKey(pub_asym_arr.unwrap())),
         revocation_public_key: crypto::sign::PublicKey(revocation_public_key_arr.unwrap()),
         signature: crypto::sign::Signature(signature_arr.unwrap())})
     }

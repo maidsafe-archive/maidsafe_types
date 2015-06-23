@@ -35,14 +35,14 @@ use routing::NameType;
 #[derive(Clone)]
 pub struct IdType {
     type_tag: u64,
-    public_keys: (crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey),
-    secret_keys: (crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey)
+    public_keys: (crypto::sign::PublicKey, crypto::box_::PublicKey),
+    secret_keys: (crypto::sign::SecretKey, crypto::box_::SecretKey)
 }
 
 impl IdType {
     /// Invoked to create an instance of IdType
     pub fn new(revocation_id: &RevocationIdType) -> IdType {
-        let asym_keys = crypto::asymmetricbox::gen_keypair();
+        let asym_keys = crypto::box_::gen_keypair();
         let signing_keys = crypto::sign::gen_keypair();
 
         IdType {
@@ -64,11 +64,11 @@ impl IdType {
         NameType(crypto::hash::sha512::hash(&combined).0)
     }
     /// Returns the PublicKeys
-    pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey){
+    pub fn public_keys(&self) -> &(crypto::sign::PublicKey, crypto::box_::PublicKey){
         &self.public_keys
     }
     /// Returns the PublicKeys
-    pub fn secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::asymmetricbox::SecretKey) {
+    pub fn secret_keys(&self) -> &(crypto::sign::SecretKey, crypto::box_::SecretKey) {
         &self.secret_keys
     }
     /// Signs the data with the SecretKey and returns the Signed data
@@ -76,18 +76,18 @@ impl IdType {
         return crypto::sign::sign(&data, &self.secret_keys.0)
     }
     /// Encrypts and authenticates data. It returns a ciphertext and the Nonce.
-    pub fn seal(&self, data : &[u8], to : &crypto::asymmetricbox::PublicKey) -> (Vec<u8>, crypto::asymmetricbox::Nonce) {
-        let nonce = crypto::asymmetricbox::gen_nonce();
-        let sealed = crypto::asymmetricbox::seal(data, &nonce, &to, &self.secret_keys.1);
+    pub fn seal(&self, data : &[u8], to : &crypto::box_::PublicKey) -> (Vec<u8>, crypto::box_::Nonce) {
+        let nonce = crypto::box_::gen_nonce();
+        let sealed = crypto::box_::seal(data, &nonce, &to, &self.secret_keys.1);
         return (sealed, nonce);
     }
     /// Verifies and decrypts the data
     pub fn open(
         &self,
         data : &[u8],
-        nonce : &crypto::asymmetricbox::Nonce,
-        from : &crypto::asymmetricbox::PublicKey) -> Result<Vec<u8>, ::CryptoError> {
-        return crypto::asymmetricbox::open(&data, &nonce, &from, &self.secret_keys.1).ok_or(::CryptoError::Unknown);
+        nonce : &crypto::box_::Nonce,
+        from : &crypto::box_::PublicKey) -> Result<Vec<u8>, ::CryptoError> {
+        return crypto::box_::open(&data, &nonce, &from, &self.secret_keys.1).ok_or(::CryptoError::Unknown);
     }
 }
 
@@ -108,8 +108,8 @@ impl fmt::Debug for IdType {
 
 impl Encodable for IdType {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-        let (crypto::sign::PublicKey(pub_sign_vec), crypto::asymmetricbox::PublicKey(pub_asym_vec)) = self.public_keys;
-        let (crypto::sign::SecretKey(sec_sign_vec), crypto::asymmetricbox::SecretKey(sec_asym_vec)) = self.secret_keys;
+        let (crypto::sign::PublicKey(pub_sign_vec), crypto::box_::PublicKey(pub_asym_vec)) = self.public_keys;
+        let (crypto::sign::SecretKey(sec_sign_vec), crypto::box_::SecretKey(sec_asym_vec)) = self.secret_keys;
         let type_vec = self.type_tag.to_string().into_bytes();
 
         CborTagEncode::new(5483_001, &(
@@ -126,9 +126,9 @@ impl Decodable for IdType {
         try!(d.read_u64());
         let (tag_type_vec, pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
-        let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::asymmetricbox::PUBLICKEYBYTES);
+        let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::box_::PUBLICKEYBYTES);
         let sec_sign_arr = convert_to_array!(sec_sign_vec, crypto::sign::SECRETKEYBYTES);
-        let sec_asym_arr = convert_to_array!(sec_asym_vec, crypto::asymmetricbox::SECRETKEYBYTES);
+        let sec_asym_arr = convert_to_array!(sec_asym_vec, crypto::box_::SECRETKEYBYTES);
 
         if pub_sign_arr.is_none() || pub_asym_arr.is_none() || sec_sign_arr.is_none() || sec_asym_arr.is_none() {
             return Err(d.error("Bad IdType size"));
@@ -145,8 +145,8 @@ impl Decodable for IdType {
         };
 
         Ok(IdType{ type_tag: type_tag,
-            public_keys:(crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::asymmetricbox::PublicKey(pub_asym_arr.unwrap())),
-            secret_keys: (crypto::sign::SecretKey(sec_sign_arr.unwrap()), crypto::asymmetricbox::SecretKey(sec_asym_arr.unwrap())) })
+            public_keys:(crypto::sign::PublicKey(pub_sign_arr.unwrap()), crypto::box_::PublicKey(pub_asym_arr.unwrap())),
+            secret_keys: (crypto::sign::SecretKey(sec_sign_arr.unwrap()), crypto::box_::SecretKey(sec_asym_arr.unwrap())) })
     }
 }
 
@@ -179,10 +179,10 @@ mod test {
         let mut d = cbor::Decoder::from_bytes(e.as_bytes());
         let obj_after: IdType = d.decode().next().unwrap().unwrap();
 
-        let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::asymmetricbox::PublicKey(pub_asym_arr_before)) = obj_before.public_keys();
-        let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::asymmetricbox::PublicKey(pub_asym_arr_after)) = obj_after.public_keys();
-        let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::asymmetricbox::SecretKey(sec_asym_arr_before)) = &obj_before.secret_keys;
-        let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::asymmetricbox::SecretKey(sec_asym_arr_after)) = &obj_after.secret_keys;
+        let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::box_::PublicKey(pub_asym_arr_before)) = obj_before.public_keys();
+        let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::box_::PublicKey(pub_asym_arr_after)) = obj_after.public_keys();
+        let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::box_::SecretKey(sec_asym_arr_before)) = &obj_before.secret_keys;
+        let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::box_::SecretKey(sec_asym_arr_after)) = &obj_after.secret_keys;
 
         assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
         assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
