@@ -45,30 +45,5 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 
 #Todo Items
 
-## [0.1.4]
-- [x] Remove anonymous public types
-  - [x] [MAID-1053](https://maidsafe.atlassian.net/browse/MAID-1053) Anonymous public types to be included as part of the body of the public type
-  - [x] [MAID-1058](https://maidsafe.atlassian.net/browse/MAID-1058) Change tests to reflect the above task
-- [x] Modifications to Id types
-  - [x] [MAID-1029](https://maidsafe.atlassian.net/browse/MAID-1029) Remove name from types to enhance type invariance
-  - [x] [MAID-1035](https://maidsafe.atlassian.net/browse/MAID-1035) Add a member of signature type to Id types. The signature in pure keys is sign_using_own_private_key(public keys + type tag). And in dependent keys, is sign_using_owner_private_key(public keys + owner public key + type tag)
-  - [x] [MAID-1041](https://maidsafe.atlassian.net/browse/MAID-1041) Remove maid_signature and mpid_signature from PublicMaid and PublicAnMaid
-
-- [X] [MAID-1115] (https://maidsafe.atlassian.net/browse/MAID-1115) Update StructuredData
-- [x] [MAID-1116] (https://maidsafe.atlassian.net/browse/MAID-1116) Create 2 new ImmutableData types
-
-## [0.1.5]
-- [x] [MAID-1036](https://maidsafe.atlassian.net/browse/MAID-1036) Add SafeCoin type with entries i) type tag ii) name iii) owners iv) previous owners, and v) signatures. Implement and test Sendable, Encodable, Decodable, PartialEq and fmt::Debug traits for SafeCoin type. Merges [MAID-1044](https://maidsafe.atlassian.net/browse/MAID-1044) to a single unit of work.
-
-- [x] [MAID-1119](https://maidsafe.atlassian.net/browse/MAID-1036) Implement TypeTag for StructuredData type.
-
-- [x] [MAID-1056](https://maidsafe.atlassian.net/browse/MAID-1056) Write tests to confirm invariants of all types
-
-## [0.1.51]
-- [x] Update version in line with routing.
-
-## [0.1.52]
-- [x] Add account type tags for PayLoad.
-
-## [0.1.53]
+## [0.2.1]
 - [ ] Add MSID type for shared data.
