@@ -55,7 +55,7 @@ macro_rules! convert_to_array {
 ///
 /// Return NameType using Public signing & encryption keys
 ///
-pub fn name(public_keys: &(crypto::sign::PublicKey, crypto::asymmetricbox::PublicKey), type_tag: u64,
+pub fn name(public_keys: &(crypto::sign::PublicKey, crypto::box_::PublicKey), type_tag: u64,
         signature: &crypto::sign::Signature) -> NameType {
     let combined_iter = (public_keys.0).0.into_iter().chain((public_keys.1).0.into_iter());
     let mut combined: Vec<u8> = Vec::new();
