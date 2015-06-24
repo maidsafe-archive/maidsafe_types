@@ -1,6 +1,6 @@
 [package]
 name = "maidsafe_types"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["MaidSafe Developers <dev@maidsafe.net>"]
 description = "Types for maidsafe clients and vaults."
 documentation = "http://maidsafe.github.io/maidsafe_types/latest"

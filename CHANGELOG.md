@@ -1,5 +1,9 @@
 # MaidSafe Types - Change Log
 
+## [0.2.0]
+
+- [#78](https://github.com/maidsafe/maidsafe_types/pull/78) make Payload Sendable -- patch
+
 ## [0.1.52]
 - Add account type tags for PayLoad.
 
