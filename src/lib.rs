@@ -62,6 +62,9 @@ pub use data::{ImmutableData, ImmutableDataBackup, ImmutableDataSacrificial, Str
 use cbor::CborTagEncode;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 
+use routing::NameType;
+use routing::sendable::Sendable;
+
 /// TypeTag trait
 pub trait TypeTag {
     /// returns type tag
@@ -192,33 +195,57 @@ impl Decodable for PayloadTypeTag {
 /// Encoded type serialised and ready to send on wire
 pub struct Payload {
     type_tag : PayloadTypeTag,
+    name: NameType,
+    payload_type_tag : u64,
     payload : Vec<u8>
 }
 
 impl Encodable for Payload {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-        CborTagEncode::new(5483_001, &(&self.type_tag, &self.payload)).encode(e)
+        CborTagEncode::new(5483_001, &(&self.type_tag, &self.name, &self.payload_type_tag, &self.payload)).encode(e)
     }
 }
 
 impl Decodable for Payload {
     fn decode<D: Decoder>(d: &mut D)->Result<Payload, D::Error> {
         try!(d.read_u64());
-        let (type_tag, payload) = try!(Decodable::decode(d));
-        Ok(Payload { type_tag: type_tag, payload: payload })
+        let (type_tag, name, payload_type_tag, payload) = try!(Decodable::decode(d));
+        Ok(Payload { type_tag: type_tag, name: name, payload_type_tag: payload_type_tag, payload: payload })
     }
+}
+
+impl Sendable for Payload {
+    fn name(&self) -> NameType {
+        self.name.clone()
+    }
+
+    fn type_tag(&self) -> u64 {
+        self.payload_type_tag.clone()
+    }
+
+    fn serialised_contents(&self) -> Vec<u8> {
+        let mut e = cbor::Encoder::from_memory();
+        e.encode(&[&self]).unwrap();
+        e.into_bytes()
+    }
+
+    fn refresh(&self)->bool {
+        false
+    }
+
+    fn merge(&self, _: Vec<Box<Sendable>>) -> Option<Box<Sendable>> { None }
 }
 
 impl Payload {
     /// Creates an Instance of the Payload with empty payload and tag type passed as parameter.
     pub fn dummy_new(type_tag : PayloadTypeTag) -> Payload {
-        Payload { type_tag: type_tag, payload: Vec::<u8>::new() }
+        Payload { type_tag: type_tag, name: NameType::new([0u8; 64]), payload_type_tag: 0, payload: Vec::<u8>::new() }
     }
     /// Creates an instance of the Payload
-    pub fn new<T>(type_tag : PayloadTypeTag, data : &T) -> Payload where T: for<'a> Encodable + Decodable {
+    pub fn new<T>(type_tag : PayloadTypeTag, data : &T) -> Payload where T: for<'a> Encodable + Decodable + Sendable {
         let mut e = cbor::Encoder::from_memory();
         e.encode(&[data]).unwrap();
-        Payload { type_tag: type_tag, payload: e.as_bytes().to_vec() }
+        Payload { type_tag: type_tag, name: data.name(), payload_type_tag: data.type_tag(), payload: e.as_bytes().to_vec() }
     }
     /// Returns the data
     pub fn get_data<T>(&self) -> T where T: for<'a> Encodable + Decodable {
