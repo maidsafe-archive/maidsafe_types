@@ -3,11 +3,11 @@ name = "maidsafe_types"
 version = "0.2.0"
 authors = ["MaidSafe Developers <dev@maidsafe.net>"]
 description = "Types for maidsafe clients and vaults."
-documentation = "http://maidsafe.github.io/maidsafe_types/latest"
+documentation = "http://maidsafe.net/maidsafe_types/latest"
 repository = "https://github.com/maidsafe/maidsafe_types"
 readme = "README.md"
 license = "GPL-3.0"
-homepage = "http://www.maidsafe.net"
+homepage = "http://maidsafe.net"
 
 [dependencies]
 rustc-serialize = "*"
