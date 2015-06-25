@@ -83,20 +83,20 @@ pub struct MpidTypeTags;
 
 impl IdTypeTags for MaidTypeTags {
     /// returns tag type for AnMaid type
-    fn revocation_id_type_tag(&self) -> u64 { 101 }
+    fn revocation_id_type_tag(&self) -> u64 { data_tags::AN_MAID_TAG }
     /// returns tag type for Maid type
-    fn id_type_tag(&self) -> u64 { 201 }
+    fn id_type_tag(&self) -> u64 { data_tags::MAID_TAG }
     /// returns tag type for PublicMaid type
-    fn public_id_type_tag(&self) -> u64 { 301 }
+    fn public_id_type_tag(&self) -> u64 { data_tags::PUBLIC_MAID_TAG }
 }
 
 impl IdTypeTags for MpidTypeTags {
     /// returns tag type for AnMpid type
-    fn revocation_id_type_tag(&self) -> u64 { 102 }
+    fn revocation_id_type_tag(&self) -> u64 { data_tags::AN_MPID_TAG }
     /// returns tag type for Mpid type
-    fn id_type_tag(&self) -> u64 { 202 }
+    fn id_type_tag(&self) -> u64 { data_tags::MPID_TAG }
     /// returns tag type for PublicMpid type
-    fn public_id_type_tag(&self) -> u64 { 302 }
+    fn public_id_type_tag(&self) -> u64 { data_tags::PUBLIC_MPID_TAG }
 }
 
 /// Random trait is used to generate random instances.

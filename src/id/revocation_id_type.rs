@@ -92,6 +92,7 @@ impl RevocationIdType {
         &self.type_tags
     }
     /// Returns type tag
+    /// TODO needless reference for built in POD
     pub fn type_tag(&self) -> &u64 {
         &self.type_tags.0
     }
@@ -126,7 +127,7 @@ impl Encodable for RevocationIdType {
         let revocation_type_tag_vec = self.type_tags.0.to_string().into_bytes();
         let id_type_tag_vec = self.type_tags.1.to_string().into_bytes();
         let public_id_type_tag_vec = self.type_tags.2.to_string().into_bytes();
-        CborTagEncode::new(5483_001,
+        CborTagEncode::new(*self.type_tag(),
              &(revocation_type_tag_vec,
                id_type_tag_vec,
                public_id_type_tag_vec,
@@ -136,7 +137,6 @@ impl Encodable for RevocationIdType {
 
 impl Decodable for RevocationIdType {
     fn decode<D: Decoder>(d: &mut D)-> Result<RevocationIdType, D::Error> {
-        try!(d.read_u64());
         let(revocation_type_tag_vec, id_type_tag_vec, public_id_type_tag_vec , pub_sign_vec, sec_sign_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let sec_sign_arr = convert_to_array!(sec_sign_vec, crypto::sign::SECRETKEYBYTES);
@@ -186,9 +186,10 @@ mod test {
         e.encode(&[&obj_before]).unwrap();
 
         let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-        let obj_after: RevocationIdType = d.decode().next().unwrap().unwrap();
-
-        assert_eq!(obj_before, obj_after);
+        match d.decode().next().unwrap().unwrap() {
+            ::test_utils::Parser::AnMaid(obj_after) => assert_eq!(obj_before, obj_after),
+            _ => panic!("Unexpected!"),
+        }
     }
 
 #[test]

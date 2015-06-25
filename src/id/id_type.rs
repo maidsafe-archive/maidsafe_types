@@ -112,7 +112,7 @@ impl Encodable for IdType {
         let (crypto::sign::SecretKey(sec_sign_vec), crypto::box_::SecretKey(sec_asym_vec)) = self.secret_keys;
         let type_vec = self.type_tag.to_string().into_bytes();
 
-        CborTagEncode::new(5483_001, &(
+        CborTagEncode::new(self.type_tag, &(
             type_vec,
             pub_sign_vec.as_ref(),
             pub_asym_vec.as_ref(),
@@ -123,7 +123,6 @@ impl Encodable for IdType {
 
 impl Decodable for IdType {
     fn decode<D: Decoder>(d: &mut D)-> Result<IdType, D::Error> {
-        try!(d.read_u64());
         let (tag_type_vec, pub_sign_vec, pub_asym_vec, sec_sign_vec, sec_asym_vec) : (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
         let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
         let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::box_::PUBLICKEYBYTES);
@@ -177,17 +176,20 @@ mod test {
         e.encode(&[&obj_before]).unwrap();
 
         let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-        let obj_after: IdType = d.decode().next().unwrap().unwrap();
+        match d.decode().next().unwrap().unwrap() {
+            ::test_utils::Parser::Maid(obj_after) => {
+                let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::box_::PublicKey(pub_asym_arr_before)) = obj_before.public_keys();
+                let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::box_::PublicKey(pub_asym_arr_after)) = obj_after.public_keys();
+                let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::box_::SecretKey(sec_asym_arr_before)) = &obj_before.secret_keys;
+                let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::box_::SecretKey(sec_asym_arr_after)) = &obj_after.secret_keys;
 
-        let &(crypto::sign::PublicKey(pub_sign_arr_before), crypto::box_::PublicKey(pub_asym_arr_before)) = obj_before.public_keys();
-        let &(crypto::sign::PublicKey(pub_sign_arr_after), crypto::box_::PublicKey(pub_asym_arr_after)) = obj_after.public_keys();
-        let &(crypto::sign::SecretKey(sec_sign_arr_before), crypto::box_::SecretKey(sec_asym_arr_before)) = &obj_before.secret_keys;
-        let &(crypto::sign::SecretKey(sec_sign_arr_after), crypto::box_::SecretKey(sec_asym_arr_after)) = &obj_after.secret_keys;
-
-        assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
-        assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
-        assert!(slice_equal(&sec_sign_arr_before, &sec_sign_arr_after));
-        assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
+                assert_eq!(pub_sign_arr_before, pub_sign_arr_after);
+                assert_eq!(pub_asym_arr_before, pub_asym_arr_after);
+                assert!(slice_equal(&sec_sign_arr_before, &sec_sign_arr_after));
+                assert_eq!(sec_asym_arr_before, sec_asym_arr_after);
+            },
+            _ => panic!("Unexpected!"),
+        }
     }
 
 #[test]
