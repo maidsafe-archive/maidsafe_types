@@ -127,7 +127,7 @@ impl Encodable for PublicIdType {
         let crypto::sign::PublicKey(ref revocation_public_key_vec) = self.revocation_public_key;
         let crypto::sign::Signature(ref signature) = self.signature;
         let type_vec = self.type_tag.to_string().into_bytes();
-        CborTagEncode::new(5483_001, &(
+        CborTagEncode::new(self.type_tag, &(
             type_vec,
             pub_sign_vec.as_ref(),
             pub_asym_vec.as_ref(),
@@ -138,7 +138,6 @@ impl Encodable for PublicIdType {
 
 impl Decodable for PublicIdType {
     fn decode<D: Decoder>(d: &mut D)-> Result<PublicIdType, D::Error> {
-    try!(d.read_u64());
     let (tag_type_vec, pub_sign_vec, pub_asym_vec, revocation_public_key_vec, signature_vec): (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) = try!(Decodable::decode(d));
     let pub_sign_arr = convert_to_array!(pub_sign_vec, crypto::sign::PUBLICKEYBYTES);
     let pub_asym_arr = convert_to_array!(pub_asym_vec, crypto::box_::PUBLICKEYBYTES);
@@ -201,9 +200,10 @@ mod test {
         e.encode(&[&obj_before]).unwrap();
 
         let mut d = cbor::Decoder::from_bytes(e.as_bytes());
-        let obj_after: PublicIdType = d.decode().next().unwrap().unwrap();
-
-        assert_eq!(obj_before, obj_after);
+        match d.decode().next().unwrap().unwrap() {
+            ::test_utils::Parser::PubMaid(obj_after) => assert_eq!(obj_before, obj_after),
+            _ => panic!("Unexpected!"),
+        }
     }
 
     #[test]
