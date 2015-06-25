@@ -46,5 +46,5 @@ Extract and place the libsodium.a file in "bin\x86_64-pc-windows-gnu" for 64bit 
 
 #Todo Items
 
-## [0.2.1]
+## [0.2.3]
 - [ ] Add MSID type for shared data.

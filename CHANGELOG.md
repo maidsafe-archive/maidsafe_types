@@ -1,5 +1,9 @@
 # MaidSafe Types - Change Log
 
+## [0.2.2]
+
+- [#81](https://github.com/maidsafe/maidsafe_types/pull/81) Remove payload introduce cbor tagging
+
 ## [0.2.0]
 
 - [#78](https://github.com/maidsafe/maidsafe_types/pull/78) make Payload Sendable -- patch
