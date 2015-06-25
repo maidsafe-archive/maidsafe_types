@@ -18,8 +18,8 @@
 pub enum Parser {
     StructData(::data::StructuredData),
     ImmutData(::data::ImmutableData),
-    ImmutDataBkup(::data::ImmutableData),
-    ImmutDataSacrificial(::data::ImmutableData),
+    ImmutDataBkup(::data::ImmutableDataBackup),
+    ImmutDataSacrificial(::data::ImmutableDataSacrificial),
     Maid(::id::IdType),
     Mpid(::id::IdType),
     AnMaid(::id::RevocationIdType),

@@ -36,19 +36,19 @@ pub struct ImmutableDataSacrificialTypeTag;
 
 impl TypeTag for ImmutableDataTypeTag {
     fn type_tag(&self) -> u64 {
-        return 101;
+        ::data_tags::IMMUTABLE_DATA_TAG
     }
 }
 
 impl TypeTag for ImmutableDataBackupTypeTag {
     fn type_tag(&self) -> u64 {
-        return 102;
+        ::data_tags::IMMUTABLE_DATA_BACKUP_TAG
     }
 }
 
 impl TypeTag for ImmutableDataSacrificialTypeTag {
     fn type_tag(&self) -> u64 {
-        return 103;
+        ::data_tags::IMMUTABLE_DATA_SACRIFICIAL_TAG
     }
 }
 
@@ -113,13 +113,12 @@ impl ImmutableData {
 
 impl Encodable for ImmutableData {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-        CborTagEncode::new(5483_001, &(&self.value)).encode(e)
+        CborTagEncode::new(::data_tags::IMMUTABLE_DATA_TAG, &(&self.value)).encode(e)
     }
 }
 
 impl Decodable for ImmutableData {
     fn decode<D: Decoder>(d: &mut D)->Result<ImmutableData, D::Error> {
-        try!(d.read_u64());
         let value = try!(Decodable::decode(d));
         Ok(ImmutableData::new(value))
     }
@@ -187,13 +186,12 @@ impl ImmutableDataBackup {
 
 impl Encodable for ImmutableDataBackup {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-        CborTagEncode::new(5483_001, &(&self.value)).encode(e)
+        CborTagEncode::new(::data_tags::IMMUTABLE_DATA_BACKUP_TAG, &(&self.value)).encode(e)
     }
 }
 
 impl Decodable for ImmutableDataBackup {
     fn decode<D: Decoder>(d: &mut D)->Result<ImmutableDataBackup, D::Error> {
-        try!(d.read_u64());
         let value = try!(Decodable::decode(d));
         Ok(ImmutableDataBackup::new(ImmutableData::new(value)))
     }
@@ -262,13 +260,12 @@ impl ImmutableDataSacrificial {
 
 impl Encodable for ImmutableDataSacrificial {
     fn encode<E: Encoder>(&self, e: &mut E)->Result<(), E::Error> {
-        CborTagEncode::new(5483_001, &(&self.value)).encode(e)
+        CborTagEncode::new(::data_tags::IMMUTABLE_DATA_SACRIFICIAL_TAG, &(&self.value)).encode(e)
     }
 }
 
 impl Decodable for ImmutableDataSacrificial {
     fn decode<D: Decoder>(d: &mut D)->Result<ImmutableDataSacrificial, D::Error> {
-        try!(d.read_u64());
         let value = try!(Decodable::decode(d));
         Ok(ImmutableDataSacrificial::new(ImmutableData::new(value)))
     }
@@ -340,26 +337,30 @@ mod test {
         immutable_data_encoder.encode(&[&immutable_data]).unwrap();
         let mut immutable_data_decoder =
                 Decoder::from_bytes(immutable_data_encoder.as_bytes());
-        let decoded_immutable_data: ImmutableData =
-                immutable_data_decoder.decode().next().unwrap().unwrap();
+        match immutable_data_decoder.decode().next().unwrap().unwrap() {
+            ::test_utils::Parser::ImmutData(decoded_immutable_data) => assert_eq!(immutable_data, decoded_immutable_data),
+            _ => panic!("Unexpected!"),
+        }
+
         // ImmutableDataBackup
         let mut immutable_data_backup_encoder = Encoder::from_memory();
         immutable_data_backup_encoder.encode(&[&immutable_data_backup]).unwrap();
         let mut immutable_data_backup_decoder =
                 Decoder::from_bytes(immutable_data_backup_encoder.as_bytes());
-        let decoded_immutable_data_backup: ImmutableDataBackup =
-                immutable_data_backup_decoder.decode().next().unwrap().unwrap();
+        match immutable_data_backup_decoder.decode().next().unwrap().unwrap() {
+            ::test_utils::Parser::ImmutDataBkup(decoded_immutable_data_backup) => assert_eq!(immutable_data_backup, decoded_immutable_data_backup),
+            _ => panic!("Unexpected!"),
+        }
+
         // ImmutableDataSacrificial
         let mut immutable_data_sacrificial_encoder = Encoder::from_memory();
         immutable_data_sacrificial_encoder.encode(&[&immutable_data_sacrificial]).unwrap();
         let mut immutable_data_sacrificial_decoder =
                 Decoder::from_bytes(immutable_data_sacrificial_encoder.as_bytes());
-        let decoded_immutable_data_sacrificial: ImmutableDataSacrificial =
-                immutable_data_sacrificial_decoder.decode().next().unwrap().unwrap();
-
-        assert_eq!(immutable_data, decoded_immutable_data);
-        assert_eq!(immutable_data_backup, decoded_immutable_data_backup);
-        assert_eq!(immutable_data_sacrificial, decoded_immutable_data_sacrificial);
+        match immutable_data_sacrificial_decoder.decode().next().unwrap().unwrap() {
+            ::test_utils::Parser::ImmutDataSacrificial(decoded_immutable_data_sacrificial) => assert_eq!(immutable_data_sacrificial, decoded_immutable_data_sacrificial),
+            _ => panic!("Unexpected!"),
+        }
     }
 
     #[test]
