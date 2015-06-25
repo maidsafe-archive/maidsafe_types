@@ -30,7 +30,7 @@ pub struct StructuredDataTypeTag;
 
 impl TypeTag for StructuredDataTypeTag {
     fn type_tag(&self) -> u64 {
-        return 100;
+        ::data_tags::STRUCTURED_DATA_TAG
     }
 }
 
@@ -111,13 +111,12 @@ impl StructuredData {
 
 impl Encodable for StructuredData {
     fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
-        CborTagEncode::new(5483_002, &(&self.name, &self.owner, &self.value)).encode(e)
+        CborTagEncode::new(::data_tags::STRUCTURED_DATA_TAG, &(&self.name, &self.owner, &self.value)).encode(e)
     }
 }
 
 impl Decodable for StructuredData {
     fn decode<D: Decoder>(d: &mut D) -> Result<StructuredData, D::Error> {
-        try!(d.read_u64());
         let (name, owner, value) = try!(Decodable::decode(d));
         let structured = StructuredData {
             type_tag: StructuredDataTypeTag,
@@ -161,7 +160,7 @@ mod test {
         let structured_data = StructuredData::generate_random();
         let data = StructuredData::new(structured_data.name(), structured_data.owner().unwrap(), structured_data.value());
         assert_eq!(data, structured_data);
-        assert_eq!(structured_data.type_tag(), 100u64);
+        assert_eq!(structured_data.type_tag(), ::data_tags::STRUCTURED_DATA_TAG);
     }
 
 #[test]
@@ -174,10 +173,13 @@ mod test {
         e.encode(&[&obj_before]).unwrap();
 
         let mut d = Decoder::from_bytes(e.as_bytes());
-        let obj_after: StructuredData = d.decode().next().unwrap().unwrap();
-
-        assert_eq!(obj_before, obj_after);
-        assert!(!(obj_before != obj_before_clone));
-        assert!(obj_before != obj_before1);
+        match d.decode().next().unwrap().unwrap() {
+            ::test_utils::Parser::StructData(obj_after) => {
+                assert_eq!(obj_before, obj_after);
+                assert!(!(obj_before != obj_before_clone));
+                assert!(obj_before != obj_before1);
+            },
+            _ => panic!("Unexpected!"),
+        }
     }
 }
