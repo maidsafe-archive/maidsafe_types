@@ -1,5 +1,10 @@
 # MaidSafe Types - Change Log
 
+## [0.2.3]
+
+- Updated dependencies' versions
+- Fixed lint warnings caused by latest Rust nightly
+
 ## [0.2.2]
 
 - [#81](https://github.com/maidsafe/maidsafe_types/pull/81) Remove payload introduce cbor tagging
