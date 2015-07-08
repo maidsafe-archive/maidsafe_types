@@ -1,6 +1,6 @@
 [package]
 name = "maidsafe_types"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["MaidSafe Developers <dev@maidsafe.net>"]
 description = "Types for maidsafe clients and vaults."
 documentation = "http://maidsafe.net/maidsafe_types/latest"
@@ -14,4 +14,4 @@ rustc-serialize = "*"
 cbor = "*"
 sodiumoxide = "*"
 rand = "*"
-routing = "*"
+routing = "0.2.*"
