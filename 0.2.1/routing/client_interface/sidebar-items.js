@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["Interface","The Interface trait introduces the methods expected to be implemented by the user of RoutingClient"]]});

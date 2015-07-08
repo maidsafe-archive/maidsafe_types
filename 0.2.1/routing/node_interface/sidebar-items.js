@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["MethodCall","MethodCall denotes a specific request to be carried out by routing."]],"trait":[["CreatePersonas",""],["Interface","The Interface trait introduces the methods expected to be implemented by the user of RoutingNode"]]});

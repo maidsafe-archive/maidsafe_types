@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="Source to the Rust file `src/lib.rs`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang">
+
+    <title>lib.rs.html -- source</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    <link rel="shortcut icon" href="http://maidsafe.net/img/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        <a href='../../maidsafe_types/index.html'><img src='http://maidsafe.net/img/Resources/branding/maidsafe_logo.fab2.png' alt='' width='100'></a>
+        
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content source"><pre class="line-numbers"><span id="1">  1</span>
+<span id="2">  2</span>
+<span id="3">  3</span>
+<span id="4">  4</span>
+<span id="5">  5</span>
+<span id="6">  6</span>
+<span id="7">  7</span>
+<span id="8">  8</span>
+<span id="9">  9</span>
+<span id="10"> 10</span>
+<span id="11"> 11</span>
+<span id="12"> 12</span>
+<span id="13"> 13</span>
+<span id="14"> 14</span>
+<span id="15"> 15</span>
+<span id="16"> 16</span>
+<span id="17"> 17</span>
+<span id="18"> 18</span>
+<span id="19"> 19</span>
+<span id="20"> 20</span>
+<span id="21"> 21</span>
+<span id="22"> 22</span>
+<span id="23"> 23</span>
+<span id="24"> 24</span>
+<span id="25"> 25</span>
+<span id="26"> 26</span>
+<span id="27"> 27</span>
+<span id="28"> 28</span>
+<span id="29"> 29</span>
+<span id="30"> 30</span>
+<span id="31"> 31</span>
+<span id="32"> 32</span>
+<span id="33"> 33</span>
+<span id="34"> 34</span>
+<span id="35"> 35</span>
+<span id="36"> 36</span>
+<span id="37"> 37</span>
+<span id="38"> 38</span>
+<span id="39"> 39</span>
+<span id="40"> 40</span>
+<span id="41"> 41</span>
+<span id="42"> 42</span>
+<span id="43"> 43</span>
+<span id="44"> 44</span>
+<span id="45"> 45</span>
+<span id="46"> 46</span>
+<span id="47"> 47</span>
+<span id="48"> 48</span>
+<span id="49"> 49</span>
+<span id="50"> 50</span>
+<span id="51"> 51</span>
+<span id="52"> 52</span>
+<span id="53"> 53</span>
+<span id="54"> 54</span>
+<span id="55"> 55</span>
+<span id="56"> 56</span>
+<span id="57"> 57</span>
+<span id="58"> 58</span>
+<span id="59"> 59</span>
+<span id="60"> 60</span>
+<span id="61"> 61</span>
+<span id="62"> 62</span>
+<span id="63"> 63</span>
+<span id="64"> 64</span>
+<span id="65"> 65</span>
+<span id="66"> 66</span>
+<span id="67"> 67</span>
+<span id="68"> 68</span>
+<span id="69"> 69</span>
+<span id="70"> 70</span>
+<span id="71"> 71</span>
+<span id="72"> 72</span>
+<span id="73"> 73</span>
+<span id="74"> 74</span>
+<span id="75"> 75</span>
+<span id="76"> 76</span>
+<span id="77"> 77</span>
+<span id="78"> 78</span>
+<span id="79"> 79</span>
+<span id="80"> 80</span>
+<span id="81"> 81</span>
+<span id="82"> 82</span>
+<span id="83"> 83</span>
+<span id="84"> 84</span>
+<span id="85"> 85</span>
+<span id="86"> 86</span>
+<span id="87"> 87</span>
+<span id="88"> 88</span>
+<span id="89"> 89</span>
+<span id="90"> 90</span>
+<span id="91"> 91</span>
+<span id="92"> 92</span>
+<span id="93"> 93</span>
+<span id="94"> 94</span>
+<span id="95"> 95</span>
+<span id="96"> 96</span>
+<span id="97"> 97</span>
+<span id="98"> 98</span>
+<span id="99"> 99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+</pre><pre class='rust '>
+<span class='comment'>// Copyright 2015 MaidSafe.net limited.</span>
+<span class='comment'>//</span>
+<span class='comment'>// This SAFE Network Software is licensed to you under (1) the MaidSafe.net Commercial License,</span>
+<span class='comment'>// version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which</span>
+<span class='comment'>// licence you accepted on initial access to the Software (the &quot;Licences&quot;).</span>
+<span class='comment'>//</span>
+<span class='comment'>// By contributing code to the SAFE Network Software, or to this project generally, you agree to be</span>
+<span class='comment'>// bound by the terms of the MaidSafe Contributor Agreement, version 1.0.  This, along with the</span>
+<span class='comment'>// Licenses can be found in the root directory of this project at LICENSE, COPYING and CONTRIBUTOR.</span>
+<span class='comment'>//</span>
+<span class='comment'>// Unless required by applicable law or agreed to in writing, the SAFE Network Software distributed</span>
+<span class='comment'>// under the GPL Licence is distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY</span>
+<span class='comment'>// KIND, either express or implied.</span>
+<span class='comment'>//</span>
+<span class='comment'>// Please review the Licences for the specific language governing permissions and limitations</span>
+<span class='comment'>// relating to use of the SAFE Network Software.</span>
+
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>crate_name</span> <span class='op'>=</span> <span class='string'>&quot;maidsafe_types&quot;</span>]</span>
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>crate_type</span> <span class='op'>=</span> <span class='string'>&quot;lib&quot;</span>]</span>
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>doc</span>(<span class='ident'>html_logo_url</span> <span class='op'>=</span> <span class='string'>&quot;http://maidsafe.net/img/Resources/branding/maidsafe_logo.fab2.png&quot;</span>,
+       <span class='ident'>html_favicon_url</span> <span class='op'>=</span> <span class='string'>&quot;http://maidsafe.net/img/favicon.ico&quot;</span>,
+       <span class='ident'>html_root_url</span> <span class='op'>=</span> <span class='string'>&quot;http://maidsafe.github.io/maidsafe/maidsafe_types/&quot;</span>)]</span>
+
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>forbid</span>(<span class='ident'>bad_style</span>, <span class='ident'>warnings</span>)]</span>
+
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>deny</span>(<span class='ident'>deprecated</span>, <span class='ident'>improper_ctypes</span>, <span class='ident'>missing_docs</span>, <span class='ident'>non_shorthand_field_patterns</span>,
+        <span class='ident'>overflowing_literals</span>, <span class='ident'>plugin_as_library</span>, <span class='ident'>private_no_mangle_fns</span>, <span class='ident'>private_no_mangle_statics</span>,
+        <span class='ident'>raw_pointer_derive</span>, <span class='ident'>stable_features</span>, <span class='ident'>unconditional_recursion</span>, <span class='ident'>unknown_lints</span>, <span class='comment'>// unsafe_code,</span>
+        <span class='ident'>unsigned_negation</span>, <span class='ident'>unused</span>, <span class='ident'>unused_allocation</span>, <span class='ident'>unused_attributes</span>, <span class='ident'>unused_comparisons</span>,
+        <span class='ident'>unused_features</span>, <span class='ident'>unused_parens</span>, <span class='ident'>while_true</span>)]</span>
+
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>warn</span>(<span class='ident'>trivial_casts</span>, <span class='ident'>trivial_numeric_casts</span>, <span class='ident'>unused_extern_crates</span>, <span class='ident'>unused_import_braces</span>,
+        <span class='ident'>unused_qualifications</span>, <span class='ident'>variant_size_differences</span>)]</span>
+
+<span class='doccomment'>//! #Safe Network Data Types</span>
+<span class='doccomment'>//!</span>
+<span class='doccomment'>//! This library implements the fundimental data types used on the SAFE Network</span>
+<span class='doccomment'>//! The serialisation mechnism used is ``cbor``` which is an IETF Rfc [7049](http://tools.ietf.org/html/rfc7049)</span>
+<span class='doccomment'>//! for serialising data and is an attempt to upgrade messagepack and ASN.1</span>
+<span class='doccomment'>//! On disk serialisation is [JSON](https://www.ietf.org/rfc/rfc4627.txt)</span>
+<span class='doccomment'>//!</span>
+<span class='doccomment'>//! [Project github page](https://github.com/maidsafe/maidsafe_types)</span>
+
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>rustc_serialize</span>;
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>sodiumoxide</span>;
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>cbor</span>;
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>routing</span>;
+
+<span class='doccomment'>/// Helper provides helper functions for array to vector conversions and vice versa</span>
+<span class='attribute'>#[<span class='ident'>macro_use</span>]</span>
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>helper</span>;
+<span class='doccomment'>/// Holds the structs for Id related Types such as Maid, AnMaid, Mpid, etc</span>
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>id</span>;
+<span class='doccomment'>/// Holds the structs related to data such as ImmutableData/Backup/Sacrificial and StructuredData</span>
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>data</span>;
+<span class='doccomment'>/// SafeCoin related details</span>
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>coin</span>;
+
+<span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>id</span>::{<span class='ident'>RevocationIdType</span>, <span class='ident'>IdType</span>, <span class='ident'>PublicIdType</span>};
+<span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>data</span>::{<span class='ident'>ImmutableData</span>, <span class='ident'>ImmutableDataBackup</span>, <span class='ident'>ImmutableDataSacrificial</span>, <span class='ident'>StructuredData</span>};
+
+<span class='doccomment'>/// TypeTag trait</span>
+<span class='kw'>pub</span> <span class='kw'>trait</span> <span class='ident'>TypeTag</span> {
+    <span class='doccomment'>/// returns type tag</span>
+    <span class='kw'>fn</span> <span class='ident'>type_tag</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>u64</span>;
+}
+
+<span class='doccomment'>/// Interface to IdTypes</span>
+<span class='kw'>pub</span> <span class='kw'>trait</span> <span class='ident'>IdTypeTags</span> {
+    <span class='doccomment'>/// returns tag type for revocation id type</span>
+    <span class='kw'>fn</span> <span class='ident'>revocation_id_type_tag</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>u64</span>;
+    <span class='doccomment'>/// returns tag type for id type</span>
+    <span class='kw'>fn</span> <span class='ident'>id_type_tag</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>u64</span>;
+    <span class='doccomment'>/// returns tag type for public id type</span>
+    <span class='kw'>fn</span> <span class='ident'>public_id_type_tag</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>u64</span>;
+}
+
+<span class='doccomment'>/// TypeTags for Maid type variants</span>
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>MaidTypeTags</span>;
+
+<span class='doccomment'>/// TypeTags for Maid type variants</span>
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>MpidTypeTags</span>;
+
+<span class='kw'>impl</span> <span class='ident'>IdTypeTags</span> <span class='kw'>for</span> <span class='ident'>MaidTypeTags</span> {
+    <span class='doccomment'>/// returns tag type for AnMaid type</span>
+    <span class='kw'>fn</span> <span class='ident'>revocation_id_type_tag</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>u64</span> { <span class='ident'>data_tags</span>::<span class='ident'>AN_MAID_TAG</span> }
+    <span class='doccomment'>/// returns tag type for Maid type</span>
+    <span class='kw'>fn</span> <span class='ident'>id_type_tag</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>u64</span> { <span class='ident'>data_tags</span>::<span class='ident'>MAID_TAG</span> }
+    <span class='doccomment'>/// returns tag type for PublicMaid type</span>
+    <span class='kw'>fn</span> <span class='ident'>public_id_type_tag</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>u64</span> { <span class='ident'>data_tags</span>::<span class='ident'>PUBLIC_MAID_TAG</span> }
+}
+
+<span class='kw'>impl</span> <span class='ident'>IdTypeTags</span> <span class='kw'>for</span> <span class='ident'>MpidTypeTags</span> {
+    <span class='doccomment'>/// returns tag type for AnMpid type</span>
+    <span class='kw'>fn</span> <span class='ident'>revocation_id_type_tag</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>u64</span> { <span class='ident'>data_tags</span>::<span class='ident'>AN_MPID_TAG</span> }
+    <span class='doccomment'>/// returns tag type for Mpid type</span>
+    <span class='kw'>fn</span> <span class='ident'>id_type_tag</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>u64</span> { <span class='ident'>data_tags</span>::<span class='ident'>MPID_TAG</span> }
+    <span class='doccomment'>/// returns tag type for PublicMpid type</span>
+    <span class='kw'>fn</span> <span class='ident'>public_id_type_tag</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>u64</span> { <span class='ident'>data_tags</span>::<span class='ident'>PUBLIC_MPID_TAG</span> }
+}
+
+<span class='doccomment'>/// Random trait is used to generate random instances.</span>
+<span class='doccomment'>/// Used in the test mod</span>
+<span class='kw'>pub</span> <span class='kw'>trait</span> <span class='ident'>Random</span> {
+    <span class='doccomment'>/// Generates a random instance and returns the created random instance</span>
+    <span class='kw'>fn</span> <span class='ident'>generate_random</span>() <span class='op'>-&gt;</span> <span class='kw'>Self</span>;
+}
+<span class='doccomment'>/// Crypto Error types</span>
+<span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>CryptoError</span> {
+    <span class='doccomment'>/// Unknown Error Type</span>
+    <span class='ident'>Unknown</span>
+}
+
+<span class='doccomment'>/// All Maidsafe tagging should offset from this</span>
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>MAIDSAFE_TAG</span>: <span class='ident'>u64</span> <span class='op'>=</span> <span class='number'>5483_000</span>;
+
+<span class='doccomment'>/// All Maidsafe Data tags</span>
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>data_tags</span> {
+    <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>MAIDSAFE_DATA_TAG</span>: <span class='ident'>u64</span> <span class='op'>=</span> ::<span class='ident'>MAIDSAFE_TAG</span> <span class='op'>+</span> <span class='number'>100</span>;
+
+    <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>IMMUTABLE_DATA_TAG</span>: <span class='ident'>u64</span>             <span class='op'>=</span> <span class='ident'>MAIDSAFE_DATA_TAG</span> <span class='op'>+</span> <span class='number'>1</span>;
+    <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>IMMUTABLE_DATA_BACKUP_TAG</span>: <span class='ident'>u64</span>      <span class='op'>=</span> <span class='ident'>MAIDSAFE_DATA_TAG</span> <span class='op'>+</span> <span class='number'>2</span>;
+    <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>IMMUTABLE_DATA_SACRIFICIAL_TAG</span>: <span class='ident'>u64</span> <span class='op'>=</span> <span class='ident'>MAIDSAFE_DATA_TAG</span> <span class='op'>+</span> <span class='number'>3</span>;
+    <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>STRUCTURED_DATA_TAG</span>: <span class='ident'>u64</span>            <span class='op'>=</span> <span class='ident'>MAIDSAFE_DATA_TAG</span> <span class='op'>+</span> <span class='number'>4</span>;
+    <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>AN_MPID_TAG</span>: <span class='ident'>u64</span>                    <span class='op'>=</span> <span class='ident'>MAIDSAFE_DATA_TAG</span> <span class='op'>+</span> <span class='number'>5</span>;
+    <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>AN_MAID_TAG</span>: <span class='ident'>u64</span>                    <span class='op'>=</span> <span class='ident'>MAIDSAFE_DATA_TAG</span> <span class='op'>+</span> <span class='number'>6</span>;
+    <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>MAID_TAG</span>: <span class='ident'>u64</span>                       <span class='op'>=</span> <span class='ident'>MAIDSAFE_DATA_TAG</span> <span class='op'>+</span> <span class='number'>7</span>;
+    <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>MPID_TAG</span>: <span class='ident'>u64</span>                       <span class='op'>=</span> <span class='ident'>MAIDSAFE_DATA_TAG</span> <span class='op'>+</span> <span class='number'>8</span>;
+    <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PUBLIC_MAID_TAG</span>: <span class='ident'>u64</span>                <span class='op'>=</span> <span class='ident'>MAIDSAFE_DATA_TAG</span> <span class='op'>+</span> <span class='number'>9</span>;
+    <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PUBLIC_MPID_TAG</span>: <span class='ident'>u64</span>                <span class='op'>=</span> <span class='ident'>MAIDSAFE_DATA_TAG</span> <span class='op'>+</span> <span class='number'>10</span>;
+}
+
+<span class='kw'>mod</span> <span class='ident'>test_utils</span>;
+</pre>
+</section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+            <p>
+                Search functions by type signature (e.g.
+                <code>vec -> usize</code>)
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "maidsafe_types";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>
