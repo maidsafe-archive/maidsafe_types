@@ -115,6 +115,7 @@ pub enum CryptoError {
 pub const MAIDSAFE_TAG: u64 = 5483_000;
 
 /// All Maidsafe Data tags
+#[allow(missing_docs)]
 pub mod data_tags {
     pub const MAIDSAFE_DATA_TAG: u64 = ::MAIDSAFE_TAG + 100;
 
